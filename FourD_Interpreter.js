@@ -1,5 +1,5 @@
 //region Object constructors for 3D code.
-const Instruction = function (name,param1,param2,param3,param4) {
+const Instruction = function (name,param1=null,param2=null,param3=null,param4=null) {
     this.name = name;
     switch (name) {
     case "standard":
@@ -41,6 +41,10 @@ const Instruction = function (name,param1,param2,param3,param4) {
         break;
     case "call":
         this.target = param1;
+        break;
+    case "print":
+        this.format = param1;
+        this.value = param2;
         break;
     default:
         break;
@@ -87,11 +91,8 @@ function reset_3D() { //Resets all structures back to default.
     STACK = [];
     INSTRUCTION_STACK = [];
 }
-function printChar(char) { //ATM the output will be logged to the literal console of JS.
-    console.log(char);
-}
-function readChar() { //Honestly, not sure how to implement this.
-
+function print(format = 'char', value = 0) { //ATM the output will be logged to the literal console of JS.
+    console.log(format);
 }
 function log(message) { //Atm we log to the console. However, this should log to the Handmade console.
     console.log(message);
@@ -249,6 +250,15 @@ function play_3D() { //Input is parsed outside this function. It also assumes th
                     continue;  //We perform the jump
                 } //We do nothing and resume normal execution.
                 break;
+            case "print":
+                a = instruction.format; //We get the format for how to print the argument.
+                b = instruction.value; //We get the number/char to print
+                b = Number(b); //We turn the number into a an actual number
+                if(b===NaN){
+                    b = temporals[instruction.value]; //We get the value from the temporals
+                }
+                print(a,b); //We print the value
+                break; //That's all.
             default:
                 throw "Unrecognized 3D instruction;";
         }
