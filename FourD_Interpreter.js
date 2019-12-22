@@ -1,0 +1,188 @@
+//region Constants used for ThreeD interpreter.
+const instructions = {
+    clear:function () {
+        Object.keys(this).forEach(key => {
+            if(key!='clear')delete this[key];
+        });
+    }
+};
+const labels = {
+    clear:function () {
+        Object.keys(this).forEach(key => {
+            if(key!='clear')delete this[key];
+        });
+    }
+};
+const temporals = {
+    clear:function () {
+        Object.keys(this).forEach(key => {
+            if(key!='clear')delete this[key];
+        });
+    }
+};
+let HEAP = [];
+let STACK = [];
+let INSTRUCTION_STACK = [];
+let CAP_HEAP = false;
+let MAX_HEAP = 150000;
+let CACHE_BEGIN = 100; //The cache takes place in the Stack. between the TryCatch segment and the Stack segment (100-1000) by default.
+let STACK_BEGIN = 1000; //The Stack begins above the Cache and the TryCatch segment. by default at 1000.
+let TRY_CATCH_BEGIN = 0; //The TryCatch Segment starts at 0 and ends at CACHE_BEGIN.
+//endregion
+//region Native Functions:
+function reset_3D() { //Resets all structures back to default.
+    instructions.clear();
+    temporals.clear();
+    labels.clear();
+    HEAP = [];
+    STACK = [];
+    INSTRUCTION_STACK = [];
+}
+function printChar(char) { //ATM the output will be logged to the literal console of JS.
+    console.log(char);
+}
+function readChar() { //Honestly, not sure how to implement this.
+
+}
+function log(message) { //Atm we log to the console. However, this should log to the Handmade console.
+    console.log(message);
+}
+//endregion
+//region Execute 3D:
+function play_3D() { //Input is parsed outside this function. It also assumes that all structures have been loaded successfully.
+//0) Get the index of the Main function:
+    let i = 0;
+    if("main" in labels)i = labels.main;
+    else throw "NO main method found. could not start code execution.";
+    while(i<Object.keys(instructions).length){
+        let instruction = instructions[i]; //Instruction is supposed to be a Instruction node of the 3D sentence.
+        let destiny = null;
+        let address = 0;
+        let vessel = 0;
+        let value = 0;
+        let a = 0;
+        let b = 0;
+        let c = 0;
+        switch (instruction.name) {
+            case "standard": //Standard 3D operation.
+                a = instruction.a; //We get the name of temp we're using. or the value if we're having a number.
+                a = Number(a); //We convert the text to a number (if applicable)
+                if(a===NaN){ //Is a name not a number.
+                    a = temporals[a]; //We get the actual value.
+                }
+                b = instruction.b; //We get the name of the temp we're using.
+                b = Number(b);
+                if(b===NaN){ //b is a name not a number
+                    b = temporals[b]; //We get the actual value
+                }
+                switch (instruction.op) { //We perform the operation.
+                    case "+":
+                        c = a+b;
+                        break;
+                    case "-":
+                        c = a-b;
+                        break;
+                    case "*":
+                        c = a*b;
+                        break;
+                    case "/":
+                        c = a/b;
+                        break;
+                    case "%":
+                        c = a%b;
+                        break;
+                    default:
+                        break;
+                }
+                temporals[instruction.c] = c; //We set the value in the vessel.
+                break; //That's all!
+            case "GET_HEAP": //We're getting a value from the heap.
+                address = instruction.address; //We get the name of the temporal
+                address = temporals[address]; //We get the actual value.
+                vessel = instruction.vessel; //We get the name of the recipent temporal.
+                temporals[vessel] = HEAP[address]; //We perform the assignation.
+                break; //That's all.
+            case "SET_HEAP":
+                address = instruction.address; //We get the name of the temporal
+                address = temporals[address]; //We get the actual value.
+                value = instruction.value; //We get the name of the value.
+                value = temporals[value]; //We get the actual value.
+                HEAP[address] = value; //We perform the assignation.
+                break;
+            case "GET_STACK": //We're getting a value from the Stack.
+                address = instruction.address; //We get the name of the temporal
+                address = temporals[address]; //We get the actual value.
+                vessel = instruction.vessel; //We get the name of the recipent temporal.
+                temporals[vessel] = STACK[address]; //We perform the assignation.
+                break; //That's all.
+            case "SET_STACK": //We're setting a value in the Stack
+                address = instruction.address; //We get the name of the temporal
+                address = temporals[address]; //We get the actual value of the address.
+                value = instruction.value; //We get the name of the value.
+                value = temporals[value]; //We get the actual value.
+                STACK[address] = value; //We perform the assignation.
+                break;
+            case "goto":
+                destiny = instruction.target; //Destiny is supposed to hold the name of the label we're targeting.
+                destiny = labels[destiny]; //We replace the name of the label by the index of the instruction we're jumping to.
+                i = destiny; //We update the value of i so we can actually do the jump.
+                continue; //We perform the jump.
+            case "call": //How to perform jumps:
+                INSTRUCTION_STACK.push(i+1); //We push the instruction where we're supposed to return.
+                destiny = instruction.target; //We get the name of the target.
+                destiny = labels[destiny]; //We get the actual index of the instruction to execute.
+                i = destiny; //We update i.
+                continue; //We perform the jump
+            case "ret": //How to return back after a proc is finished:
+                if(INSTRUCTION_STACK.length){
+                    destiny = INSTRUCTION_STACK.pop(); //We get the address where we're supposed to return.
+                    i = destiny; //We update i.
+                    continue; //We perform the jump back.
+                }else{ //The stack is empty. This can only mean we finished the execution of 3D code.
+                    log("3D execution finished successfully.");
+                    log("Max Heap size used: "+HEAP.length);
+                    log("Max Stack size used: "+STACK.length);
+                    return;
+                }
+                break;
+            case "if": //Conditional jump.
+                a = instruction.a; //Name of the first temp.
+                b = instruction.b; //Name of the second temp.
+                a = temporals[a]; //We get the actual value of the temp.
+                b = temporals[b]; //We get the actual value of the temp.
+                switch (instruction.op) {
+                    case "==":
+                        c = a == b;
+                        break;
+                    case "!=":
+                        c = a!=b;
+                        break;
+                    case ">":
+                        c = a>b;
+                        break;
+                    case "<":
+                        c = a<b;
+                        break;
+                    case "<=":
+                        c = a<=b;
+                        break;
+                    case ">=":
+                        c = a>=b;
+                        break;
+                    default:
+                        break;
+                }
+                if(c){ //We perform the jump
+                    destiny = instruction.target; //We get the name of the target
+                    destiny = labels[destiny];  //We get the index of the target
+                    i = destiny; //We update i.
+                    continue;  //We perform the jump
+                } //We do nothing and resume normal execution.
+                break;
+            default:
+                throw "Unrecognized 3D instruction;";
+        }
+        i++;
+    }
+}
+//endregion
