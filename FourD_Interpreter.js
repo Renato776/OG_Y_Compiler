@@ -1,4 +1,53 @@
-//region Constants used for ThreeD interpreter.
+//region Object constructors for 3D code.
+const Instruction = function (name,param1,param2,param3,param4) {
+    this.name = name;
+    switch (name) {
+    case "standard":
+        this.a = param1;
+        this.b = param2;
+        this.op = param3;
+        this.c = param4;
+        break;
+    case "assignation":
+        this.vessel = param1;
+        this.value = param2;
+        break;
+    case "GET_HEAP":
+        this.vessel = param1;
+        this.address = param2;
+        break;
+    case "GET_STACK":
+        this.vessel = param1;
+        this.address = param2;
+        break;
+    case "SET_HEAP":
+        this.address = param1;
+        this.value = param2;
+        break;
+    case "SET_STACK":
+        this.address = param1;
+        this.value = param2;
+        break;
+    case "if":
+        this.a = param1;
+        this.b = param2;
+        this.op = param3;
+        this.target = param4;
+        break;
+    case "goto":
+        this.target = param1;
+        break;
+        case "ret": //Takes no extra params besides name.
+        break;
+    case "call":
+        this.target = param1;
+        break;
+    default:
+        break;
+    }
+};
+//endregion
+//region Constants used for 3D interpreter.
 const instructions = {
     clear:function () {
         Object.keys(this).forEach(key => {
@@ -68,12 +117,12 @@ function play_3D() { //Input is parsed outside this function. It also assumes th
                 a = instruction.a; //We get the name of temp we're using. or the value if we're having a number.
                 a = Number(a); //We convert the text to a number (if applicable)
                 if(a===NaN){ //Is a name not a number.
-                    a = temporals[a]; //We get the actual value.
+                    a = temporals[instruction.a]; //We get the actual value.
                 }
                 b = instruction.b; //We get the name of the temp we're using.
                 b = Number(b);
                 if(b===NaN){ //b is a name not a number
-                    b = temporals[b]; //We get the actual value
+                    b = temporals[instruction.b]; //We get the actual value
                 }
                 switch (instruction.op) { //We perform the operation.
                     case "+":
@@ -96,17 +145,29 @@ function play_3D() { //Input is parsed outside this function. It also assumes th
                 }
                 temporals[instruction.c] = c; //We set the value in the vessel.
                 break; //That's all!
+            case "assignment":
+                vessel = instruction.vessel;
+                value = instruction.value;
+                value = Number(value);
+                if(value===NaN){
+                    value = temporals[instruction.value];
+                }
+                temporals[vessel] = value;
+                break;
             case "GET_HEAP": //We're getting a value from the heap.
                 address = instruction.address; //We get the name of the temporal
                 address = temporals[address]; //We get the actual value.
-                vessel = instruction.vessel; //We get the name of the recipent temporal.
+                vessel = instruction.vessel; //We get the name of the recipient temporal.
                 temporals[vessel] = HEAP[address]; //We perform the assignation.
                 break; //That's all.
             case "SET_HEAP":
                 address = instruction.address; //We get the name of the temporal
                 address = temporals[address]; //We get the actual value.
-                value = instruction.value; //We get the name of the value.
-                value = temporals[value]; //We get the actual value.
+                value = instruction.value; //We get the name of the value or the pure value.
+                value = Number(value); //If it is a number we get it.
+                if(value===NaN){
+                    value = temporals[instruction.value]; //We get the actual value.
+                }
                 HEAP[address] = value; //We perform the assignation.
                 break;
             case "GET_STACK": //We're getting a value from the Stack.
@@ -118,8 +179,11 @@ function play_3D() { //Input is parsed outside this function. It also assumes th
             case "SET_STACK": //We're setting a value in the Stack
                 address = instruction.address; //We get the name of the temporal
                 address = temporals[address]; //We get the actual value of the address.
-                value = instruction.value; //We get the name of the value.
-                value = temporals[value]; //We get the actual value.
+                value = instruction.value; //We get the name of the value. Or the pure value.
+                value = Number(value); //If it is a number we get it.
+                if(value===NaN){ //Is a name not a number
+                    value = temporals[instruction.value]; //We get the actual value.
+                }
                 STACK[address] = value; //We perform the assignation.
                 break;
             case "goto":
@@ -148,8 +212,14 @@ function play_3D() { //Input is parsed outside this function. It also assumes th
             case "if": //Conditional jump.
                 a = instruction.a; //Name of the first temp.
                 b = instruction.b; //Name of the second temp.
-                a = temporals[a]; //We get the actual value of the temp.
-                b = temporals[b]; //We get the actual value of the temp.
+                a = Number(a);
+                if(a===NaN){
+                    a = temporals[instruction.a];
+                }
+                b = Number(b);
+                if(b===NaN){
+                    b = temporals[instruction.b];
+                }
                 switch (instruction.op) {
                     case "==":
                         c = a == b;
@@ -184,5 +254,8 @@ function play_3D() { //Input is parsed outside this function. It also assumes th
         }
         i++;
     }
+    log("3D execution finished successfully.");
+    log("Max Heap size used: "+HEAP.length);
+    log("Max Stack size used: "+STACK.length);
 }
 //endregion
