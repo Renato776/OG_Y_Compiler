@@ -19,10 +19,10 @@
 "heap"           return 'HEAP';
 "["           return 'LEFT_BRACKET';
 "]"                 return 'RIGHT_BRACKET';
-"<"                 return 'MENORQ';
-">"                 return 'MAYORQ';
 "<="                 return 'MENORIGUAL';
 ">="                 return 'MAYORIGUAL';
+"<"                 return 'MENORQ';
+">"                 return 'MAYORQ';
 "+"                 return 'SUM';
 "-"                 return 'MINUS';
 "*"                 return 'MULTIPLY';
@@ -48,7 +48,7 @@
 [0-9]+("."[0-9]+)\b    return 'FLOAT';
 ("L")[0-9]+             return 'LABEL';
 ([a-zA-Z]|_)+[0-9]*\b    return 'ID';
-("'%d'")|("'%e'")|("'%c'") return FORMAT
+("'%d'")|("'%e'")|("'%c'") return 'FORMAT'
 <<EOF>>                 return 'EOF';
 
 .                       { console.error('Este es un error léxico: ' + yytext + ', en la linea: ' + yylloc.first_line + ', en la columna: ' + yylloc.first_column); }
@@ -225,10 +225,10 @@ print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {
        ;
 
 setHeap : HEAP LEFT_BRACKET ID RIGHT_BRACKET ASIGNACION value {
-        $$ = new Instruction("SET_HEAP",$6,$3,$5);
+        $$ = new Instruction("SET_HEAP",$6,$3,$6);
         };
 setStack : STACK LEFT_BRACKET ID RIGHT_BRACKET ASIGNACION value {
-        $$ = new Instruction("SET_STACK",$6,$3,$5);
+        $$ = new Instruction("SET_STACK",$6,$3,$6);
         };
 getHeap : ID ASIGNACION HEAP LEFT_BRACKET ID RIGHT_BRACKET {
         $$ = new Instruction("GET_HEAP",new _3D_Token($1,@1.first_line,@1.first_column),$1,$5);

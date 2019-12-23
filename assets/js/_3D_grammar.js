@@ -71,7 +71,7 @@
     recoverable: (boolean: TRUE when the parser has a error recovery rule available for this particular error)
   }
 */
-var gramatica = (function(){
+var _3D_grammar = (function(){
 var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[1,8],$V1=[1,9],$V2=[1,24],$V3=[1,23],$V4=[1,25],$V5=[1,27],$V6=[1,26],$V7=[1,28],$V8=[1,29],$V9=[1,30],$Va=[1,31],$Vb=[1,32],$Vc=[6,11,13,14,29,37,41,47,48,49,50,53,56],$Vd=[11,14,29,37,41,47,48,49,50,53,56],$Ve=[1,55],$Vf=[1,56],$Vg=[1,58],$Vh=[1,59],$Vi=[1,60],$Vj=[1,63],$Vk=[1,62],$Vl=[6,11,13,14,29,32,33,34,35,36,37,41,47,48,49,50,53,56],$Vm=[2,58],$Vn=[2,57],$Vo=[6,11,13,14,29,32,33,34,35,36,37,39,40,41,42,43,44,45,46,47,48,49,50,53,56],$Vp=[6,11,13,14,29,37,39,40,41,42,43,44,45,46,47,48,49,50,53,56];
 var parser = {trace: function trace () { },
 yy: {},
@@ -234,12 +234,12 @@ case 46:
 break;
 case 47:
 
-        this.$ = new Instruction("SET_HEAP",$$[$0],$$[$0-3],$$[$0-1]);
+        this.$ = new Instruction("SET_HEAP",$$[$0],$$[$0-3],$$[$0]);
         
 break;
 case 48:
 
-        this.$ = new Instruction("SET_STACK",$$[$0],$$[$0-3],$$[$0-1]);
+        this.$ = new Instruction("SET_STACK",$$[$0],$$[$0-3],$$[$0]);
         
 break;
 case 49:
@@ -771,13 +771,13 @@ case 8:return 54;
 break;
 case 9:return 55;
 break;
-case 10:return 42;
+case 10:return 44;
 break;
-case 11:return 39;
+case 11:return 43;
 break;
-case 12:return 44;
+case 12:return 42;
 break;
-case 13:return 43;
+case 13:return 39;
 break;
 case 14:return 32;
 break;
@@ -825,7 +825,7 @@ case 35:return 11;
 break;
 case 36:return 14;
 break;
-case 37:return FORMAT
+case 37:return 51
 break;
 case 38:return 6;
 break;
@@ -833,7 +833,7 @@ case 39: console.error('Este es un error léxico: ' + yy_.yytext + ', en la line
 break;
 }
 },
-rules: [/^(?:;.*)/i,/^(?:proc\b)/i,/^(?:\{)/i,/^(?:\})/i,/^(?:\()/i,/^(?:\))/i,/^(?:stack\b)/i,/^(?:heap\b)/i,/^(?:\[)/i,/^(?:\])/i,/^(?:<)/i,/^(?:>)/i,/^(?:<=)/i,/^(?:>=)/i,/^(?:\+)/i,/^(?:-)/i,/^(?:\*)/i,/^(?:\/)/i,/^(?:%)/i,/^(?:!=)/i,/^(?:==)/i,/^(?:=)/i,/^(?:if\b)/i,/^(?:ifFalse\b)/i,/^(?:goto\b)/i,/^(?::)/i,/^(?:var\b)/i,/^(?:call\b)/i,/^(?:print\b)/i,/^(?:,)/i,/^(?:[ \r\t]+)/i,/^(?:\n)/i,/^(?:[0-9]+(\.0)\b)/i,/^(?:[0-9]+\b)/i,/^(?:[0-9]+(\.[0-9]+)\b)/i,/^(?:(L)[0-9]+)/i,/^(?:([a-zA-Z]|_)+[0-9]*\b)/i,/^(?:('%d')|('%e')|('%c'))/i,/^(?:$)/i,/^(?:.)/i],
+rules: [/^(?:;.*)/i,/^(?:proc\b)/i,/^(?:\{)/i,/^(?:\})/i,/^(?:\()/i,/^(?:\))/i,/^(?:stack\b)/i,/^(?:heap\b)/i,/^(?:\[)/i,/^(?:\])/i,/^(?:<=)/i,/^(?:>=)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\+)/i,/^(?:-)/i,/^(?:\*)/i,/^(?:\/)/i,/^(?:%)/i,/^(?:!=)/i,/^(?:==)/i,/^(?:=)/i,/^(?:if\b)/i,/^(?:ifFalse\b)/i,/^(?:goto\b)/i,/^(?::)/i,/^(?:var\b)/i,/^(?:call\b)/i,/^(?:print\b)/i,/^(?:,)/i,/^(?:[ \r\t]+)/i,/^(?:\n)/i,/^(?:[0-9]+(\.0)\b)/i,/^(?:[0-9]+\b)/i,/^(?:[0-9]+(\.[0-9]+)\b)/i,/^(?:(L)[0-9]+)/i,/^(?:([a-zA-Z]|_)+[0-9]*\b)/i,/^(?:('%d')|('%e')|('%c'))/i,/^(?:$)/i,/^(?:.)/i],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39],"inclusive":true}}
 });
 return lexer;
@@ -848,9 +848,9 @@ return new Parser;
 
 
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
-exports.parser = gramatica;
-exports.Parser = gramatica.Parser;
-exports.parse = function () { return gramatica.parse.apply(gramatica, arguments); };
+exports.parser = _3D_grammar;
+exports.Parser = _3D_grammar.Parser;
+exports.parse = function () { return _3D_grammar.parse.apply(_3D_grammar, arguments); };
 exports.main = function commonjsMain (args) {
     if (!args[1]) {
         console.log('Usage: '+args[0]+' FILE');

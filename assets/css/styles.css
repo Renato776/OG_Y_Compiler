@@ -1,0 +1,44 @@
+.col-form-label.Depurar_Title {
+  font-size: xx-large;
+  font-family: monospace;
+  color: rgb(19,0,136);
+  margin-bottom: 1em;
+}
+
+.col.Title_Container {
+  text-align: center;
+}
+
+.Inline_Title {
+  margin-right: 1em;
+}
+
+#Current_Instruction {
+  font-family: monospace;
+  color: rgb(44,0,99);
+}
+
+#Opciones_Header {
+  text-align: center;
+}
+
+#Opciones_Table .table th {
+  text-align: center;
+}
+
+.form-control-plaintext {
+  text-align: center;
+  /*text-decoration: initial;*/
+  font-weight: bold;
+}
+
+#ThreeD_Source {
+  width: 100%;
+  height: auto;
+}
+
+.Debug_Container_Hide {
+  display: none;
+  visibility: hidden;
+}
+

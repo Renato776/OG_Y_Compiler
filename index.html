@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Y-IDE</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+    <div id="DEBUG" class="Debug_Container_Show">
+        <div class="container">
+            <div class="row">
+                <div class="col Title_Container"><label class="col-form-label Depurar_Title"><strong>Depurar</strong></label></div>
+            </div>
+            <div class="row">
+                <div class="col" id="Debug_TextArea">
+                    <div><label>Source Code</label></div><textarea id="ThreeD_Source" rows="18"></textarea></div>
+                <div class="col" id="Debug_Options">
+                    <div class="row">
+                        <div class="col"><label class="Inline_Title">Break Points:</label><input type="text" id="Break_Points_Source"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col"><label class="Inline_Title">Current Instruction:&nbsp;</label><label id="Current_Instruction">#) T0 = 0</label></div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="table-responsive" id="Opciones_Table">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th id="Opciones_Header" colspan="3">Opciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td></td>
+                                            <td><button class="btn btn-danger" id="Iniciar_3D" style="border: none;width: 100%;height: auto;background-color: #24ff00;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Iniciar</button></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td><button class="btn btn-danger" style="border: none;width: 100%;height: auto;background-color: #1effff;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Siguiente Linea</button></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td><button class="btn btn-danger" id="Saltar_3D" style="border: none;width: 100%;height: auto;background-color: #1effff;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Saltar</button></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td><button class="btn btn-danger" id="Siguiente_BP_3D" style="border: none;width: 100%;height: auto;background-color: #1effff;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Siguiente Break Point</button></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td><button class="btn btn-danger" id="Continuar_3D" style="border: none;width: 100%;height: auto;background-color: #960090;color: rgb(255,255,255);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/"
+                                                    type="button">Continuar</button></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td><button class="btn btn-danger" id="Detener_3D" value="Temporales" readonly="" style="width: 100%;">Detener</button></td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col"><input class="form-control-plaintext" type="text" value="Temporales" readonly="">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="Temporals_Display">
+                                <tr>
+                                    <td>Cell 1</td>
+                                    <td>Cell 2</td>
+                                </tr>
+                                <tr>
+                                    <td>Cell 3</td>
+                                    <td>Cell 4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col"><input class="form-control-plaintext" type="text" value="Stack" readonly="">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Direccion</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="Stack_Display">
+                                <tr>
+                                    <td>Cell 1</td>
+                                    <td>Cell 2</td>
+                                </tr>
+                                <tr>
+                                    <td>Cell 3</td>
+                                    <td>Cell 4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col"><input class="form-control-plaintext" type="text" value="Heap" readonly="">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Direccion</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody id="Heap_Display">
+                                <tr>
+                                    <td>Cell 1</td>
+                                    <td>Cell 2</td>
+                                </tr>
+                                <tr>
+                                    <td>Cell 3</td>
+                                    <td>Cell 4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Console</th>
+                                </tr>
+                            </thead>
+                            <tbody id="Debug_Console">
+                                <tr>
+                                    <td>&gt;&gt;</td>
+                                    <td>Cell 2</td>
+                                </tr>
+                                <tr>
+                                    <td>&gt;&gt;</td>
+                                    <td>Cell 4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+</body>
+
+</html>
