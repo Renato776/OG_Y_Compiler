@@ -1,6 +1,5 @@
 //region Object constructors for 3D code.
 //import * as _3D_grammar from "./gramatica";
-
 const _3D_Token = function (text, row, col, negative = false) {
   this.text = text;
   this.row = row;
