@@ -7,7 +7,7 @@ const _3D_Token = function (text, row, col, negative = false) {
   this.negative = negative;
 };
 const _3D_Exception = function (token,message) {
-    log("Fatal Error at: row ="+token.row+" col ="+token.col+" under symbol: "+token.text+"\nDetails: "+message);
+    log("Runtime Exception at: ("+token.row+","+token.col+")  Details: "+message);
 };
 const Instruction = function (name,token,param1=null,param2=null,param3=null,param4=null) {
     this.name = name;
@@ -116,21 +116,30 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     IC = 0;
 }
 function print(format = 'char', value = 0) { //ATM the output will be logged to the literal console of JS.
-    console.log(value);
+    if(current_line==null){ //Should only happen if is the first time we print a char.
+        current_line = new line("");
+        $("#Debug_Console").append(current_line);
+    }
     switch (format) {
         case "'%c'":
-            console.log(String.fromCharCode(value));
+            if(value=='\n'){ //Print new line.
+                current_line = new line("");
+                $("#Debug_Console").append(current_line);
+            }else{
+                current_line.append(String.fromCharCode(value));
+            }
             break;
         case "'%e'":
         case "'%d'":
-            console.log(value.toString());
+            current_line.append(value.toString());
             break;
     }
 }
 function log(message) { //Atm we log to the console. However, this should log to the Handmade console.
-    console.log(message);
+    current_line = new line(message);
+    $("#Debug_Console").append(current_line);
 }
-function play_instruction(instruction, i) {
+function play_instruction(instruction,debug = false) {
     let destiny = null;
     let address = 0;
     let vessel = 0;
@@ -151,7 +160,7 @@ function play_instruction(instruction, i) {
             b = instruction.b.text; //We get the name of the temp we're using.
             b = Number(b);
             if(isNaN(b)){ //b is a name not a number
-                b = temporals[instruction.b]; //We get the actual value
+                b = temporals[instruction.b.text]; //We get the actual value
             }
             if(instruction.b.negative){
                 b = -1*b;
@@ -176,6 +185,8 @@ function play_instruction(instruction, i) {
                     break;
             }
             temporals[instruction.c] = c; //We set the value in the vessel.
+            if(debug)update_temporal(instruction.c,c);
+            IP++;//We update for next instruction.
             break; //That's all!
         case "assignation":
             vessel = instruction.vessel;
@@ -188,12 +199,16 @@ function play_instruction(instruction, i) {
                 value = -1*value;
             }
             temporals[vessel] = value;
+            if(debug)update_temporal(vessel,value);
+            IP++;//We update for next instruction.
             break;
         case "GET_HEAP": //We're getting a value from the heap.
             address = instruction.address; //We get the name of the temporal
             address = temporals[address]; //We get the actual value.
             vessel = instruction.vessel; //We get the name of the recipient temporal.
             temporals[vessel] = HEAP[address]; //We perform the assignation.
+            if(debug)update_temporal(vessel,HEAP[address]);
+            IP++;//We update for next instruction.
             break; //That's all.
         case "SET_HEAP":
             address = instruction.address; //We get the name of the temporal
@@ -207,6 +222,8 @@ function play_instruction(instruction, i) {
                 value = -1*value;
             }
             HEAP[address] = value; //We perform the assignation.
+            if(debug)update_heap(address,value);
+            IP++;//We update for next instruction.
             break;
         case "GET_STACK": //We're getting a value from the Stack.
             address = instruction.address; //We get the name of the temporal
@@ -214,6 +231,8 @@ function play_instruction(instruction, i) {
             vessel = instruction.vessel; //We get the name of the temporal vessel.
             console.log(vessel+"= stack["+address+"]");
             temporals[vessel] = STACK[address]; //We perform the assignation.
+            if(debug)update_temporal(vessel,STACK[address]);
+            IP++;//We update for next instruction.
             break; //That's all.
         case "SET_STACK": //We're setting a value in the Stack
             address = instruction.address; //We get the name of the temporal
@@ -228,28 +247,31 @@ function play_instruction(instruction, i) {
             }
             console.log("stack["+address+"]= "+value);
             STACK[address] = value; //We perform the assignation.
+            if(debug)update_stack(address,value);
+            IP++;//We update for next instruction.
             break;
         case "goto":
             destiny = instruction.target; //Destiny is supposed to hold the name of the label we're targeting.
             destiny = labels[destiny]; //We replace the name of the label by the index of the instruction we're jumping to.
-            i = destiny; //We update the value of i so we can actually do the jump.
-            return i; //We perform the jump.
+            IP = destiny; //We update the value of i so we can actually do the jump.
+            return; //We perform the jump.
         case "call": //How to perform jumps:
             INSTRUCTION_STACK.push(i+1); //We push the instruction where we're supposed to return.
             destiny = instruction.target; //We get the name of the target.
             destiny = labels[destiny]; //We get the actual index of the instruction to execute.
-            i = destiny; //We update i.
-            return i; //We perform the jump
+            IP = destiny; //We update i.
+            return; //We perform the jump
         case "ret": //How to return back after a proc is finished:
             if(INSTRUCTION_STACK.length){
                 destiny = INSTRUCTION_STACK.pop(); //We get the address where we're supposed to return.
-                i = destiny; //We update i.
-                return i; //We perform the jump back.
+                IP = destiny; //We update i.
+                return; //We perform the jump back.
             }else{ //The stack is empty. This can only mean we finished the execution of 3D code.
                 log("3D execution finished successfully.");
                 log("Max Heap size used: "+HEAP.length);
                 log("Max Stack size used: "+STACK.length);
-                return Object.keys(instructions).length;
+                IP = Object.keys(instructions).length+1;
+                return;
             }
             break;
         case "if": //Conditional jump.
@@ -294,8 +316,8 @@ function play_instruction(instruction, i) {
             if(c){ //We perform the jump
                 destiny = instruction.target; //We get the name of the target
                 destiny = labels[destiny];  //We get the index of the target
-                i = destiny; //We update i.
-                return i;  //We perform the jump
+                IP = destiny; //We update i.
+                return;  //We perform the jump
             } //We do nothing and resume normal execution.
             break;
         case "print":
@@ -306,26 +328,25 @@ function play_instruction(instruction, i) {
                 b = temporals[instruction.value.text]; //We get the value from the temporals
             }
             print(a,b); //We print the value
-            break; //That's all.
+            IP++;//We go to next instruction.
+            break;
         default:
             throw new _3D_Exception(instruction.token,"Unrecognized 3D instruction");
     }
-    i++;
-    return  i;
 }
 //endregion
 //region Execute 3D:
-function play_3D() { //Input is parsed outside this function. It also assumes that all structures have been loaded successfully.
-//0) Get the index of the Main function:
-    let i = 0;
+function play_3D() { //Input is parsed outside this function. Play 3D Uses IP directly and executes all instructions without debugging.
+    IP = 0;
     if(!('T' in temporals))temporals['T']=0; //We load T if not being used.
-    if("main" in labels)i = labels.main;
-    else throw "NO main method found. could not start code execution.";
-    while(i<Object.keys(instructions).length){
+    if("main" in labels)IP = labels.main;
+    else throw new _3D_Exception(new _3D_Token("",0,0),"NO main method found. could not start code execution.");
+    let total_instructions_length = Object.keys(instructions).length;
+    while(IP<total_instructions_length){
   		IC++;
-  		if(IC>=INSTRUCTION_MAX)throw "Potential infinite loop prevented. Cannot excecute more than "+INSTRUCTION_MAX+" Sentences.";
-        let instruction = instructions[i]; //Instruction is supposed to be a Instruction node of the 3D sentence.
-        i = play_instruction(instruction,i);
+  		if(IC>=INSTRUCTION_MAX)throw new _3D_Exception(new _3D_Token("",0,0),"Potential infinite loop prevented. Cannot excecute more than "+INSTRUCTION_MAX+" Sentences.");
+        let instruction = instructions[IP]; //We get the instruction to execute.
+        play_instruction(instruction,true);
     }
     log("3D execution finished successfully.");
     log("Max Heap size used: "+HEAP.length);
@@ -334,9 +355,9 @@ function play_3D() { //Input is parsed outside this function. It also assumes th
 //endregion
 //region Parse Text Input and evaluate.
 function _interpret() { //Parses text and plays 3D.
-    var element = document.getElementById("sourceGrammar");
-    alert("Comenzando a analizar!");
-    let source = element.value;
+    var element = $("#ThreeD_Source");
+    console.log("Comenzando a analizar!");
+    let source = element.val();
     reset_3D(); //We reset the structures back to default.
     _3D_grammar.parse(source);
     try{

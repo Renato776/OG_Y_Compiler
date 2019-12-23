@@ -17,7 +17,16 @@
             </div>
             <div class="row">
                 <div class="col" id="Debug_TextArea">
-                    <div><label>Source Code</label></div><textarea id="ThreeD_Source" rows="18"></textarea></div>
+                    <div><label>Source Code</label></div><textarea id="ThreeD_Source" rows="18">
+proc main {
+T0 = 0
+T1 = T0 + 5
+T2 = T1 *2
+T3 = T2 - T1
+Stack[T1] = 77
+}
+T88 = -99
+                </textarea></div>
                 <div class="col" id="Debug_Options">
                     <div class="row">
                         <div class="col"><label class="Inline_Title">Break Points:</label><input type="text" id="Break_Points_Source"></div>
@@ -42,7 +51,7 @@
                                         </tr>
                                         <tr>
                                             <td></td>
-                                            <td><button class="btn btn-danger" style="border: none;width: 100%;height: auto;background-color: #1effff;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Siguiente Linea</button></td>
+                                            <td><button class="btn btn-danger" id="Siguiente_3D" style="border: none;width: 100%;height: auto;background-color: #1effff;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Siguiente Linea</button></td>
                                             <td></td>
                                         </tr>
                                         <tr>

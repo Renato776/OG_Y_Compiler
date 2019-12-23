@@ -1,0 +1,16 @@
+Console default content:
+proc main {
+T0 = 0
+T1 = T0 + 5
+T2 = T1 *2
+T3 = T2 - T1
+Stack[T1] = 77
+}
+T88 = -99
+
+Import scripts:
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="assets/js/_3D_grammar.js"></script>
+    <script src="assets/js/_3D_Interpreter.js"></script>
+    <script src="assets/js/_3D_Utility.js"></script>
