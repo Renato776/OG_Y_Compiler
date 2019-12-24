@@ -88,27 +88,25 @@ console.log('3D input parsed successfully!');
 break;
 case 3:
 
-	  instructions[IP] = $$[$0];
-      IP++;
+	  instructions[$$[$0].token.row-1] = $$[$0];
 	  
 break;
 case 4:
 
-	 instructions[IP] = $$[$0]; //Register Instruction in the Instruction List.
-	 IP++; // Advance InstructionPointer
+	 instructions[$$[$0].token.row-1] = $$[$0]; //Register Instruction in the Instruction List.
 	 
 break;
 case 5:
 
      $$[$0-1].forEach(label=>{
-     labels[label.text] = IP; //We register the labels.
+     labels[label.text] = $$[$0].token.row-1; //We register the labels.
      });
      this.$ = $$[$0];
      
 break;
 case 6:
 
-    labels[$$[$0-1].text] = IP; //We register the proc
+    labels[$$[$0-1].text] = $$[$0].token.row-1; //We register the proc
     this.$ = $$[$0];
     
 break;

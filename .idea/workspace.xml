@@ -2,16 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/codemirror.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/codemirror.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modes/ntriples/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/modes/ntriples/ntriples.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_3D_grammar.jison" beforeDir="false" afterPath="$PROJECT_DIR$/_3D_grammar.jison" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/css/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/assets/css/styles.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/js/_3D_Utility.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Utility.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/js/_3D_grammar.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_grammar.js" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -76,7 +70,7 @@
       <workItem from="1577048421191" duration="1063000" />
       <workItem from="1577066156763" duration="14829000" />
       <workItem from="1577122533588" duration="8566000" />
-      <workItem from="1577157004812" duration="14742000" />
+      <workItem from="1577157004812" duration="15874000" />
     </task>
     <servers />
   </component>

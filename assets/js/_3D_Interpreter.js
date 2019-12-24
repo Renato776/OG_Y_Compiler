@@ -80,9 +80,9 @@ function to_string_list(array) {
     }
     return res;
 }
-function findNext(key, obj) {
+function find__Next(key, obj) {
     let keys = Object.keys(obj);
-    return keys[(keys.indexOf(key) + 1) % keys.length];
+    return keys[(keys.indexOf(key.toString()) + 1) % keys.length];
 }
 
 function new_3D_cycle() {
@@ -128,7 +128,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     current_line = null;
 }
 function increase_IP(value) {
-    IP = findNext(IP,instructions);
+    IP = find__Next(IP,instructions);
     temporals['T']=IP;
 }
 function set_IP(index) {
