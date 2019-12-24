@@ -32,20 +32,13 @@ const temporals = {
         });
     }
 };
-const onCursorActivity = (instance) => { //.selected_breakpoint
+const onCursorActivity = (instance) => { //Failed to fetch the line.no Object successfully. Therefore a table holding all breakpoints will be shown instead.
     const cursor = CodeMirror_3D.getCursor();
-    let lns = $(".CodeMirror-linenumber, CodeMirror-gutter-elt");
-    console.log(lns.length);
     let i = cursor.line;
      if(breakpoints.includes(i)){
          breakpoints.splice( breakpoints.indexOf(i), 1 );
-         let ob = lns[i];
-         $(ob).removeClass('selected_breakpoint');
-         return;
-     }
-    breakpoints.push(i);
-    let r = lns[i];
-     $(r).addClass('selected_breakpoint');
+     } else  breakpoints.push(i);
+    show_breakpoints($(".BreakPoints_Container"),to_div_array(breakpoints));
 };
 //endregion
 //region Global Variables for 3D
@@ -60,25 +53,35 @@ let current_line = null;
 let CodeMirror_3D = null;
 //endregion
 //region Global Utility Functions for 3D
-function to_num_array(string) {
-    string = string.trim();
-    if(string=="")return [];
-    let bps = string.split(',');
-    let aux = [];
-    bps.forEach(b=>{
-        aux.push(parseInt(b));
-    });
-    return aux;
+function delete_breakpoint(e) {
+    let bp = e.target;
+    bp = parseInt($(bp).html());
+    breakpoints.splice( breakpoints.indexOf(bp), 1 );
+    show_breakpoints($(".BreakPoints_Container"),to_div_array(breakpoints));
 }
-function to_string_list(array) {
-    if(array.length==0)return "";
-    let i = 1;
-    let res = array[0];
-    while(i<array.length){
-        res+=","+array[i];
+function clear_all_breakpoints() {
+    breakpoints = [];
+    show_breakpoints($(".BreakPoints_Container"),to_div_array(breakpoints));
+}
+function to_div_array(array) {
+    let res = [];
+    let i = 0;
+    array.forEach(b=>{
+        let $div = $("<div>");
+        $div.click(delete_breakpoint);
+        if(i%2==0)$div.addClass('selected_breakpoint');
+        else $div.addClass('selected_breakpoint_2');
+        $div.append(b);
+        res.push($div);
         i++;
-    }
+    });
     return res;
+}
+function show_breakpoints(container, bps){
+    container.empty();
+    bps.forEach(b=>{
+        container.append(b);
+    });
 }
 function find__Next(key, obj) {
     let keys = Object.keys(obj);
@@ -368,7 +371,7 @@ function play_instruction(instruction,debug = false) {
             set_IP(destiny); //We update the value of i so we can actually do the jump.
             return; //We perform the jump.
         case "call": //How to perform jumps:
-            INSTRUCTION_STACK.push(IP+1); //We push the instruction where we're supposed to return.
+            INSTRUCTION_STACK.push(find__Next(IP,instructions)); //We push the instruction where we're supposed to return.
             destiny = instruction.target; //We get the name of the target.
             destiny = labels[destiny]; //We get the actual index of the instruction to execute.
             set_IP(destiny); //We update i.
@@ -379,7 +382,7 @@ function play_instruction(instruction,debug = false) {
                 set_IP(destiny); //We update i.
                 return; //We perform the jump back.
             }else{ //The stack is empty. This can only mean we finished the execution of 3D code.
-                set_IP( -1);
+                set_IP( 'end');
                 return;
             }
             break;
@@ -448,7 +451,7 @@ function play_instruction(instruction,debug = false) {
 function play_3D(debug = false) { //Input is parsed outside this function. Play 3D Uses IP directly and executes all instructions without debugging.
     compiling = false;//Always starts a new cycle.
     new_3D_cycle();
-    while(IP!=-1){
+    while(IP!='end'){
   		let instruction = instructions[IP]; //We get the instruction to execute.
         play_instruction(instruction,debug);
     }

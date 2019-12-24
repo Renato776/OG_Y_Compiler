@@ -121,7 +121,7 @@ function next_3D(){
     }
     let instruction = instructions[IP]; //We get the next instruction to execute.
     play_instruction(instruction,true); //We play the instruction and show what happened.
-    if(IP ==-1){
+    if(IP =='end'){
         compiling = false;
         end_3d();
     }
@@ -135,11 +135,13 @@ function jump_3D(){ //Same as next, except we skip proc calls.
     let instruction = instructions[IP]; //We get the next instruction to execute.
     if(instruction.name=="call"){
         let og_length = INSTRUCTION_STACK.length;
+        let i = instruction;
         do{
-            play_instruction(instruction,true);
+            play_instruction(i,true);
+            i = instructions[IP];
         }while (og_length!=INSTRUCTION_STACK.length);
     }else  play_instruction(instruction,true);
-    if(IP == -1){
+    if(IP == 'end'){
         compiling = false;
         end_3d();
     }
@@ -151,11 +153,11 @@ function next_BP(){
     if(breakpoints.length==0){
         continue_3D(); //There's no need to stop since there's no Breakpoints.
     }else{
-        while(IP!=-1&&!breakpoints.includes(IP)){
+        while(IP!='end'&&!breakpoints.includes(parseInt(IP))){
             let instruction = instructions[IP];
             play_instruction(instruction,true);
         }
-        if(IP==-1){
+        if(IP=='end'){
             compiling = false;
             end_3d();
         }else{
@@ -170,7 +172,7 @@ function continue_3D(){ //Resumes execution and no longer stops until execution 
     if(!compiling){
         new_3D_cycle();
     }
-    while (IP!=-1){
+    while (IP!='end'){
         let instruction = instructions[IP];
         play_instruction(instruction,true);
     }
@@ -192,6 +194,7 @@ function initialize_3D(){
     $("#Siguiente_BP_3D").click(next_BP);
     $("#Continuar_3D").click(continue_3D);
     $("#Detener_3D").click(stop_3D);
+    $("#clear_all_breakpoints").click(clear_all_breakpoints);
     $("#Debug_Console").empty(); //We clear the console.
     $("#Current_Instruction").empty();
     current_line = null; //We set current_line back to null
@@ -205,7 +208,6 @@ function initialize_3D(){
         styleSelectedText: true
     });
     CodeMirror_3D.on("cursorActivity", onCursorActivity);
-//    CodeMirror_3D = CodeMirror.fromTextArea($("#ThreeD_Source"));
 }
 $( document ).ready(function() {
     initialize_3D();

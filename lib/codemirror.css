@@ -7,9 +7,24 @@
   color: black;
   direction: ltr;
 }
+.BreakPoint_Container_Container{
+  padding-bottom: 1.5em;
+}
 .selected_breakpoint{
-	color: black !important; 
-	background:red;
+	color: #f9fdff !important;
+	background: #ff4900;
+	display: inline-block;
+    padding: 0.1em 0.7em;
+    border-inline: thick black;
+  width:auto !important;
+}
+.selected_breakpoint_2{
+  color: #f9fdff !important;
+  background: black;
+  display: inline-block;
+  padding: 0.1em 0.7em;
+  border-inline: thick #ff4900;
+  width:auto !important;
 }
 /* PADDING */
 
@@ -324,8 +339,8 @@ div.CodeMirror-dragcursors {
   visibility: visible;
 }
 
-.CodeMirror-selected { background: #red; }
-.CodeMirror-focused .CodeMirror-selected { background: red; }
+.CodeMirror-selected { background: blue; }
+.CodeMirror-focused .CodeMirror-selected { background: blue; }
 .CodeMirror-crosshair { cursor: crosshair; }
 .CodeMirror-line::selection, .CodeMirror-line > span::selection, .CodeMirror-line > span > span::selection { background: #d7d4f0; }
 .CodeMirror-line::-moz-selection, .CodeMirror-line > span::-moz-selection, .CodeMirror-line > span > span::-moz-selection { background: #d7d4f0; }
