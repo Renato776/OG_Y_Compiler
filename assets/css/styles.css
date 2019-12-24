@@ -42,3 +42,8 @@
   visibility: hidden;
 }
 
+.col.Display_Container {
+  height: 40em;
+  overflow: auto;
+}
+

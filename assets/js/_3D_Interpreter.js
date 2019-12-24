@@ -1,68 +1,16 @@
-//region Object constructors for 3D code.
-//import * as _3D_grammar from "./gramatica";
-const _3D_Token = function (text, row, col, negative = false) {
-  this.text = text;
-  this.row = row;
-  this.col = col;
-  this.negative = negative;
-};
-const _3D_Exception = function (token,message) {
-    log("Runtime Exception at: ("+token.row+","+token.col+")  Details: "+message);
-};
-const Instruction = function (name,token,param1=null,param2=null,param3=null,param4=null) {
-    this.name = name;
-    this.token = token;
-    switch (name) {
-    case "standard":
-        this.a = param1; //A token
-        this.b = param2; //A token
-        this.op = param3; //Text
-        this.c = param4; //A temp name
-        break;
-    case "assignation":
-        this.vessel = param1; //A temp name
-        this.value = param2; //A token
-        break;
-    case "GET_HEAP":
-        this.vessel = param1; //A temp name
-        this.address = param2; //A temp name
-        break;
-    case "GET_STACK":
-        this.vessel = param1; //A temp name
-        this.address = param2; //A temp name
-        break;
-    case "SET_HEAP":
-        this.address = param1; //A temp name
-        this.value = param2; //A token
-        break;
-    case "SET_STACK":
-        this.address = param1; //A temp name
-        this.value = param2; //A token
-        break;
-    case "if":
-        this.a = param1; //A token
-        this.b = param2; //A token
-        this.op = param3; //Text
-        this.target = param4; //A label name
-        break;
-    case "goto":
-        this.target = param1; //A label name
-        break;
-    case "ret": //Takes no extra params besides name & token
-        break;
-    case "call":
-        this.target = param1; //A label name
-        break;
-    case "print":
-        this.format = param1; //Text (literally '%c','%e','%d'
-        this.value = param2; //A token
-        break;
-    default:
-        break;
-    }
-};
+//region Directives
+let CAP_HEAP = false;
+let CAP_HEAP_DISPLAY = true;
+let CAP_STACK_DISPLAY = true;
+let MAX_HEAP = 150000;
+let MAX_TRY_CATCH = 50; //At default you can only use up to 50 nested Try Catch blocks.
+let MAX_CACHE = 300; //At default you can only use a cache of up to 300 cells.
+let MAX_HEAP_DISPLAY = 2000; //At default you can only graph up to 2000 cells in the heap.
+let MAX_STACK_DISPLAY = 1000; //At default you can only graph up to 1000 cells in the stack.
+let INSTRUCTION_MAX = 50000; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences.
+let CAP_INSTRUCTION_EXECUTION = true;
 //endregion
-//region Constants used for 3D interpreter.
+//region Constants for 3D.
 const instructions = {
     clear:function () {
         Object.keys(this).forEach(key => {
@@ -84,36 +32,116 @@ const temporals = {
         });
     }
 };
-const breakpoints = {
-    clear:function () {
-        Object.keys(this).forEach(key => {
-            if(key!='clear')delete this[key];
-        });
-    }
+const onCursorActivity = (instance) => { //.selected_breakpoint
+    const cursor = CodeMirror_3D.getCursor();
+    let lns = $(".CodeMirror-linenumber, CodeMirror-gutter-elt");
+    console.log(lns.length);
+    let i = cursor.line;
+     if(breakpoints.includes(i)){
+         breakpoints.splice( breakpoints.indexOf(i), 1 );
+         let ob = lns[i];
+         $(ob).removeClass('selected_breakpoint');
+         return;
+     }
+    breakpoints.push(i);
+    let r = lns[i];
+     $(r).addClass('selected_breakpoint');
 };
+//endregion
+//region Global Variables for 3D
+let compiling = false; //Indicates if I'm within a 3D execution program or if no program has started execution.
 let IP = 0;
+let IC = 0;
+let breakpoints = [];
 let HEAP = [];
 let STACK = [];
 let INSTRUCTION_STACK = [];
-let CAP_HEAP = false;
-let MAX_HEAP = 150000;
-let CACHE_BEGIN = 100; //The cache takes place in the Stack. between the TryCatch segment and the Stack segment (100-1000) by default.
-let STACK_BEGIN = 1000; //The Stack begins above the Cache and the TryCatch segment. by default at 1000.
-let TRY_CATCH_BEGIN = 0; //The TryCatch Segment starts at 0 and ends at CACHE_BEGIN.
-let INSTRUCTION_MAX = 4000; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences.
-let IC = 0;
+let current_line = null;
+let CodeMirror_3D = null;
 //endregion
-//region Native Functions:
+//region Global Utility Functions for 3D
+function to_num_array(string) {
+    string = string.trim();
+    if(string=="")return [];
+    let bps = string.split(',');
+    let aux = [];
+    bps.forEach(b=>{
+        aux.push(parseInt(b));
+    });
+    return aux;
+}
+function to_string_list(array) {
+    if(array.length==0)return "";
+    let i = 1;
+    let res = array[0];
+    while(i<array.length){
+        res+=","+array[i];
+        i++;
+    }
+    return res;
+}
+function findNext(key, obj) {
+    let keys = Object.keys(obj);
+    return keys[(keys.indexOf(key) + 1) % keys.length];
+}
+
+function new_3D_cycle() {
+    if(!compiling){
+        reset_3D(); //We reset structures back to default
+       // let element = $("#ThreeD_Source");
+        let source = CodeMirror_3D.getValue();
+        try{
+            _3D_grammar.parse(source); //We try to parse the input.
+        }catch (e) {
+            throw new _3D_Exception(null,"Parse error: "+ e,false)
+        }
+        reset_IP(); //We get the first instruction.
+        compiling = true;
+    }
+}
+function end_3d(sucess = true) {
+    if(sucess)log("3D execution finished successfully.");
+    log("Max Heap size used: "+HEAP.length);
+    log("Max Stack size used: "+STACK.length);
+}
+function reset_IP() {
+    if("main" in labels)IP = labels.main;
+    else throw new _3D_Exception(null,"NO main method found. could not start code execution.",false);
+    temporals['T']=IP; //We load T.
+    $("#Current_Instruction").html(instructions[IP].signature);
+}
 function reset_3D() { //Resets all structures back to default. Must be called before parsing.
-    instructions.clear();
     temporals.clear();
+    instructions.clear();
     labels.clear();
-    //breakpoints.clear(); It isn't a good idea to clear breakpoints each time we run 3D.
     HEAP = [];
     STACK = [];
     INSTRUCTION_STACK = [];
-    IP = 0;
+    set_IP(0);
     IC = 0;
+    MAX_HEAP_DISPLAY = 2000;
+    MAX_STACK_DISPLAY = 1000;
+    show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H");
+    show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S");
+    $("#Temporals_Display").empty();
+    $("#Debug_Console").empty();
+    current_line = null;
+}
+function increase_IP(value) {
+    IP = findNext(IP,instructions);
+    temporals['T']=IP;
+}
+function set_IP(index) {
+    IP = index;
+    temporals['T']=IP;
+}
+function get_signature(token) {
+    let s = "";
+    if(token.negative){
+        s+="-";
+    }
+    s+=token.text;
+    return s;
 }
 function print(format = 'char', value = 0) { //ATM the output will be logged to the literal console of JS.
     if(current_line==null){ //Should only happen if is the first time we print a char.
@@ -126,12 +154,14 @@ function print(format = 'char', value = 0) { //ATM the output will be logged to 
                 current_line = new line("");
                 $("#Debug_Console").append(current_line);
             }else{
-                current_line.append(String.fromCharCode(value));
+                let ch = current_line.children();
+                ch[1].append(String.fromCharCode(value));
             }
             break;
         case "'%e'":
         case "'%d'":
-            current_line.append(value.toString());
+            let ch = current_line.children();
+            ch[1].append(value.toString());
             break;
     }
 }
@@ -139,7 +169,91 @@ function log(message) { //Atm we log to the console. However, this should log to
     current_line = new line(message);
     $("#Debug_Console").append(current_line);
 }
+//endregion
+//region Object constructors for 3D code.
+const _3D_Token = function (text, row, col, negative = false) {
+  this.text = text;
+  this.row = row;
+  this.col = col;
+  this.negative = negative;
+};
+const _3D_Exception = function (token,message,show_position = true) {
+    compiling = false;
+    if(show_position)log("Runtime Exception at: ("+token.row+","+token.col+")  Details: "+message);
+    else log("Runtime Exception: "+message);
+    end_3d(false);
+};
+const Instruction = function (name,token,param1=null,param2=null,param3=null,param4=null) {
+    this.name = name;
+    this.token = token;
+    switch (name) {
+    case "standard":
+        this.a = param1; //A token
+        this.b = param2; //A token
+        this.op = param3; //Text
+        this.c = param4; //A temp name
+        this.signature = this.c+" = "+get_signature(this.a)+this.op+get_signature(this.b);
+        break;
+    case "assignation":
+        this.vessel = param1; //A temp name
+        this.value = param2; //A token
+        this.signature = this.vessel+" = "+get_signature(param2);
+        break;
+    case "GET_HEAP":
+        this.vessel = param1; //A temp name
+        this.address = param2; //A temp name
+        this.signature = this.vessel+" = heap["+this.address+"]";
+        break;
+    case "GET_STACK":
+        this.vessel = param1; //A temp name
+        this.address = param2; //A temp name
+        this.signature = this.vessel+" = stack["+this.address+"]";
+        break;
+    case "SET_HEAP":
+        this.address = param1; //A temp name
+        this.value = param2; //A token
+        this.signature = "heap["+this.address+"] = "+get_signature(this.value);
+        break;
+    case "SET_STACK":
+        this.address = param1; //A temp name
+        this.value = param2; //A token
+        this.signature = "stack["+this.address+"] = "+get_signature(this.value);
+        break;
+    case "if":
+        this.a = param1; //A token
+        this.b = param2; //A token
+        this.op = param3; //Text
+        this.target = param4; //A label name
+        this.signature = "if("+get_signature(this.a)+this.op+get_signature(this.b)+") goto "+this.target;
+        break;
+    case "goto":
+        this.target = param1; //A label name
+        this.signature = "goto "+this.target;
+        break;
+    case "ret": //Takes no extra params besides name & token
+        this.signature = "}";
+        break;
+    case "call":
+        this.target = param1; //A label name
+        this.signature = "call "+this.target;
+        break;
+    case "print":
+        this.format = param1; //Text (literally '%c','%e','%d'
+        this.value = param2; //A token
+        this.signature = "print("+this.format+","+get_signature(this.value)+")";
+        break;
+    default:
+        break;
+    }
+};
+//endregion
+//region Play Instruction
 function play_instruction(instruction,debug = false) {
+    IC++;
+    if(IC>=INSTRUCTION_MAX&&CAP_INSTRUCTION_EXECUTION)throw new _3D_Exception(null,"Potential infinite loop prevented. Cannot execute more than "+INSTRUCTION_MAX+" Sentences.",false);
+    if(debug){
+        $("#Current_Instruction").html(IP+") "+instruction.signature); //We update the instruction we're executing.
+    }
     let destiny = null;
     let address = 0;
     let vessel = 0;
@@ -186,7 +300,7 @@ function play_instruction(instruction,debug = false) {
             }
             temporals[instruction.c] = c; //We set the value in the vessel.
             if(debug)update_temporal(instruction.c,c);
-            IP++;//We update for next instruction.
+            increase_IP(1);//We update for next instruction.
             break; //That's all!
         case "assignation":
             vessel = instruction.vessel;
@@ -200,7 +314,7 @@ function play_instruction(instruction,debug = false) {
             }
             temporals[vessel] = value;
             if(debug)update_temporal(vessel,value);
-            IP++;//We update for next instruction.
+            increase_IP(1);//We update for next instruction.
             break;
         case "GET_HEAP": //We're getting a value from the heap.
             address = instruction.address; //We get the name of the temporal
@@ -208,7 +322,7 @@ function play_instruction(instruction,debug = false) {
             vessel = instruction.vessel; //We get the name of the recipient temporal.
             temporals[vessel] = HEAP[address]; //We perform the assignation.
             if(debug)update_temporal(vessel,HEAP[address]);
-            IP++;//We update for next instruction.
+            increase_IP(1);//We update for next instruction.
             break; //That's all.
         case "SET_HEAP":
             address = instruction.address; //We get the name of the temporal
@@ -223,16 +337,15 @@ function play_instruction(instruction,debug = false) {
             }
             HEAP[address] = value; //We perform the assignation.
             if(debug)update_heap(address,value);
-            IP++;//We update for next instruction.
+            increase_IP(1);//We update for next instruction.
             break;
         case "GET_STACK": //We're getting a value from the Stack.
             address = instruction.address; //We get the name of the temporal
             address = temporals[address]; //We get the actual value.
             vessel = instruction.vessel; //We get the name of the temporal vessel.
-            console.log(vessel+"= stack["+address+"]");
             temporals[vessel] = STACK[address]; //We perform the assignation.
             if(debug)update_temporal(vessel,STACK[address]);
-            IP++;//We update for next instruction.
+            increase_IP(1);//We update for next instruction.
             break; //That's all.
         case "SET_STACK": //We're setting a value in the Stack
             address = instruction.address; //We get the name of the temporal
@@ -245,32 +358,28 @@ function play_instruction(instruction,debug = false) {
             if(instruction.value.negative){
                 value = -1*value;
             }
-            console.log("stack["+address+"]= "+value);
             STACK[address] = value; //We perform the assignation.
             if(debug)update_stack(address,value);
-            IP++;//We update for next instruction.
+            increase_IP(1);//We update for next instruction.
             break;
         case "goto":
             destiny = instruction.target; //Destiny is supposed to hold the name of the label we're targeting.
             destiny = labels[destiny]; //We replace the name of the label by the index of the instruction we're jumping to.
-            IP = destiny; //We update the value of i so we can actually do the jump.
+            set_IP(destiny); //We update the value of i so we can actually do the jump.
             return; //We perform the jump.
         case "call": //How to perform jumps:
-            INSTRUCTION_STACK.push(i+1); //We push the instruction where we're supposed to return.
+            INSTRUCTION_STACK.push(IP+1); //We push the instruction where we're supposed to return.
             destiny = instruction.target; //We get the name of the target.
             destiny = labels[destiny]; //We get the actual index of the instruction to execute.
-            IP = destiny; //We update i.
+            set_IP(destiny); //We update i.
             return; //We perform the jump
         case "ret": //How to return back after a proc is finished:
             if(INSTRUCTION_STACK.length){
                 destiny = INSTRUCTION_STACK.pop(); //We get the address where we're supposed to return.
-                IP = destiny; //We update i.
+                set_IP(destiny); //We update i.
                 return; //We perform the jump back.
             }else{ //The stack is empty. This can only mean we finished the execution of 3D code.
-                log("3D execution finished successfully.");
-                log("Max Heap size used: "+HEAP.length);
-                log("Max Stack size used: "+STACK.length);
-                IP = Object.keys(instructions).length+1;
+                set_IP( -1);
                 return;
             }
             break;
@@ -316,9 +425,9 @@ function play_instruction(instruction,debug = false) {
             if(c){ //We perform the jump
                 destiny = instruction.target; //We get the name of the target
                 destiny = labels[destiny];  //We get the index of the target
-                IP = destiny; //We update i.
+                set_IP(destiny); //We update i.
                 return;  //We perform the jump
-            } //We do nothing and resume normal execution.
+            } else increase_IP(1);
             break;
         case "print":
             a = instruction.format; //We get the format for how to print the argument.
@@ -328,45 +437,22 @@ function play_instruction(instruction,debug = false) {
                 b = temporals[instruction.value.text]; //We get the value from the temporals
             }
             print(a,b); //We print the value
-            IP++;//We go to next instruction.
+            increase_IP(1);//We go to next instruction.
             break;
         default:
             throw new _3D_Exception(instruction.token,"Unrecognized 3D instruction");
     }
 }
 //endregion
-//region Execute 3D:
-function play_3D() { //Input is parsed outside this function. Play 3D Uses IP directly and executes all instructions without debugging.
-    IP = 0;
-    if(!('T' in temporals))temporals['T']=0; //We load T if not being used.
-    if("main" in labels)IP = labels.main;
-    else throw new _3D_Exception(new _3D_Token("",0,0),"NO main method found. could not start code execution.");
-    let total_instructions_length = Object.keys(instructions).length;
-    while(IP<total_instructions_length){
-  		IC++;
-  		if(IC>=INSTRUCTION_MAX)throw new _3D_Exception(new _3D_Token("",0,0),"Potential infinite loop prevented. Cannot excecute more than "+INSTRUCTION_MAX+" Sentences.");
-        let instruction = instructions[IP]; //We get the instruction to execute.
-        play_instruction(instruction,true);
+//region Execute 3D
+function play_3D(debug = false) { //Input is parsed outside this function. Play 3D Uses IP directly and executes all instructions without debugging.
+    compiling = false;//Always starts a new cycle.
+    new_3D_cycle();
+    while(IP!=-1){
+  		let instruction = instructions[IP]; //We get the instruction to execute.
+        play_instruction(instruction,debug);
     }
-    log("3D execution finished successfully.");
-    log("Max Heap size used: "+HEAP.length);
-    log("Max Stack size used: "+STACK.length);
-}
-//endregion
-//region Parse Text Input and evaluate.
-function _interpret() { //Parses text and plays 3D.
-    var element = $("#ThreeD_Source");
-    console.log("Comenzando a analizar!");
-    let source = element.val();
-    reset_3D(); //We reset the structures back to default.
-    _3D_grammar.parse(source);
-    try{
-        play_3D();
-    }catch (e) {
-        console.log(e);
-    }
-}
-function debug() {
-    console.log("Debugging Not implemented yet.")
+    compiling = false; //We end the cycle.
+    end_3d();
 }
 //endregion

@@ -1,19 +1,18 @@
-let current_line = null;
 const line = function (message) {
     let row =  $("<tr>");
     let s = $("<td>");
     s.append("&gt;&gt;");
     let m = $("<td>");
+    m.attr("style","width: 100%; " +
+        "text-align: left;");
     m.append(message);
     row.append(s);
     row.append(m);
     return row;
 };
 const heap_cell = function (index, value) {
-  let cell = $("<tr>");
-  let i = $("<td>");
-  i.append(index); //We show the index.
-  i.addClass("heap_cell_index");
+  let cell = $("<tr>"), i = $("<td>");
+    i.append(index); //We show the index.
   let v = $("<td>");
   v.attr("id","H"+index);
   v.append(value); //We set the value
@@ -22,10 +21,8 @@ const heap_cell = function (index, value) {
   return cell;
 };
 const stack_cell = function (index, value) {
-    let cell = $("<tr>");
-    let i = $("<td>");
+    let cell = $("<tr>"), i = $("<td>");
     i.append(index); //We show the index.
-    i.addClass("stack_cell_index");
     let v = $("<td>");
     v.attr("id","S"+index);
     v.append(value); //We set the value
@@ -44,49 +41,65 @@ const temporal_cell = function (name, value) {
     cell.append(v);
     return cell;
 };
+
+function show_new_segment($container, size,prefix) {
+    let max_rows = size/2;
+    $container.empty();
+    let i = 0;
+    while(i<max_rows){
+        let $row = $("<tr>");
+        let $index = $("<td>");
+        $index.html(i);
+        let $val = $("<td>");
+        $val.attr("id",prefix+i);
+        $val.html(0);
+        let $index2 = $("<td>");
+        $index2.html(i+max_rows);
+        let $val2 = $("<td>");
+        $val2.attr("id",prefix+(i+max_rows));
+        $val2.html(0);
+        $row.append($index);
+        $row.append($val);
+        $row.append($index2);
+        $row.append($val2);
+        $container.append($row);
+        i++;
+    }
+}
+
 function update_heap(index,value) { //A function to update the heap Graphically.
     let signature = "#H"+index; //We build the ID of the exact cell we'll edit.
-    if(!$(signature).length){ //Doesn't exist, let's fill it.
-        let indexes = $('.heap_cell_index');
-        let last_index_;
-        if(indexes.length!=0){
-            last_index_ = indexes[indexes.length - 1];
-        } else{
-            last_index_=$("<td>");
-            last_index_.html(0);
-        }
-        let last_index = last_index_.html(); //We get the index.
-        last_index = Number(last_index); //We turn it into a number.
-        if(isNaN(last_index))throw "Failed to fetch last row's index.";
-        last_index++; //We go to the next cell
-        while(last_index<=index) { //We have to fill it with random cells.
-            $("#Heap_Display").append(new heap_cell(last_index, 0));
+    if(index>=MAX_HEAP_DISPLAY){
+        if(CAP_HEAP_DISPLAY){
+            if(!alerted_H){
+                alert("To keep optimal performance in debugger visualization of any Heap index past "+MAX_HEAP_DISPLAY+" is forbidden.");
+            } alerted_H = true;
+            return;
+        }else{ //Alright we haven't capped the display limit this means we could make a new segment twice as big.
+            MAX_HEAP_DISPLAY = MAX_HEAP_DISPLAY*2; //We increase it.
+            show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H");
         }
     }
-    let h = $(signature); //We get it once again.
-    h.html(value);
+    let h = $(signature); //We get the cell
+    h.html(value); //We update the value.
 }
+let alerted_H = false;
+let alerted_S = false;
 function update_stack(index,value) { //A function to update the heap Graphically.
     let signature = "#S"+index; //We build the ID of the exact cell we'll edit.
-    if(!$(signature).length){ //Doesn't exist, let's fill it.
-        let indexes = $('.stack_cell_index');
-        let last_index_;
-        if(indexes.length!=0){
-            last_index_ = indexes[indexes.length - 1];
-        } else{
-            last_index_=$("<td>");
-            last_index_.html(0);
-        }
-        let last_index = last_index_.html(); //We get the index.
-        last_index = Number(last_index); //We turn it into a number.
-        if(isNaN(last_index))throw "Failed to fetch last row's index. (Stack)";
-        last_index++; //We go to the next cell
-        while(last_index<=index) { //We have to fill it with random cells.
-            $("#Stack_Display").append(new stack_cell(last_index, 0));
+    if(index>=MAX_STACK_DISPLAY){
+        if(CAP_STACK_DISPLAY){
+            if(!alerted_S){
+                alert("To keep optimal performance in debugger visualization of any Stack index past "+MAX_STACK_DISPLAY+" is forbidden.");
+            } alerted_S = true;
+            return;
+        }else{ //Alright we haven't capped the display limit this means we could make a new segment twice as big.
+            MAX_STACK_DISPLAY = MAX_STACK_DISPLAY*2; //We increase it.
+            show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S");
         }
     }
-    let h = $(signature); //We get it once again.
-    h.html(value);
+    let h = $(signature); //We get the cell
+    h.html(value); //We update the value.
 }
 function update_temporal(name,value) {
     let signature = "#T_"+name;
@@ -98,32 +111,77 @@ function update_temporal(name,value) {
 }
 //region begin_3D
 function begin_3D(){
-    _interpret();
+    play_3D(true);
 }
 //endregion
 //region next_3D
 function next_3D(){
-    log("next_3D");
+    if(!compiling){
+        new_3D_cycle();
+    }
+    let instruction = instructions[IP]; //We get the next instruction to execute.
+    play_instruction(instruction,true); //We play the instruction and show what happened.
+    if(IP ==-1){
+        compiling = false;
+        end_3d();
+    }
 }
 //endregion
 //region jump_3D
-function jump_3D(){
-    log("jump_3D");
+function jump_3D(){ //Same as next, except we skip proc calls.
+    if(!compiling){
+        new_3D_cycle();
+    }
+    let instruction = instructions[IP]; //We get the next instruction to execute.
+    if(instruction.name=="call"){
+        let og_length = INSTRUCTION_STACK.length;
+        do{
+            play_instruction(instruction,true);
+        }while (og_length!=INSTRUCTION_STACK.length);
+    }else  play_instruction(instruction,true);
+    if(IP == -1){
+        compiling = false;
+        end_3d();
+    }
 }
 //endregion
 //region next_BP
 function next_BP(){
-    log("next_BP_3D");
+    new_3D_cycle();
+    if(breakpoints.length==0){
+        continue_3D(); //There's no need to stop since there's no Breakpoints.
+    }else{
+        while(IP!=-1&&!breakpoints.includes(IP)){
+            let instruction = instructions[IP];
+            play_instruction(instruction,true);
+        }
+        if(IP==-1){
+            compiling = false;
+            end_3d();
+        }else{
+            let instruction = instructions[IP];
+            play_instruction(instruction,true);
+        }
+    }
 }
 //endregion
 //region continue_3D
-function continue_3D(){
-    log("continue_3D");
+function continue_3D(){ //Resumes execution and no longer stops until execution is finished.
+    if(!compiling){
+        new_3D_cycle();
+    }
+    while (IP!=-1){
+        let instruction = instructions[IP];
+        play_instruction(instruction,true);
+    }
+    compiling = false; //At this point the program has finished execution.
+    end_3d();
 }
 //endregion
 //region stop_3D
-function stop_3D(){
-    log("stop_3D");
+function stop_3D(){ //Resets execution.
+    compiling = false;
+    throw new _3D_Exception(null,"Stopped 3D execution.",false);
 }
 //endregion
 //region Load functions to Buttons.
@@ -135,10 +193,19 @@ function initialize_3D(){
     $("#Continuar_3D").click(continue_3D);
     $("#Detener_3D").click(stop_3D);
     $("#Debug_Console").empty(); //We clear the console.
-    $("#Heap_Display").empty(); //We clear the Heap
-    $("#Stack_Display").empty(); //We clear the Stack.
-    $("#Temporals_Display").empty(); //We clear the temp list
+    $("#Current_Instruction").empty();
     current_line = null; //We set current_line back to null
+    show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S"); //We load default segment
+    show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H"); //We load default segment
+    $("#Temporals_Display").empty(); //We clear the temp list
+    let code = $("#ThreeD_Source")[0];
+    CodeMirror_3D = CodeMirror.fromTextArea(code, {
+        lineNumbers : true,
+        firstLineNumber: 0,
+        styleSelectedText: true
+    });
+    CodeMirror_3D.on("cursorActivity", onCursorActivity);
+//    CodeMirror_3D = CodeMirror.fromTextArea($("#ThreeD_Source"));
 }
 $( document ).ready(function() {
     initialize_3D();
