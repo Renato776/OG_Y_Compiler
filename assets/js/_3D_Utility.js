@@ -133,14 +133,15 @@ function jump_3D(){ //Same as next, except we skip proc calls.
         new_3D_cycle();
     }
     let instruction = instructions[IP]; //We get the next instruction to execute.
-    if(instruction.name=="call"){
-        let og_length = INSTRUCTION_STACK.length;
+    if($("#Current_Instruction").text().includes("call")){
+        let og_length = INSTRUCTION_STACK.length-1; //I just performed the jump one instruction ago.
         let i = instruction;
         do{
             play_instruction(i,true);
             i = instructions[IP];
         }while (og_length!=INSTRUCTION_STACK.length);
-    }else  play_instruction(instruction,true);
+       // if(IP!='end')$("#Current_Instruction").text(IP+") "+instructions[IP].signature); //We display the next instruction.
+    }else play_instruction(instruction,true);
     if(IP == 'end'){
         compiling = false;
         end_3d();

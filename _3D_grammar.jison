@@ -101,6 +101,7 @@ labelList:
 
 procDef:
     PROC ID LEFT_BRACE {
+    function_names.push($2);
     $$ = new _3D_Token($2,@2.first_line,@2.first_column);
     }
     ;
@@ -214,7 +215,7 @@ call : CALL ID {
       };
 
 ret : RIGHT_BRACE {
-      $$ = new Instruction("ret",new _3D_Token("ret",@1.first_line,@1.first_column));
+      $$ = new Instruction("ret",new _3D_Token(function_names.pop(),@1.first_line,@1.first_column));
       };
 
 print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {

@@ -11,6 +11,7 @@ let INSTRUCTION_MAX = 50000; //To prevent infinite loops any program will NOT be
 let CAP_INSTRUCTION_EXECUTION = true;
 //endregion
 //region Constants for 3D.
+const function_names = []; //This array will always be empty before and after parsing. There's no need to empty it after parsing.
 const instructions = {
     clear:function () {
         Object.keys(this).forEach(key => {
@@ -87,7 +88,16 @@ function find__Next(key, obj) {
     let keys = Object.keys(obj);
     return keys[(keys.indexOf(key.toString()) + 1) % keys.length];
 }
-
+function getReturnAddress(name) {
+    let i = -1;
+    INSTRUCTION_STACK.forEach((f,j)=>{
+        if(f.func==name)i =j;
+    });
+    if(i == -1) return 'end';
+    let a =  INSTRUCTION_STACK[i].returnTo;
+    INSTRUCTION_STACK = INSTRUCTION_STACK.slice(0, i);
+    return a;
+}
 function new_3D_cycle() {
     if(!compiling){
         reset_3D(); //We reset structures back to default
@@ -234,7 +244,8 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
         this.signature = "goto "+this.target;
         break;
     case "ret": //Takes no extra params besides name & token
-        this.signature = "}";
+        this.target = this.token.text;
+        this.signature = "}; "+this.token.text;
         break;
     case "call":
         this.target = param1; //A label name
@@ -371,14 +382,14 @@ function play_instruction(instruction,debug = false) {
             set_IP(destiny); //We update the value of i so we can actually do the jump.
             return; //We perform the jump.
         case "call": //How to perform jumps:
-            INSTRUCTION_STACK.push(find__Next(IP,instructions)); //We push the instruction where we're supposed to return.
+            INSTRUCTION_STACK.push({func:instruction.target,returnTo:find__Next(IP,instructions)}); //We push the instruction where we're supposed to return.
             destiny = instruction.target; //We get the name of the target.
             destiny = labels[destiny]; //We get the actual index of the instruction to execute.
             set_IP(destiny); //We update i.
             return; //We perform the jump
         case "ret": //How to return back after a proc is finished:
             if(INSTRUCTION_STACK.length){
-                destiny = INSTRUCTION_STACK.pop(); //We get the address where we're supposed to return.
+                destiny = getReturnAddress(instruction.target); //We get the address where we're supposed to return.
                 set_IP(destiny); //We update i.
                 return; //We perform the jump back.
             }else{ //The stack is empty. This can only mean we finished the execution of 3D code.
