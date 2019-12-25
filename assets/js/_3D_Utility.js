@@ -189,7 +189,7 @@ function stop_3D(){ //Resets execution.
 }
 //endregion
 //region On document ready.
-function initialize_3D(){
+function initialize(){
     $("#Iniciar_3D").click(begin_3D);
     $("#Siguiente_3D").click(next_3D);
     $("#Saltar_3D").click(jump_3D);
@@ -197,29 +197,33 @@ function initialize_3D(){
     $("#Continuar_3D").click(continue_3D);
     $("#Detener_3D").click(stop_3D);
     $("#clear_all_breakpoints").click(clear_all_breakpoints);
-    $("#Debug_Console").empty(); //We clear the console.
+    $("#Debug_Console").empty();
+    $("#Ejecutar_Console").empty();
+    $("#Main_Console").empty();
     $("#Current_Instruction").empty();
     $("#ErrorTableBody").empty();
     current_line = null; //We set current_line back to null
     show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S"); //We load default segment
     show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H"); //We load default segment
     $("#Temporals_Display").empty(); //We clear the temp list
-    let code = $("#ThreeD_Source")[0];
-    CodeMirror_3D = CodeMirror.fromTextArea(code, {
+    current_tab = $("#MAIN");
+    $("#Depurar_Button").click(show_tab);
+    $("#Compilar_Button").click(show_tab);
+    $("#Ejecutar_Button").click(show_tab);
+    $("#Errores_Button").click(show_tab);
+    $("#TablaDeSimbolos_Button").click(show_tab);
+    $("#AST_Button").click(show_tab);
+    $("#Optimizacion_Button").click(show_tab);
+    //Load the first Code Mirror:
+    let code = $("#Main_Source")[0];
+    CodeMirror_Main = CodeMirror.fromTextArea(code, {
         lineNumbers : true,
         firstLineNumber: 0,
         styleSelectedText: true
     });
-    CodeMirror_3D.on("cursorActivity", onCursorActivity);
-    tabs.push($("#DEBUG"));
-    tabs.push($("#ERROR_TABLE"));
-    current_tab = $("#DEBUG");
-    $("#ERROR_TABLE").addClass('Debug_Container_Hide'); //Repeat with all 7 tabs.
-    $("#Errores_Button").click(show_tab);
-    $("#Depurar_Button").click(show_tab);
 }
 $( document ).ready(function() {
-    initialize_3D();
+    initialize();
 });
 
 //endregion

@@ -11,7 +11,6 @@ let INSTRUCTION_MAX = 50000; //To prevent infinite loops any program will NOT be
 let CAP_INSTRUCTION_EXECUTION = true;
 //endregion
 //region Constants for 3D.
-const tabs = [];
 const function_names = []; //This array will always be empty before and after parsing. There's no need to empty it after parsing.
 const instructions = {
     clear:function () {
@@ -53,6 +52,8 @@ let STACK = [];
 let INSTRUCTION_STACK = [];
 let current_line = null;
 let CodeMirror_3D = null;
+let CodeMirror_Main = null;
+let CodeMirror_Execute = null;
 let token_tracker = [];
 let current_tab = null;
 //endregion
@@ -70,6 +71,30 @@ function show_tab(e) {
     signature = "#"+signature;
     current_tab = $(signature);
     current_tab.removeClass('Debug_Container_Hide');
+    if(signature=="#DEBUG"&&CodeMirror_3D==null){
+        let code = $("#ThreeD_Source")[0];
+        CodeMirror_3D = CodeMirror.fromTextArea(code, {
+            lineNumbers : true,
+            firstLineNumber: 0,
+            styleSelectedText: true
+        });
+        CodeMirror_3D.on("cursorActivity", onCursorActivity);
+    }else if(signature=="#EJECUTAR"&&CodeMirror_Execute==null){
+        let code = $("#Ejecutar_3D_Source")[0];
+        CodeMirror_Execute = CodeMirror.fromTextArea(code, {
+            lineNumbers : true,
+            firstLineNumber: 0,
+            styleSelectedText: true,
+            readonly :true
+        });
+    }else if(signature=="#MAIN"&&CodeMirror_Main==null){
+        let code = $("#Main_Source")[0];
+        CodeMirror_Main = CodeMirror.fromTextArea(code, {
+            lineNumbers : true,
+            firstLineNumber: 0,
+            styleSelectedText: true
+        });
+    }
 }
 function register_token(yytext, row, col) {
     yytext = yytext.trim();
@@ -164,6 +189,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     $("#Temporals_Display").empty();
     $("#Debug_Console").empty();
     current_line = null;
+    compiling = false;
 }
 function increase_IP(value) {
     IP = find__Next(IP,instructions);
@@ -181,10 +207,10 @@ function get_signature(token) {
     s+=token.text;
     return s;
 }
-function print(format = 'char', value = 0) { //ATM the output will be logged to the literal console of JS.
+function print(format = 'char', value = 0,console = $("#Debug_Console")) { //ATM the output will be logged to the literal console of JS.
     if(current_line==null){ //Should only happen if is the first time we print a char.
         current_line = new line("");
-        $("#Debug_Console").append(current_line);
+        console.append(current_line);
     }
     switch (format) {
         case "'%c'":
@@ -203,9 +229,9 @@ function print(format = 'char', value = 0) { //ATM the output will be logged to 
             break;
     }
 }
-function log(message) { //Atm we log to the console. However, this should log to the Handmade console.
+function log(message,console = $("#Debug_Console")) {
     current_line = new line(message);
-    $("#Debug_Console").append(current_line);
+    console.append(current_line);
 }
 //endregion
 //region Object constructors for 3D code.
@@ -236,7 +262,7 @@ const _3D_Exception = function (token,message,show_position = true,type = 'Runti
     $details.html(message);
     $row.append($type);
     $row.append($details);
-    $row.append($row);
+    $row.append($line);
     $row.append($col);
     $row.append($class);
     $("#ErrorTableBody").append($row);

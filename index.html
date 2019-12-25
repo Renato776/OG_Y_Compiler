@@ -13,21 +13,190 @@
 <body>
 <div class="container">
 <div class="row Options" id="Primary_Options_Container">
-            <div class="col Options"><button class="btn btn-danger Primary_Options" id="Compilar_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button">Compilar</button></div>
+            <div class="col Options"><button class="btn btn-danger Primary_Options" id="Compilar_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button" RValue="MAIN">Compilar</button></div>
             <div
-                class="col col-4"><button class="btn btn-danger Primary_Options" id="Ejecutar_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button">Ejecutar</button></div>
+                class="col col-4"><button class="btn btn-danger Primary_Options" id="Ejecutar_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button" RValue = "EJECUTAR">Ejecutar</button></div>
         <div
             class="col"><button class="btn btn-danger Primary_Options" id="Depurar_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button" RValue = "DEBUG">Depurar</button></div>
     </div>
     <div class="row Options" id="Secondary_Options_Container">
         <div class="col"><button class="btn btn-danger Secondary_Options" id="Errores_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button" RValue = "ERROR_TABLE">Errores</button></div>
         <div
-            class="col"><button class="btn btn-danger Secondary_Options" id="AST_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button">AST</button></div>
-    <div class="col"><button class="btn btn-danger Secondary_Options" id="TablaDeSimbolos_Button" style="border: none;width: auto;height: auto;background-color: #face1a;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;" type="button">Tabla de Simbolos</button></div>
+            class="col"><button class="btn btn-danger Secondary_Options" id="AST_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button" RValue = "AST">AST</button></div>
+    <div class="col"><button class="btn btn-danger Secondary_Options" id="TablaDeSimbolos_Button" style="border: none;width: auto;height: auto;background-color: #face1a;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;" type="button" RValue="SYMBOL_TABLE">Tabla de Simbolos</button></div>
     <div
-        class="col"><button class="btn btn-danger Secondary_Options" id="Optimizacion_Button" style="border: none;width: auto;height: auto;background-color: #face1a;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;" type="button">Optimizacion</button></div>
+        class="col"><button class="btn btn-danger Secondary_Options" id="Optimizacion_Button" style="border: none;width: auto;height: auto;background-color: #face1a;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;" type="button" RValue="OPTIMIZACION">Optimizacion</button></div>
         </div>
-    <div class="row" id="ERROR_TABLE">
+    <div class="row Debug_Container_Hide" id="SYMBOL_TABLE">
+        <div class="col">
+            <div class="Display_Title"><label class="Inline_Title Display_Title">Tabla de Simbolos</label>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead id="SYMBOL_TABLE_HEADER">
+                        <tr>
+                            <th>Column 1</th>
+                            <th>Column 2</th>
+                        </tr>
+                        </thead>
+                        <tbody id="SYMBOL_TABLE_BODY">
+                        <tr>
+                            <td>Cell 1</td>
+                            <td>Cell 2</td>
+                        </tr>
+                        <tr>
+                            <td>Cell 3</td>
+                            <td>Cell 4</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row Debug_Container_Hide" id="AST">
+        <div class="col">
+            <div class="Display_Title"><label class="Inline_Title Display_Title">AST</label>
+                <div id="AST_Container"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row Debug_Container_Hide" id="OPTIMIZACION">
+        <div class="col">
+            <div class="Display_Title"><label class="Inline_Title Display_Title">Reporte de Optimizacion</label>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead id="OPTIMIZACION_HEADER">
+                        <tr>
+                            <th>Column 1</th>
+                            <th>Column 2</th>
+                        </tr>
+                        </thead>
+                        <tbody id="OPTIMIZACION_BODY">
+                        <tr>
+                            <td>Cell 1</td>
+                            <td>Cell 2</td>
+                        </tr>
+                        <tr>
+                            <td>Cell 3</td>
+                            <td>Cell 4</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row Debug_Container_Hide" id="EJECUTAR">
+        <div class="col">
+            <div class="row">
+                <div class="col Title_Container"><label class="col-form-label Inline_Title Display_Title"><strong>EJECUTAR</strong><br /></label></div>
+            </div>
+            <div class="row">
+                <div class="col" id="Ejecutar_TextArea">
+                    <div><label>Source Code</label></div><textarea id="Ejecutar_3D_Source" rows="18" readonly="true" cols="50"></textarea></div>
+                <div class="col" id="Ejecutar_Options">
+                    <div class="row">
+                        <div class="col" href="#"><button class="btn btn-danger" style="border: none;width: 100%;height: auto;background-color: #1afa3e;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;margin-bottom: 1em;" type="button">Iniciar</button></div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th colspan="2">Console</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="Ejecutar_Console">
+                                    <tr>
+                                        <td>&gt;&gt;</td>
+                                        <td style="width: 100%;text-align: left;">Cell 2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>&gt;&gt;</td>
+                                        <td>Cell 4</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row" id="MAIN">
+        <div class="col">
+            <div class="row">
+                <div class="col Title_Container"><label class="col-form-label Display_Title Inline_Title"><strong>Alto Nivel</strong></label></div>
+            </div>
+            <div class="row">
+                <div class="col" id="Main_TextArea">
+                    <div><label>Source Code</label></div><textarea id="Main_Source" rows="18"></textarea></div>
+                <div class="col" id="Main_Options">
+                    <div class="row">
+                        <div class="col">
+                            <div class="table-responsive" id="Main_Opciones_Table" style="margin-top: 1em;">
+                                <table class="table">
+                                    <thead>
+                                    <tr>
+                                        <th id="Main_Opciones_Header" colspan="3">Opciones</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td></td>
+                                        <td><button class="btn btn-danger" id="Nuevo_Button" style="border: none;width: 100%;height: auto;background-color: #24ff00;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Nuevo</button></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td><button class="btn btn-danger" id="Cargar_Button" style="border: none;width: 100%;height: auto;background-color: #1effff;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Cargar</button></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td><button class="btn btn-danger" id="Guardar_Button" style="border: none;width: 100%;height: auto;background-color: #1effff;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Guardar</button></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td><button class="btn btn-danger" id="Compilar_Main" style="border: none;width: 100%;height: auto;background-color: #960090;color: rgb(255,255,255);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Compilar</button></td>
+                                        <td></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col Display_Container">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th colspan="2">Console</th>
+                            </tr>
+                            </thead>
+                            <tbody id="Main_Console">
+                            <tr>
+                                <td>&gt;&gt;</td>
+                                <td style="width: 100%;text-align: left;">Cell 2</td>
+                            </tr>
+                            <tr>
+                                <td>&gt;&gt;</td>
+                                <td>Cell 4</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row Debug_Container_Hide" id="ERROR_TABLE">
         <div class="col">
             <div class="Display_Title"><label class="Inline_Title Display_Title">Tabla de Errores</label>
                 <div class="table-responsive">
@@ -62,9 +231,9 @@
             </div>
         </div>
     </div>
-    <div class="row">
+    <div class="row Debug_Container_Hide" id = "DEBUG">
             <div class="col">
-    <div id="DEBUG">
+    <div>
         <div class="container">
             <div class="row">
                 <div class="col Title_Container"><label class="col-form-label Depurar_Title"><strong>Depurar</strong></label></div>
