@@ -17,10 +17,10 @@
             <div
                 class="col col-4"><button class="btn btn-danger Primary_Options" id="Ejecutar_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button">Ejecutar</button></div>
         <div
-            class="col"><button class="btn btn-danger Primary_Options" id="Depurar_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button">Depurar</button></div>
+            class="col"><button class="btn btn-danger Primary_Options" id="Depurar_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button" RValue = "DEBUG">Depurar</button></div>
     </div>
     <div class="row Options" id="Secondary_Options_Container">
-        <div class="col"><button class="btn btn-danger Secondary_Options" id="Errores_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button">Errores</button></div>
+        <div class="col"><button class="btn btn-danger Secondary_Options" id="Errores_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button" RValue = "ERROR_TABLE">Errores</button></div>
         <div
             class="col"><button class="btn btn-danger Secondary_Options" id="AST_Button" style="border:none;width:auto;height:auto;background-color:#face1a;color:rgb(0,0,0);margin:auto;padding-left:2.5em;padding-right:2.5em;" type="button">AST</button></div>
     <div class="col"><button class="btn btn-danger Secondary_Options" id="TablaDeSimbolos_Button" style="border: none;width: auto;height: auto;background-color: #face1a;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;" type="button">Tabla de Simbolos</button></div>
@@ -41,7 +41,7 @@
                             <th>Clase</th>
                         </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="ErrorTableBody">
                         <tr>
                             <td>Cell 1</td>
                             <td>Cell 2</td>
@@ -64,7 +64,7 @@
     </div>
     <div class="row">
             <div class="col">
-    <div id="DEBUG" class="Debug_Container_Hide">
+    <div id="DEBUG">
         <div class="container">
             <div class="row">
                 <div class="col Title_Container"><label class="col-form-label Depurar_Title"><strong>Depurar</strong></label></div>

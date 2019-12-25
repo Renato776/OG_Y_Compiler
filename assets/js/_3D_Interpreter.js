@@ -11,6 +11,7 @@ let INSTRUCTION_MAX = 50000; //To prevent infinite loops any program will NOT be
 let CAP_INSTRUCTION_EXECUTION = true;
 //endregion
 //region Constants for 3D.
+const tabs = [];
 const function_names = []; //This array will always be empty before and after parsing. There's no need to empty it after parsing.
 const instructions = {
     clear:function () {
@@ -53,6 +54,7 @@ let INSTRUCTION_STACK = [];
 let current_line = null;
 let CodeMirror_3D = null;
 let token_tracker = [];
+let current_tab = null;
 //endregion
 //region Global Utility Functions for 3D
 /*
@@ -61,6 +63,14 @@ register_token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 default on that switch:
 default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column),"Lexical error. Unrecognized symbol: "+yy_.yytext);
 */
+function show_tab(e) {
+    let b = $(e.target);
+    current_tab.addClass('Debug_Container_Hide'); //We hide the previous tab.
+    let signature = b.attr("RValue");
+    signature = "#"+signature;
+    current_tab = $(signature);
+    current_tab.removeClass('Debug_Container_Hide');
+}
 function register_token(yytext, row, col) {
     yytext = yytext.trim();
     if(yytext!=""){
@@ -205,10 +215,31 @@ const _3D_Token = function (text, row, col, negative = false) {
   this.col = col;
   this.negative = negative;
 };
-const _3D_Exception = function (token,message,show_position = true) {
+const _3D_Exception = function (token,message,show_position = true,type = 'Runtime') {
     compiling = false;
-    if(show_position)log("Runtime Exception at: ("+token.row+","+token.col+") Under symbol: "+token.text+"  Details: "+message);
-    else log("Runtime Exception: "+message);
+    let $row = $("<tr>");
+    let $type = $("<td>");
+    let $line = $("<td>");
+    let $col = $("<td>");
+    let $details = $("<td>");
+    let $class = $("<td>");
+    $type.html(type);
+    if(show_position){
+        $line.html(token.row);
+        $col.html(token.col);
+        $class.html('Not Implemented Yet');
+    }else{
+        $line.html('N/A');
+        $col.html('N/A');
+        $class.html('N/A');
+    }
+    $details.html(message);
+    $row.append($type);
+    $row.append($details);
+    $row.append($row);
+    $row.append($col);
+    $row.append($class);
+    $("#ErrorTableBody").append($row);
     end_3d(false);
 };
 const Instruction = function (name,token,param1=null,param2=null,param3=null,param4=null) {

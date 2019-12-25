@@ -199,6 +199,7 @@ function initialize_3D(){
     $("#clear_all_breakpoints").click(clear_all_breakpoints);
     $("#Debug_Console").empty(); //We clear the console.
     $("#Current_Instruction").empty();
+    $("#ErrorTableBody").empty();
     current_line = null; //We set current_line back to null
     show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S"); //We load default segment
     show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H"); //We load default segment
@@ -210,8 +211,12 @@ function initialize_3D(){
         styleSelectedText: true
     });
     CodeMirror_3D.on("cursorActivity", onCursorActivity);
-    var current_lex = _3D_grammar;
-    let current_lexer = current_lex.lexer;
+    tabs.push($("#DEBUG"));
+    tabs.push($("#ERROR_TABLE"));
+    current_tab = $("#DEBUG");
+    $("#ERROR_TABLE").addClass('Debug_Container_Hide'); //Repeat with all 7 tabs.
+    $("#Errores_Button").click(show_tab);
+    $("#Depurar_Button").click(show_tab);
 }
 $( document ).ready(function() {
     initialize_3D();
