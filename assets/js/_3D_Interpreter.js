@@ -52,8 +52,21 @@ let STACK = [];
 let INSTRUCTION_STACK = [];
 let current_line = null;
 let CodeMirror_3D = null;
+let token_tracker = [];
 //endregion
 //region Global Utility Functions for 3D
+/*
+place before the switch($avoiding_name_collisions) { place:
+register_token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
+default on that switch:
+default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column),"Lexical error. Unrecognized symbol: "+yy_.yytext);
+*/
+function register_token(yytext, row, col) {
+    yytext = yytext.trim();
+    if(yytext!=""){
+        token_tracker.push(new _3D_Token(yytext,row,col));
+    }
+}
 function delete_breakpoint(e) {
     let bp = e.target;
     bp = parseInt($(bp).html());
@@ -106,7 +119,8 @@ function new_3D_cycle() {
         try{
             _3D_grammar.parse(source); //We try to parse the input.
         }catch (e) {
-            throw new _3D_Exception(null,"Parse error: "+ e,false)
+            /*A parse error occurred. We dispose of the error Object and log other properly:*/
+            new _3D_Exception(token_tracker.pop(),"Syntax error. Unexpected symbol");
         }
         reset_IP(); //We get the first instruction.
         compiling = true;
@@ -130,6 +144,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     HEAP = [];
     STACK = [];
     INSTRUCTION_STACK = [];
+    token_tracker = [];
     set_IP(0);
     IC = 0;
     MAX_HEAP_DISPLAY = 2000;
@@ -192,7 +207,7 @@ const _3D_Token = function (text, row, col, negative = false) {
 };
 const _3D_Exception = function (token,message,show_position = true) {
     compiling = false;
-    if(show_position)log("Runtime Exception at: ("+token.row+","+token.col+")  Details: "+message);
+    if(show_position)log("Runtime Exception at: ("+token.row+","+token.col+") Under symbol: "+token.text+"  Details: "+message);
     else log("Runtime Exception: "+message);
     end_3d(false);
 };

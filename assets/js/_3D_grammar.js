@@ -749,10 +749,11 @@ stateStackSize:function stateStackSize() {
 options: {"case-insensitive":true},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 var YYSTATE=YY_START;
+register_token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 switch($avoiding_name_collisions) {
 case 0:/*ignore*/
 break;
-case 1:return 13;
+case 1: return 13;
 break;
 case 2:return 15;
 break;
@@ -828,7 +829,7 @@ case 37:return 51
 break;
 case 38:return 6;
 break;
-case 39: console.error('Este es un error léxico: ' + yy_.yytext + ', en la linea: ' + yy_.yylloc.first_line + ', en la columna: ' + yy_.yylloc.first_column); 
+    default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column),"Lexical error. Unrecognized symbol: "+yy_.yytext);
 break;
 }
 },

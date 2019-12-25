@@ -187,7 +187,7 @@ function stop_3D(){ //Resets execution.
     throw new _3D_Exception(null,"Stopped 3D execution.",false);
 }
 //endregion
-//region Load functions to Buttons.
+//region On document ready.
 function initialize_3D(){
     $("#Iniciar_3D").click(begin_3D);
     $("#Siguiente_3D").click(next_3D);
@@ -209,6 +209,8 @@ function initialize_3D(){
         styleSelectedText: true
     });
     CodeMirror_3D.on("cursorActivity", onCursorActivity);
+    var current_lex = _3D_grammar;
+    let current_lexer = current_lex.lexer;
 }
 $( document ).ready(function() {
     initialize_3D();
