@@ -111,7 +111,7 @@ function update_temporal(name,value) {
 }
 //region begin_3D
 function begin_3D(){
-    play_3D(true);
+    play_3D(true)
 }
 //endregion
 //region next_3D
@@ -184,7 +184,8 @@ function continue_3D(){ //Resumes execution and no longer stops until execution 
 //region stop_3D
 function stop_3D(){ //Resets execution.
     compiling = false;
-    throw new _3D_Exception(null,"Stopped 3D execution.",false);
+    IP = 'end';
+    new _3D_Exception(null,"Stopped 3D execution.",false);
 }
 //endregion
 //region On document ready.

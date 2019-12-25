@@ -47,3 +47,16 @@
   overflow: auto;
 }
 
+.Inline_Title.Display_Title {
+  font-size: xx-large;
+  text-align: center;
+  font-family: serif;
+  color: rgb(35,0,38);
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.Display_Title {
+  text-align: center;
+}
+

@@ -10,3 +10,28 @@ input, button, select, optgroup, textarea {
   line-height: inherit;
 }
 
+.row.Options {
+  padding-bottom: 1em;
+  padding-top: 1em;
+}
+
+.btn.btn-danger.Primary_Options {
+  background: transparent !important;
+  font-weight: bold;
+  font-size: x-large;
+  color: white !important;
+  font-family: monospace;
+}
+
+#Primary_Options_Container {
+  background: purple;
+}
+
+.btn.btn-danger.Secondary_Options {
+  background-color: white !important;
+}
+
+#Secondary_Options_Container {
+  background-color: blue;
+}
+

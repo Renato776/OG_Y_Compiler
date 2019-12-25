@@ -478,7 +478,7 @@ function play_3D(debug = false) { //Input is parsed outside this function. Play 
     compiling = false;//Always starts a new cycle.
     new_3D_cycle();
     while(IP!='end'){
-  		let instruction = instructions[IP]; //We get the instruction to execute.
+        let instruction = instructions[IP]; //We get the instruction to execute.
         play_instruction(instruction,debug);
     }
     compiling = false; //We end the cycle.
