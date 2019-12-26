@@ -1,3 +1,13 @@
+//region Setters for Linked Globals.
+function set_3D_source(text){
+    CodeMirror_3D.setValue(text);
+    CodeMirror_Execute.setValue(text);
+}
+function append_to_3D_console(entry){
+    $("#Ejecutar_Console").append(entry);
+    $("#Debug_Console").append(entry);
+}
+//endregion
 //region Directives
 let CAP_HEAP = false;
 let CAP_HEAP_DISPLAY = true;
@@ -147,19 +157,18 @@ function getReturnAddress(name) {
     return a;
 }
 function new_3D_cycle() {
-    if(!compiling){
-        reset_3D(); //We reset structures back to default
-       // let element = $("#ThreeD_Source");
+        reset_3D();
         let source = CodeMirror_3D.getValue();
         try{
             _3D_grammar.parse(source); //We try to parse the input.
         }catch (e) {
             /*A parse error occurred. We dispose of the error Object and log other properly:*/
-            new _3D_Exception(token_tracker.pop(),"Syntax error. Unexpected symbol");
+            let t = token_tracker.pop();
+            new _3D_Exception(t,"Syntax error. Unexpected symbol: "+t.text,true);
+            return true;
         }
-        reset_IP(); //We get the first instruction.
+        if(reset_IP())return true; //We get the first instruction.
         compiling = true;
-    }
 }
 function end_3d(sucess = true) {
     if(sucess)log("3D execution finished successfully.");
@@ -168,12 +177,21 @@ function end_3d(sucess = true) {
 }
 function reset_IP() {
     if("main" in labels)IP = labels.main;
-    else throw new _3D_Exception(null,"NO main method found. could not start code execution.",false);
-    temporals['T']=IP; //We load T.
+    else {
+        new _3D_Exception(null,"NO main method found. could not start code execution.",false);
+        return true;
+    }
+    temporals['T']=IP;
     $("#Current_Instruction").html(instructions[IP].signature);
 }
 function reset_3D() { //Resets all structures back to default. Must be called before parsing.
-    temporals.clear();
+    //region Set directives back to default
+    MAX_HEAP_DISPLAY = 2000;
+    MAX_STACK_DISPLAY = 1000;
+    MAX_HEAP = 150000;
+    CAP_HEAP = true;
+    CAP_INSTRUCTION_EXECUTION = true;
+    //endregion temporals.clear();
     instructions.clear();
     labels.clear();
     HEAP = [];
@@ -182,16 +200,15 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     token_tracker = [];
     set_IP(0);
     IC = 0;
-    MAX_HEAP_DISPLAY = 2000;
-    MAX_STACK_DISPLAY = 1000;
     show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H");
     show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S");
     $("#Temporals_Display").empty();
     $("#Debug_Console").empty();
+    $("#Ejecutar_Console").empty();
+    $("#ErrorTableBody").empty();
     current_line = null;
-    compiling = false;
 }
-function increase_IP(value) {
+function increase_IP() {
     IP = find__Next(IP,instructions);
     temporals['T']=IP;
 }
@@ -207,10 +224,11 @@ function get_signature(token) {
     s+=token.text;
     return s;
 }
-function print(format = 'char', value = 0,console = $("#Debug_Console")) { //ATM the output will be logged to the literal console of JS.
+function print(format = 'char', value = 0) { //ATM the output will be logged to the literal console of JS.
     if(current_line==null){ //Should only happen if is the first time we print a char.
         current_line = new line("");
-        console.append(current_line);
+        $("#Debug_Console").append(current_line);
+        $("#Ejecutar_Console").append(current_line);
     }
     switch (format) {
         case "'%c'":
@@ -229,9 +247,10 @@ function print(format = 'char', value = 0,console = $("#Debug_Console")) { //ATM
             break;
     }
 }
-function log(message,console = $("#Debug_Console")) {
+function log(message) {
     current_line = new line(message);
-    console.append(current_line);
+    $("#Debug_Console").append(current_line);
+    $("#Ejecutar_Console").append(current_line);
 }
 //endregion
 //region Object constructors for 3D code.
@@ -241,19 +260,18 @@ const _3D_Token = function (text, row, col, negative = false) {
   this.col = col;
   this.negative = negative;
 };
-const _3D_Exception = function (token,message,show_position = true,type = 'Runtime') {
-    compiling = false;
-    let $row = $("<tr>");
+const _3D_Exception = function (token,message,show_position = false) {
+   let $row = $("<tr>");
     let $type = $("<td>");
     let $line = $("<td>");
     let $col = $("<td>");
     let $details = $("<td>");
     let $class = $("<td>");
-    $type.html(type);
+    $type.html('Runtime');
     if(show_position){
         $line.html(token.row);
         $col.html(token.col);
-        $class.html('Not Implemented Yet');
+        $class.html('N/A');
     }else{
         $line.html('N/A');
         $col.html('N/A');
@@ -266,7 +284,7 @@ const _3D_Exception = function (token,message,show_position = true,type = 'Runti
     $row.append($col);
     $row.append($class);
     $("#ErrorTableBody").append($row);
-    end_3d(false);
+    log("An error occurred during code execution. See error tab for details.");
 };
 const Instruction = function (name,token,param1=null,param2=null,param3=null,param4=null) {
     this.name = name;
@@ -336,7 +354,11 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
 //region Play Instruction
 function play_instruction(instruction,debug = false) {
     IC++;
-    if(IC>=INSTRUCTION_MAX&&CAP_INSTRUCTION_EXECUTION)throw new _3D_Exception(null,"Potential infinite loop prevented. Cannot execute more than "+INSTRUCTION_MAX+" Sentences.",false);
+    if(IC>=INSTRUCTION_MAX&&CAP_INSTRUCTION_EXECUTION){
+        new _3D_Exception(null,"Potential infinite loop prevented. Cannot execute more than "+INSTRUCTION_MAX+" Sentences.",false);
+        IC = 0;
+        return false;
+    }
     if(debug){
         $("#Current_Instruction").html(IP+") "+instruction.signature); //We update the instruction we're executing.
     }
@@ -386,8 +408,8 @@ function play_instruction(instruction,debug = false) {
             }
             temporals[instruction.c] = c; //We set the value in the vessel.
             if(debug)update_temporal(instruction.c,c);
-            increase_IP(1);//We update for next instruction.
-            break; //That's all!
+            increase_IP();//We update for next instruction.
+            return true; //That's all!
         case "assignation":
             vessel = instruction.vessel;
             value = instruction.value.text;
@@ -400,17 +422,22 @@ function play_instruction(instruction,debug = false) {
             }
             temporals[vessel] = value;
             if(debug)update_temporal(vessel,value);
-            increase_IP(1);//We update for next instruction.
-            break;
+            increase_IP();//We update for next instruction.
+            return true;
         case "GET_HEAP": //We're getting a value from the heap.
             address = instruction.address; //We get the name of the temporal
             address = temporals[address]; //We get the actual value.
             vessel = instruction.vessel; //We get the name of the recipient temporal.
             temporals[vessel] = HEAP[address]; //We perform the assignation.
             if(debug)update_temporal(vessel,HEAP[address]);
-            increase_IP(1);//We update for next instruction.
+            increase_IP();//We update for next instruction.
             break; //That's all.
         case "SET_HEAP":
+            if(HEAP.length>MAX_HEAP&&CAP_HEAP){
+                new _3D_Exception(null,"Heap overflow exception. Max allowed: "+MAX_HEAP,false);
+                MAX_HEAP = MAX_HEAP*1.5;
+                return false;
+            }
             address = instruction.address; //We get the name of the temporal
             address = temporals[address]; //We get the actual value.
             value = instruction.value.text; //Value or name
@@ -423,16 +450,16 @@ function play_instruction(instruction,debug = false) {
             }
             HEAP[address] = value; //We perform the assignation.
             if(debug)update_heap(address,value);
-            increase_IP(1);//We update for next instruction.
-            break;
+            increase_IP();//We update for next instruction.
+            return true;
         case "GET_STACK": //We're getting a value from the Stack.
             address = instruction.address; //We get the name of the temporal
             address = temporals[address]; //We get the actual value.
             vessel = instruction.vessel; //We get the name of the temporal vessel.
             temporals[vessel] = STACK[address]; //We perform the assignation.
             if(debug)update_temporal(vessel,STACK[address]);
-            increase_IP(1);//We update for next instruction.
-            break; //That's all.
+            increase_IP();//We update for next instruction.
+            return true; //That's all.
         case "SET_STACK": //We're setting a value in the Stack
             address = instruction.address; //We get the name of the temporal
             address = temporals[address]; //We get the actual value of the address.
@@ -446,27 +473,37 @@ function play_instruction(instruction,debug = false) {
             }
             STACK[address] = value; //We perform the assignation.
             if(debug)update_stack(address,value);
-            increase_IP(1);//We update for next instruction.
-            break;
+            increase_IP();//We update for next instruction.
+            return true;
         case "goto":
             destiny = instruction.target; //Destiny is supposed to hold the name of the label we're targeting.
             destiny = labels[destiny]; //We replace the name of the label by the index of the instruction we're jumping to.
+            if(destiny==undefined){
+                new _3D_Exception(instruction.token,"Undefined label: "+instruction.target,true);
+                compiling = false;
+                return false;
+            }
             set_IP(destiny); //We update the value of i so we can actually do the jump.
-            return; //We perform the jump.
+            return true; //We perform the jump.
         case "call": //How to perform jumps:
             INSTRUCTION_STACK.push({func:instruction.target,returnTo:find__Next(IP,instructions)}); //We push the instruction where we're supposed to return.
             destiny = instruction.target; //We get the name of the target.
             destiny = labels[destiny]; //We get the actual index of the instruction to execute.
+            if(destiny==undefined){
+                new _3D_Exception(instruction.token,"Undefined procedure: "+instruction.target,true);
+                compiling = false;
+                return false;
+            }
             set_IP(destiny); //We update i.
             return; //We perform the jump
         case "ret": //How to return back after a proc is finished:
             if(INSTRUCTION_STACK.length){
                 destiny = getReturnAddress(instruction.target); //We get the address where we're supposed to return.
                 set_IP(destiny); //We update i.
-                return; //We perform the jump back.
+                return true; //We perform the jump back.
             }else{ //The stack is empty. This can only mean we finished the execution of 3D code.
-                set_IP( 'end');
-                return;
+                end_3d(true);
+                return false;
             }
             break;
         case "if": //Conditional jump.
@@ -511,10 +548,14 @@ function play_instruction(instruction,debug = false) {
             if(c){ //We perform the jump
                 destiny = instruction.target; //We get the name of the target
                 destiny = labels[destiny];  //We get the index of the target
+                if(destiny==undefined){
+                    new _3D_Exception(instruction.token,"Label not found: "+instruction.target,true);
+                    compiling = false; //We start a new cycle because we cannot proceed without this label.
+                    return false;
+                }
                 set_IP(destiny); //We update i.
-                return;  //We perform the jump
-            } else increase_IP(1);
-            break;
+            } else increase_IP();
+            return true;
         case "print":
             a = instruction.format; //We get the format for how to print the argument.
             b = instruction.value.text; //We get the number/char to print
@@ -523,22 +564,21 @@ function play_instruction(instruction,debug = false) {
                 b = temporals[instruction.value.text]; //We get the value from the temporals
             }
             print(a,b); //We print the value
-            increase_IP(1);//We go to next instruction.
-            break;
+            increase_IP();//We go to next instruction.
+            return true;
         default:
-            throw new _3D_Exception(instruction.token,"Unrecognized 3D instruction");
+            new _3D_Exception(instruction.token,"Unrecognized 3D instruction: "+instruction.signature,true);
+            compiling = false;
+            return false;
     }
 }
 //endregion
 //region Execute 3D
 function play_3D(debug = false) { //Input is parsed outside this function. Play 3D Uses IP directly and executes all instructions without debugging.
-    compiling = false;//Always starts a new cycle.
-    new_3D_cycle();
-    while(IP!='end'){
-        let instruction = instructions[IP]; //We get the instruction to execute.
-        play_instruction(instruction,debug);
-    }
-    compiling = false; //We end the cycle.
-    end_3d();
+    if(!compiling)if(new_3D_cycle())return;
+    let instruction;
+    do{
+         instruction = instructions[IP];
+    }while (play_instruction(instruction,debug));
 }
 //endregion

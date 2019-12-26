@@ -116,75 +116,44 @@ function begin_3D(){
 //endregion
 //region next_3D
 function next_3D(){
-    if(!compiling){
-        new_3D_cycle();
-    }
+    if(!compiling)if(new_3D_cycle())return;
     let instruction = instructions[IP]; //We get the next instruction to execute.
     play_instruction(instruction,true); //We play the instruction and show what happened.
-    if(IP =='end'){
-        compiling = false;
-        end_3d();
-    }
 }
 //endregion
 //region jump_3D
 function jump_3D(){ //Same as next, except we skip proc calls.
-    if(!compiling){
-        new_3D_cycle();
-    }
+    if(!compiling)if(new_3D_cycle())return;
     let instruction = instructions[IP]; //We get the next instruction to execute.
     if($("#Current_Instruction").text().includes("call")){
         let og_length = INSTRUCTION_STACK.length-1; //I just performed the jump one instruction ago.
-        let i = instruction;
-        do{
-            play_instruction(i,true);
-            i = instructions[IP];
-        }while (og_length!=INSTRUCTION_STACK.length);
-       // if(IP!='end')$("#Current_Instruction").text(IP+") "+instructions[IP].signature); //We display the next instruction.
+        while (play_instruction(instruction,true)&&(og_length!=INSTRUCTION_STACK.length)){
+            instruction = instructions[IP];
+        }
     }else play_instruction(instruction,true);
-    if(IP == 'end'){
-        compiling = false;
-        end_3d();
-    }
 }
 //endregion
 //region next_BP
 function next_BP(){
-    new_3D_cycle();
-    if(breakpoints.length==0){
-        continue_3D(); //There's no need to stop since there's no Breakpoints.
-    }else{
-        while(IP!='end'&&!breakpoints.includes(parseInt(IP))){
-            let instruction = instructions[IP];
-            play_instruction(instruction,true);
-        }
-        if(IP=='end'){
-            compiling = false;
-            end_3d();
-        }else{
-            let instruction = instructions[IP];
-            play_instruction(instruction,true);
-        }
-    }
+    if(!compiling)if(new_3D_cycle())return;
+    let instruction;
+    do{
+        instruction =  instructions[IP];
+    }while (play_instruction(instruction,true)&&!breakpoints.includes(parseInt(IP)));
 }
 //endregion
 //region continue_3D
 function continue_3D(){ //Resumes execution and no longer stops until execution is finished.
-    if(!compiling){
-        new_3D_cycle();
-    }
-    while (IP!='end'){
-        let instruction = instructions[IP];
-        play_instruction(instruction,true);
-    }
-    compiling = false; //At this point the program has finished execution.
-    end_3d();
+    if(!compiling)if(new_3D_cycle())return;
+    let instruction;
+    do {
+        instruction = instructions[IP];
+    }while (play_instruction(instruction,true));
 }
 //endregion
 //region stop_3D
 function stop_3D(){ //Resets execution.
     compiling = false;
-    IP = 'end';
     new _3D_Exception(null,"Stopped 3D execution.",false);
 }
 //endregion
