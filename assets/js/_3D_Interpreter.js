@@ -3,9 +3,9 @@ function set_3D_source(text){
     CodeMirror_3D.setValue(text);
     CodeMirror_Execute.setValue(text);
 }
-function append_to_3D_console(entry){
-    $("#Ejecutar_Console").append(entry);
-    $("#Debug_Console").append(entry);
+function append_to_3D_console(){
+    $("#Ejecutar_Console").append(current_line);
+    $("#Debug_Console").append(current_line2);
 }
 //endregion
 //region Directives
@@ -61,6 +61,7 @@ let HEAP = [];
 let STACK = [];
 let INSTRUCTION_STACK = [];
 let current_line = null;
+let current_line2 = null;
 let CodeMirror_3D = null;
 let CodeMirror_Main = null;
 let CodeMirror_Execute = null;
@@ -77,6 +78,7 @@ default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.
 function show_tab(e) {
     let b = $(e.target);
     current_tab.addClass('Debug_Container_Hide'); //We hide the previous tab.
+    let og = current_tab;
     let signature = b.attr("RValue");
     signature = "#"+signature;
     current_tab = $(signature);
@@ -104,6 +106,11 @@ function show_tab(e) {
             firstLineNumber: 0,
             styleSelectedText: true
         });
+    }
+    if(og.attr("id")=="EJECUTAR"&&signature=="#DEBUG"){
+        CodeMirror_3D.setValue(CodeMirror_Execute.getValue());
+    }else if(og.attr("id")=="DEBUG"&&signature=="#EJECUTAR"){
+        CodeMirror_Execute.setValue(CodeMirror_3D.getValue());
     }
 }
 function register_token(yytext, row, col) {
@@ -207,6 +214,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     $("#Ejecutar_Console").empty();
     $("#ErrorTableBody").empty();
     current_line = null;
+    current_line2 = null;
 }
 function increase_IP() {
     IP = find__Next(IP,instructions);
@@ -227,30 +235,28 @@ function get_signature(token) {
 function print(format = 'char', value = 0) { //ATM the output will be logged to the literal console of JS.
     if(current_line==null){ //Should only happen if is the first time we print a char.
         current_line = new line("");
-        $("#Debug_Console").append(current_line);
-        $("#Ejecutar_Console").append(current_line);
-    }
+        append_to_3D_console();
+     }
     switch (format) {
         case "'%c'":
             if(value=='\n'){ //Print new line.
                 current_line = new line("");
-                $("#Debug_Console").append(current_line);
+                append_to_3D_console();
             }else{
-                let ch = current_line.children();
-                ch[1].append(String.fromCharCode(value));
+                current_line.children()[1].append(String.fromCharCode(value));
+                current_line2.children()[1].append(String.fromCharCode(value));
             }
             break;
         case "'%e'":
         case "'%d'":
-            let ch = current_line.children();
-            ch[1].append(value.toString());
+            current_line.children()[1].append(parseInt(value));
+            current_line2.children()[1].append(parseFloat(value));
             break;
     }
 }
 function log(message) {
     current_line = new line(message);
-    $("#Debug_Console").append(current_line);
-    $("#Ejecutar_Console").append(current_line);
+    append_to_3D_console();
 }
 //endregion
 //region Object constructors for 3D code.
@@ -355,7 +361,9 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
 function play_instruction(instruction,debug = false) {
     IC++;
     if(IC>=INSTRUCTION_MAX&&CAP_INSTRUCTION_EXECUTION){
-        new _3D_Exception(null,"Potential infinite loop prevented. Cannot execute more than "+INSTRUCTION_MAX+" Sentences.",false);
+        new _3D_Exception(null,"Potential infinite loop prevented. Cannot execute more than "+INSTRUCTION_MAX+" Sentences. <break>",false);
+        current_line = new line("");
+        append_to_3D_console();
         IC = 0;
         return false;
     }
@@ -431,7 +439,7 @@ function play_instruction(instruction,debug = false) {
             temporals[vessel] = HEAP[address]; //We perform the assignation.
             if(debug)update_temporal(vessel,HEAP[address]);
             increase_IP();//We update for next instruction.
-            break; //That's all.
+            return true; //That's all.
         case "SET_HEAP":
             if(HEAP.length>MAX_HEAP&&CAP_HEAP){
                 new _3D_Exception(null,"Heap overflow exception. Max allowed: "+MAX_HEAP,false);
@@ -495,7 +503,7 @@ function play_instruction(instruction,debug = false) {
                 return false;
             }
             set_IP(destiny); //We update i.
-            return; //We perform the jump
+            return true; //We perform the jump
         case "ret": //How to return back after a proc is finished:
             if(INSTRUCTION_STACK.length){
                 destiny = getReturnAddress(instruction.target); //We get the address where we're supposed to return.
@@ -571,11 +579,12 @@ function play_instruction(instruction,debug = false) {
             compiling = false;
             return false;
     }
+    throw new _3D_Exception(null,"Instruction fell through: "+instruction.signature,false);
 }
 //endregion
 //region Execute 3D
 function play_3D(debug = false) { //Input is parsed outside this function. Play 3D Uses IP directly and executes all instructions without debugging.
-    if(!compiling)if(new_3D_cycle())return;
+    if(new_3D_cycle())return;
     let instruction;
     do{
          instruction = instructions[IP];

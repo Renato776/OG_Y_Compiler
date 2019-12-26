@@ -8,6 +8,7 @@ const line = function (message) {
     m.append(message);
     row.append(s);
     row.append(m);
+    current_line2 = row.clone();
     return row;
 };
 const heap_cell = function (index, value) {

@@ -5,6 +5,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/_3D_Utility.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Utility.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -76,7 +77,7 @@
       <workItem from="1577241185099" duration="460000" />
       <workItem from="1577242670811" duration="4969000" />
       <workItem from="1577288645056" duration="5195000" />
-      <workItem from="1577313807501" duration="5322000" />
+      <workItem from="1577313807501" duration="10942000" />
     </task>
     <servers />
   </component>

@@ -93,7 +93,7 @@
             </div>
             <div class="row">
                 <div class="col" id="Ejecutar_TextArea">
-                    <div><label>Source Code</label></div><textarea id="Ejecutar_3D_Source" rows="18" readonly="true" cols="50"></textarea></div>
+                    <div><label>Source Code</label></div><div id = "Ejecutar_Source_Container"><textarea id="Ejecutar_3D_Source" rows="18" readonly="true" cols="50"></textarea></div></div>
                 <div class="col" id="Ejecutar_Options">
                     <div class="row">
                         <div class="col" href="#"><button class="btn btn-danger" style="border: none;width: 100%;height: auto;background-color: #1afa3e;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;margin-bottom: 1em;" type="button">Iniciar</button></div>
@@ -240,7 +240,7 @@
             </div>
             <div class="row">
                 <div class="col" id="Debug_TextArea">
-                    <div><label>Source Code</label></div><textarea id="ThreeD_Source" rows="22" class="codemirror-textarea">
+                    <div><label>Source Code</label></div><div id = "Debug_Source_Container"><textarea id="ThreeD_Source" rows="22" class="codemirror-textarea">
 proc printString {
 R1 = stack[C]
 C = C - 1
@@ -1421,7 +1421,7 @@ L1:
 }
 
 
-                    </textarea></div>
+                </textarea></div></div>
                 <div class="col" id="Debug_Options">
                     <div class="row BreakPoint_Container_Container">
                         <div class="col col-3">
