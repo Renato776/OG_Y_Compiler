@@ -112,7 +112,11 @@ function update_temporal(name,value) {
 }
 //region begin_3D
 function begin_3D(){
-    play_3D(true)
+    play_3D(true);
+}
+function begin_execution(){
+    if(!$("#Recover_Container").hasClass('Debug_Container_Hide'))$("#Recover_Container").addClass('Debug_Container_Hide'); //We hide the continue option if visible.
+    play_3D(false);
 }
 //endregion
 //region next_3D
@@ -152,6 +156,15 @@ function continue_3D(){ //Resumes execution and no longer stops until execution 
     }while (play_instruction(instruction,true));
 }
 //endregion
+//region recover_execution
+function recover_execution(){ //Resumes execution and no longer stops until execution is finished.
+    //if(!compiling)if(new_3D_cycle())return; NO need to start a new cycle as this option is only shown when there's a current cycle going on.
+    let instruction;
+    do {
+        instruction = instructions[IP];
+    }while (play_instruction(instruction,false));
+}
+//endregion
 //region stop_3D
 function stop_3D(){ //Resets execution.
     compiling = false;
@@ -166,6 +179,8 @@ function initialize(){
     $("#Siguiente_BP_3D").click(next_BP);
     $("#Continuar_3D").click(continue_3D);
     $("#Detener_3D").click(stop_3D);
+    $("#Iniciar").click(begin_execution);
+    $("#Recover").click(recover_execution);
     $("#clear_all_breakpoints").click(clear_all_breakpoints);
     $("#Debug_Console").empty();
     $("#Ejecutar_Console").empty();

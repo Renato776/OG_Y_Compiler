@@ -164,18 +164,20 @@ function getReturnAddress(name) {
     return a;
 }
 function new_3D_cycle() {
-        reset_3D();
-        let source = CodeMirror_3D.getValue();
-        try{
-            _3D_grammar.parse(source); //We try to parse the input.
-        }catch (e) {
-            /*A parse error occurred. We dispose of the error Object and log other properly:*/
-            let t = token_tracker.pop();
-            new _3D_Exception(t,"Syntax error. Unexpected symbol: "+t.text,true);
-            return true;
-        }
-        if(reset_IP())return true; //We get the first instruction.
-        compiling = true;
+    reset_3D();
+    let source;
+    if(current_tab.attr("id")=="EJECUTAR") source = CodeMirror_Execute.getValue();
+    else source = CodeMirror_3D.getValue();
+    try{
+        _3D_grammar.parse(source); //We try to parse the input.
+    }catch (e) {
+        /*A parse error occurred. We dispose of the error Object and log other properly:*/
+        let t = token_tracker.pop();
+        new _3D_Exception(t,"Syntax error. Unexpected symbol: "+t.text,true);
+        return true;
+    }
+    if(reset_IP())return true; //We get the first instruction.
+    compiling = true;
 }
 function end_3d(sucess = true) {
     if(sucess)log("3D execution finished successfully.");
@@ -365,6 +367,7 @@ function play_instruction(instruction,debug = false) {
         current_line = new line("");
         append_to_3D_console();
         IC = 0;
+        $("#Recover_Container").removeClass('Debug_Container_Hide');
         return false;
     }
     if(debug){
