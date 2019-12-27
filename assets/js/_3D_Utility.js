@@ -209,23 +209,6 @@ function initialize(){
 }
 $( document ).ready(function() {
     initialize();
-    fetch('http://localhost:3000',
-        { method: 'GET',
-            headers : new Headers(),
-            mode: 'cors',
-            cache: 'default' })
-            .then(function(response) {
-                if (!response.ok) {
-                    throw Error(response.statusText);
-                }
-                alert(response);
-                response.text().then(function (text) {
-                    alert(text);
-                });
-            })
-            .catch(function(error) {
-                console.log('Looks like there was a problem: \n', error);
-            });
 });
 
 //endregion

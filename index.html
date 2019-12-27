@@ -244,1183 +244,263 @@
             <div class="row">
                 <div class="col" id="Debug_TextArea">
                     <div><label>Source Code</label></div><div id = "Debug_Source_Container"><textarea id="ThreeD_Source" rows="22" class="codemirror-textarea">
-proc printString {
-R1 = stack[C]
-C = C - 1
-R2 = heap[R1]
-R = 0
+proc Fibonacci{
+n = stack[P]
+if (t1!=0) goto L2
+stack[P]=1
+goto L1
 L2:
-ifFalse ( R < R2) goto L3
-R = R + 1
-AG = R + R1
-AG = heap[AG]
-print('%c',AG)
-goto L2
+if (t3!=1) goto L3
+stack[P]=1
+goto L1
 L3:
+n = stack[P]
+n = n - 1
+P = P + 1
+stack[P] = n
+call Fibonacci
+n1 = stack[P]
+P = P - 1
+n = stack[P]
+stack[P] = n1
+n = n - 2
+P = P + 1
+stack[P] = n
+call Fibonacci
+n1 = stack[P]
+P = P - 1
+n = stack[P]
+n = n + n1
+stack[P] = n
+L1:
 }
 
-proc print_null_pointer_exception {
-H = H + 1
-heap[H] = 22
-R = H
-H = H + 22
-R1 = R + 1
-heap[R1] = 78
-R1 = R + 2
-heap[R1] = 117
-R1 = R + 3
-heap[R1] = 108
-R1 = R + 4
-heap[R1] = 108
-R1 = R + 5
-heap[R1] = 32
-R1 = R + 6
-heap[R1] = 80
-R1 = R + 7
-heap[R1] = 111
-R1 = R + 8
-heap[R1] = 105
-R1 = R + 9
-heap[R1] = 110
-R1 = R + 10
-heap[R1] = 116
-R1 = R + 11
-heap[R1] = 101
-R1 = R + 12
-heap[R1] = 114
-R1 = R + 13
-heap[R1] = 32
-R1 = R + 14
-heap[R1] = 69
-R1 = R + 15
-heap[R1] = 120
-R1 = R + 16
-heap[R1] = 99
-R1 = R + 17
-heap[R1] = 101
-R1 = R + 18
-heap[R1] = 112
-R1 = R + 19
-heap[R1] = 116
-R1 = R + 20
-heap[R1] = 105
-R1 = R + 21
-heap[R1] = 111
-R1 = R + 22
-heap[R1] = 110
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-P = 1 + P
-stack[P] = R1
+proc Test{
+
+nombre= stack[P]
+
+P = P - 1
+P = P + 1
+stack[P]=nombre
 call printString
+t10=8
+P = P + 1
+stack[P]=t10
+call Fibonacci
+res = stack[P]
+P = P - 1
+print('%e',res)
 }
 
-proc f___0 {
-R = 3.0
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-H = H + 1
-heap[H] = R1
-R = H
-H = H + R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-stack[R] = R1
-C = C + 1
-stack[C] = R
-R = 0
-R1 = stack[C]
-C = C - 1
-stack[R] = R1
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-if (R1==0) goto L7
- R = 0
- goto L8
-L7:
-R = 1
-L8:
-if (R== 0) goto L9
-call print_null_pointer_exception
-goto L1
-L9:
-R = R1 + 2
-R = heap[R]
-C = C + 1
-stack[C] = R
-R = 0
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-if (R1==R2) goto L10
- R = 0
- goto L11
-L10:
-R = 1
-L11:
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-if (R1== 1) goto L12
-goto L6
-L12:
-R = P + 3
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R = 3.0
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-H = H + 1
-heap[H] = R1
-R = H
-H = H + R1
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L13
-stack[R1] = R2
-goto L14
-L13:
-heap[R1] = R2
-L14:
-R = P + 2
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L15
-R1 = stack[R1]
-goto L16
-L15:
-R1 = heap[R1]
-L16:
-if (R1==0) goto L17
- R = 0
- goto L18
-L17:
-R = 1
-L18:
-if (R== 0) goto L19
-call print_null_pointer_exception
-goto L1
-L19:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 2
-C = C + 1
-stack[C] = R
-R = P + 1
-R = stack[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L20
-stack[R1] = R2
-goto L21
-L20:
-heap[R1] = R2
-L21:
-R = P + 3
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L22
-R1 = stack[R1]
-goto L23
-L22:
-R1 = heap[R1]
-L23:
-if (R1==0) goto L24
- R = 0
- goto L25
-L24:
-R = 1
-L25:
-if (R== 0) goto L26
-call print_null_pointer_exception
-goto L1
-L26:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 1
-C = C + 1
-stack[C] = R
-R = P + 2
-R = stack[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L27
-stack[R1] = R2
-goto L28
-L27:
-heap[R1] = R2
-L28:
-R = P + 0
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L29
-R1 = stack[R1]
-goto L30
-L29:
-R1 = heap[R1]
-L30:
-if (R1==0) goto L31
- R = 0
- goto L32
-L31:
-R = 1
-L32:
-if (R== 0) goto L33
-call print_null_pointer_exception
-goto L1
-L33:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 2
-C = C + 1
-stack[C] = R
-R = P + 3
-R = stack[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L34
-stack[R1] = R2
-goto L35
-L34:
-heap[R1] = R2
-L35:
-R = P + 0
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L36
-R1 = stack[R1]
-goto L37
-L36:
-R1 = heap[R1]
-L37:
-if (R1==0) goto L38
- R = 0
- goto L39
-L38:
-R = 1
-L39:
-if (R== 0) goto L40
-call print_null_pointer_exception
-goto L1
-L40:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 1
-C = C + 1
-stack[C] = R
-R = P + 3
-R = stack[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L41
-stack[R1] = R2
-goto L42
-L41:
-heap[R1] = R2
-L42:
-goto L4
-goto L5
-L6:
-R = P + 3
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R = 3.0
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-H = H + 1
-heap[H] = R1
-R = H
-H = H + R1
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L43
-stack[R1] = R2
-goto L44
-L43:
-heap[R1] = R2
-L44:
-R = P + 2
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L45
-R1 = stack[R1]
-goto L46
-L45:
-R1 = heap[R1]
-L46:
-if (R1==0) goto L47
- R = 0
- goto L48
-L47:
-R = 1
-L48:
-if (R== 0) goto L49
-call print_null_pointer_exception
-goto L1
-L49:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 2
-C = C + 1
-stack[C] = R
-R = P + 1
-R = stack[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L50
-stack[R1] = R2
-goto L51
-L50:
-heap[R1] = R2
-L51:
-R = P + 3
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L52
-R1 = stack[R1]
-goto L53
-L52:
-R1 = heap[R1]
-L53:
-if (R1==0) goto L54
- R = 0
- goto L55
-L54:
-R = 1
-L55:
-if (R== 0) goto L56
-call print_null_pointer_exception
-goto L1
-L56:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 1
-C = C + 1
-stack[C] = R
-R = P + 2
-R = stack[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L57
-stack[R1] = R2
-goto L58
-L57:
-heap[R1] = R2
-L58:
-R = P + 3
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L59
-R1 = stack[R1]
-goto L60
-L59:
-R1 = heap[R1]
-L60:
-if (R1==0) goto L61
- R = 0
- goto L62
-L61:
-R = 1
-L62:
-if (R== 0) goto L63
-call print_null_pointer_exception
-goto L1
-L63:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 3
-C = C + 1
-stack[C] = R
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-if (R1==0) goto L64
- R = 0
- goto L65
-L64:
-R = 1
-L65:
-if (R== 0) goto L66
-call print_null_pointer_exception
-goto L1
-L66:
-R = R1 + 2
-R = heap[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L67
-stack[R1] = R2
-goto L68
-L67:
-heap[R1] = R2
-L68:
-R = P + 0
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L69
-R1 = stack[R1]
-goto L70
-L69:
-R1 = heap[R1]
-L70:
-if (R1==0) goto L71
- R = 0
- goto L72
-L71:
-R = 1
-L72:
-if (R== 0) goto L73
-call print_null_pointer_exception
-goto L1
-L73:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 2
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L74
-R1 = stack[R1]
-goto L75
-L74:
-R1 = heap[R1]
-L75:
-if (R1==0) goto L76
- R = 0
- goto L77
-L76:
-R = 1
-L77:
-if (R== 0) goto L78
-call print_null_pointer_exception
-goto L1
-L78:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 2
-C = C + 1
-stack[C] = R
-R = P + 3
-R = stack[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L79
-stack[R1] = R2
-goto L80
-L79:
-heap[R1] = R2
-L80:
-R = P + 0
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-R2 = stack[C]
-C = C - 1
-if (R2== 1) goto L81
-R1 = stack[R1]
-goto L82
-L81:
-R1 = heap[R1]
-L82:
-if (R1==0) goto L83
- R = 0
- goto L84
-L83:
-R = 1
-L84:
-if (R== 0) goto L85
-call print_null_pointer_exception
-goto L1
-L85:
-R = 1
-C = C + 1
-stack[C] = R
-R = R1 + 2
-C = C + 1
-stack[C] = R
-R = P + 3
-R = stack[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L86
-stack[R1] = R2
-goto L87
-L86:
-heap[R1] = R2
-L87:
+proc new_String{
+
+size= stack[P]
+
+P = P - 1
+H=H+1
+t11=H
+heap[H] = size
+H=H+size
+P = P + 1
+stack[P]=t11
+}
+
+proc push_String{
+
+offset= stack[P]
+
+P = P - 1
+newChar= stack[P]
+
+P = P - 1
+cadena= stack[P]
+
+P = P - 1
+t12=cadena+offset
+heap[t12] = newChar
+}
+
+proc sum_String{
+
+string2= stack[P]
+
+P = P - 1
+string1= stack[P]
+
+P = P - 1
+size1 = heap[string1]
+size2 = heap[string2]
+length=size1+size2
+H=H+1
+t13=H
+heap[H] = length
+H=H+length
+t14=t13
+j=string1
+i=0
+L4:
+if (i>=size1) goto L2
+t14=t14+1
+i=i+1
+j=j+1
+t15 = heap[j]
+heap[t14] = t15
 goto L4
 L5:
-L4:
+j=string2
+i=0
+L6:
+if (i>=size2) goto L7
+t14=t14+1
+i=i+1
+j=j+1
+t16 = heap[j]
+heap[t14] = t16
+goto L6
+L7:
+P = P + 1
+stack[P]=t13
 }
 
-proc f___1 {
-C = C + 1
-stack[C] = R
-R = 0
-R1 = stack[C]
-C = C - 1
-stack[R] = R1
-R = P + 0
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R = P + 1
-R = stack[R]
-R = stack[R]
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-if (R1==0) goto L89
- R = 0
- goto L90
-L89:
-R = 1
-L90:
-if (R== 0) goto L91
-call print_null_pointer_exception
-goto L1
-L91:
-R = R1 + 2
-R = heap[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L92
-stack[R1] = R2
-goto L93
-L92:
-heap[R1] = R2
-L93:
-L94:
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R = 0
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-if (R1!=R2) goto L96
- R = 0
- goto L97
-L96:
-R = 1
-L97:
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-if (R1== 1) goto L98
-goto L95
-L98:
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-if (R1==0) goto L99
- R = 0
- goto L100
-L99:
-R = 1
-L100:
-if (R== 0) goto L101
-call print_null_pointer_exception
-goto L1
-L101:
-R = R1 + 1
-R = heap[R]
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-if (R1==0) goto L102
- R = 0
- goto L103
-L102:
-R = 1
-L103:
-if (R== 0) goto L104
-call print_null_pointer_exception
-goto L1
-L104:
-R = R1 + 2
-R = heap[R]
-C = C + 1
-stack[C] = R
-P = P + 2
-R2 = C - 1
-R2 = R2 + 1
-R = stack[R2]
-print('%e',R)
-R2 = R2 + 1
-C = C - 1
-print('%c',10)
-P = P - 2
-R = P + 0
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-if (R1==0) goto L105
- R = 0
- goto L106
-L105:
-R = 1
-L106:
-if (R== 0) goto L107
-call print_null_pointer_exception
-goto L1
-L107:
-R = R1 + 3
-R = heap[R]
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L108
-stack[R1] = R2
-goto L109
-L108:
-heap[R1] = R2
-L109:
-goto L94
-L95:
-L88:
+proc main{
+
+t17=15
+P = P + 1
+stack[P]=t17
+call new_String
+title= stack[P]
+
+P = P - 1
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=70
+P = P + 1
+stack[P]=1
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=105
+P = P + 1
+stack[P]=2
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=98
+P = P + 1
+stack[P]=3
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=111
+P = P + 1
+stack[P]=4
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=110
+P = P + 1
+stack[P]=5
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=97
+P = P + 1
+stack[P]=6
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=99
+P = P + 1
+stack[P]=7
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=99
+P = P + 1
+stack[P]=8
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=105
+P = P + 1
+stack[P]=9
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=32
+P = P + 1
+stack[P]=10
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=100
+P = P + 1
+stack[P]=11
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=101
+P = P + 1
+stack[P]=12
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=32
+P = P + 1
+stack[P]=13
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=56
+P = P + 1
+stack[P]=14
+call push_String
+P = P + 1
+stack[P]=title
+P = P + 1
+stack[P]=58
+P = P + 1
+stack[P]=15
+call push_String
+P = P + 1
+stack[P]=title
+call Test
 }
 
-proc main {
-P = 300
-H = 0
-C = 0
-C = C + 1
-stack[C] = R
-R = 0
-R1 = stack[C]
-C = C - 1
-stack[R] = R1
-R = P + 0
-R1 = R
-R = 0
-C = C + 1
-stack[C] = R
-R = R1
-C = C + 1
-stack[C] = R
-R = 2.0
-C = C + 1
-stack[C] = R
-R1 = stack[C]
-C = C - 1
-H = H + 1
-heap[H] = R1
-R = H
-H = H + R1
-C = C + 1
-stack[C] = R
-R2 = stack[C]
-C = C - 1
-R1 = stack[C]
-C = C - 1
-R = stack[C]
-C = C - 1
-if (R== 1) goto L110
-stack[R1] = R2
-goto L111
-L110:
-heap[R1] = R2
-L111:
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R = 8.0
-C = C + 1
-stack[C] = R
-P = P + 1
-R1 = C - 2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 0
-stack[R] = R2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 1
-stack[R] = R2
-R1 = R1 + 1
-C = C - 2
-R = P - 1
-R1 = R + 0
-R2 = P + 4
-stack[R2] = R1
-call f___0
+proc printString{
+
+cadena= stack[P]
+
 P = P - 1
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R = 9.0
-C = C + 1
-stack[C] = R
+size = heap[cadena]
+t18=0
+L8:
+if (t18>=size) goto L9
+t18=t18+1
+t20=t18+cadena
+t21 = heap[t20]
 P = P + 1
-R1 = C - 2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 0
-stack[R] = R2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 1
-stack[R] = R2
-R1 = R1 + 1
-C = C - 2
-R = P - 1
-R1 = R + 0
-R2 = P + 4
-stack[R2] = R1
-call f___0
+stack[P]=t21
+ren_= stack[P]
+
 P = P - 1
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R = 100.0
-C = C + 1
-stack[C] = R
-P = P + 1
-R1 = C - 2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 0
-stack[R] = R2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 1
-stack[R] = R2
-R1 = R1 + 1
-C = C - 2
-R = P - 1
-R1 = R + 0
-R2 = P + 4
-stack[R2] = R1
-call f___0
-P = P - 1
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R = 300.0
-C = C + 1
-stack[C] = R
-P = P + 1
-R1 = C - 2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 0
-stack[R] = R2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 1
-stack[R] = R2
-R1 = R1 + 1
-C = C - 2
-R = P - 1
-R1 = R + 0
-R2 = P + 4
-stack[R2] = R1
-call f___0
-P = P - 1
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R = 127.0
-C = C + 1
-stack[C] = R
-P = P + 1
-R1 = C - 2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 0
-stack[R] = R2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 1
-stack[R] = R2
-R1 = R1 + 1
-C = C - 2
-R = P - 1
-R1 = R + 0
-R2 = P + 4
-stack[R2] = R1
-call f___0
-P = P - 1
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R = 400.0
-C = C + 1
-stack[C] = R
-P = P + 1
-R1 = C - 2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 0
-stack[R] = R2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 1
-stack[R] = R2
-R1 = R1 + 1
-C = C - 2
-R = P - 1
-R1 = R + 0
-R2 = P + 4
-stack[R2] = R1
-call f___0
-P = P - 1
-R = P + 0
-R = stack[R]
-C = C + 1
-stack[C] = R
-R = 101.0
-C = C + 1
-stack[C] = R
-P = P + 1
-R1 = C - 2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 0
-stack[R] = R2
-R1 = R1 + 1
-R2 = stack[R1]
-R = P + 1
-stack[R] = R2
-R1 = R1 + 1
-C = C - 2
-R = P - 1
-R1 = R + 0
-R2 = P + 4
-stack[R2] = R1
-call f___0
-P = P - 1
-P = P + 1
-R1 = C - 0
-R1 = R1 + 1
-C = C - 0
-R = P - 1
-R1 = R + 0
-R2 = P + 1
-stack[R2] = R1
-call f___1
-P = P - 1
-H = H + 1
-heap[H] = 37
-R = H
-H = H + 37
-R1 = R + 1
-heap[R1] = 118
-R1 = R + 2
-heap[R1] = 97
-R1 = R + 3
-heap[R1] = 108
-R1 = R + 4
-heap[R1] = 117
-R1 = R + 5
-heap[R1] = 101
-R1 = R + 6
-heap[R1] = 32
-R1 = R + 7
-heap[R1] = 110
-R1 = R + 8
-heap[R1] = 101
-R1 = R + 9
-heap[R1] = 120
-R1 = R + 10
-heap[R1] = 116
-R1 = R + 11
-heap[R1] = 32
-R1 = R + 12
-heap[R1] = 116
-R1 = R + 13
-heap[R1] = 111
-R1 = R + 14
-heap[R1] = 32
-R1 = R + 15
-heap[R1] = 116
-R1 = R + 16
-heap[R1] = 97
-R1 = R + 17
-heap[R1] = 105
-R1 = R + 18
-heap[R1] = 108
-R1 = R + 19
-heap[R1] = 58
-R1 = R + 20
-heap[R1] = 32
-R1 = R + 21
-heap[R1] = 40
-R1 = R + 22
-heap[R1] = 115
-R1 = R + 23
-heap[R1] = 104
-R1 = R + 24
-heap[R1] = 111
-R1 = R + 25
-heap[R1] = 117
-R1 = R + 26
-heap[R1] = 108
-R1 = R + 27
-heap[R1] = 100
-R1 = R + 28
-heap[R1] = 32
-R1 = R + 29
-heap[R1] = 98
-R1 = R + 30
-heap[R1] = 101
-R1 = R + 31
-heap[R1] = 32
-R1 = R + 32
-heap[R1] = 110
-R1 = R + 33
-heap[R1] = 117
-R1 = R + 34
-heap[R1] = 108
-R1 = R + 35
-heap[R1] = 108
-R1 = R + 36
-heap[R1] = 41
-R1 = R + 37
-heap[R1] = 32
-C = C + 1
-stack[C] = R
-P = P + 1
-R2 = C - 1
-R2 = R2 + 1
-R = stack[R2]
-C = C + 1
-stack[C] = R
-call printString
-R2 = R2 + 1
-C = C - 1
-print('%c',10)
-P = P - 1
-L1:
+print('%c',ren_)
+goto L8
+L9:
 }
 
 
