@@ -199,6 +199,7 @@ function initialize(){
     $("#TablaDeSimbolos_Button").click(show_tab);
     $("#AST_Button").click(show_tab);
     $("#Optimizacion_Button").click(show_tab);
+    $("#Folders_Classes_Button").click(show_tab);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
     /*
