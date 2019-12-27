@@ -48,7 +48,7 @@
 [0-9]+("."[0-9]+)\b    return 'FLOAT';
 ("L")[0-9]+             return 'LABEL';
 ([a-zA-Z]|_)+[0-9]*\b    return 'ID';
-("'%d'")|("'%e'")|("'%c'") return 'FORMAT'
+("'%d'")|("'%e'")|("'%c'") return 'FORMAT';
 <<EOF>>                 return 'EOF';
 
 .                       { console.error('Este es un error léxico: ' + yytext + ', en la linea: ' + yylloc.first_line + ', en la columna: ' + yylloc.first_column); }
@@ -167,43 +167,43 @@ standard: ID ASIGNACION value SUM value {
         }
         ;
 
-ifStmt: IF LEFT_PAREN value MAYORQ value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'>',$8);
+ifStmt: IF value MAYORQ value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'>',$6);
         }
-        | IF LEFT_PAREN value MENORQ value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'<',$8);
+        | IF value MENORQ value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'<',$6);
         }
-        | IF LEFT_PAREN value MAYORIGUAL value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'>=',$8);
+        | IF value MAYORIGUAL value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'>=',$6);
         }
-        | IF LEFT_PAREN value MENORIGUAL value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'<=',$8);
+        | IF value MENORIGUAL value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'<=',$6);
         }
-        | IF LEFT_PAREN value IGUAL value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'==',$8);
+        | IF value IGUAL value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'==',$6);
         }
-        | IF LEFT_PAREN value DISTINTO value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'!=',$8);
+        | IF value DISTINTO value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'!=',$6);
         }
         ;
 
-ifFalseStmt: IF_FALSE LEFT_PAREN value MAYORQ value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'<=',$8);
+ifFalseStmt: IF_FALSE value MAYORQ value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'<=',$6);
         }
-        | IF_FALSE LEFT_PAREN value MENORQ value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'>=',$8);
+        | IF_FALSE value MENORQ value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'>=',$6);
         }
-        | IF_FALSE LEFT_PAREN value MAYORIGUAL value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'<',$8);
+        | IF_FALSE value MAYORIGUAL value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'<',$6);
         }
-        | IF_FALSE LEFT_PAREN value MENORIGUAL value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'>',$8);
+        | IF_FALSE value MENORIGUAL value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'>',$6);
         }
-        | IF_FALSE LEFT_PAREN value IGUAL value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'==',$8);
+        | IF_FALSE value IGUAL value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'==',$6);
         }
-        | IF_FALSE LEFT_PAREN value DISTINTO value RIGHT_PAREN GOTO LABEL {
-        $$ = new Instruction("if",$3,$3,$5,'!=',$8);
+        | IF_FALSE value DISTINTO value GOTO LABEL {
+        $$ = new Instruction("if",$2,$2,$4,'!=',$6);
         }
         ;
 goto : GOTO LABEL {

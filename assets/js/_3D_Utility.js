@@ -199,13 +199,8 @@ function initialize(){
     $("#TablaDeSimbolos_Button").click(show_tab);
     $("#AST_Button").click(show_tab);
     $("#Optimizacion_Button").click(show_tab);
-    //Load the first Code Mirror:
-    let code = $("#Main_Source")[0];
-    CodeMirror_Main = CodeMirror.fromTextArea(code, {
-        lineNumbers : true,
-        firstLineNumber: 0,
-        styleSelectedText: true
-    });
+    document.getElementById('input-file')
+        .addEventListener('change', getFile);
 }
 $( document ).ready(function() {
     initialize();

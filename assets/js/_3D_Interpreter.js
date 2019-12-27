@@ -17,7 +17,7 @@ let MAX_TRY_CATCH = 50; //At default you can only use up to 50 nested Try Catch 
 let MAX_CACHE = 300; //At default you can only use a cache of up to 300 cells.
 let MAX_HEAP_DISPLAY = 2000; //At default you can only graph up to 2000 cells in the heap.
 let MAX_STACK_DISPLAY = 1000; //At default you can only graph up to 1000 cells in the stack.
-let INSTRUCTION_MAX = 50000; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences.
+let INSTRUCTION_MAX = 50000*3; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences.
 let CAP_INSTRUCTION_EXECUTION = true;
 //endregion
 //region Constants for 3D.
@@ -173,7 +173,7 @@ function new_3D_cycle() {
     }catch (e) {
         /*A parse error occurred. We dispose of the error Object and log other properly:*/
         let t = token_tracker.pop();
-        new _3D_Exception(t,"Syntax error. Unexpected symbol: "+t.text,true);
+        new _3D_Exception(t,"Unexpected symbol: "+t.text,true,'Syntactical');
         return true;
     }
     if(reset_IP())return true; //We get the first instruction.
@@ -190,7 +190,6 @@ function reset_IP() {
         new _3D_Exception(null,"NO main method found. could not start code execution.",false);
         return true;
     }
-    temporals['T']=IP;
     $("#Current_Instruction").html(instructions[IP].signature);
 }
 function reset_3D() { //Resets all structures back to default. Must be called before parsing.
@@ -203,6 +202,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     //endregion temporals.clear();
     instructions.clear();
     labels.clear();
+    temporals.clear();
     HEAP = [];
     STACK = [];
     INSTRUCTION_STACK = [];
@@ -220,11 +220,9 @@ function reset_3D() { //Resets all structures back to default. Must be called be
 }
 function increase_IP() {
     IP = find__Next(IP,instructions);
-    temporals['T']=IP;
 }
 function set_IP(index) {
     IP = index;
-    temporals['T']=IP;
 }
 function get_signature(token) {
     let s = "";
@@ -268,14 +266,14 @@ const _3D_Token = function (text, row, col, negative = false) {
   this.col = col;
   this.negative = negative;
 };
-const _3D_Exception = function (token,message,show_position = false) {
+const _3D_Exception = function (token,message,show_position = false,type = 'Runtime') {
    let $row = $("<tr>");
     let $type = $("<td>");
     let $line = $("<td>");
     let $col = $("<td>");
     let $details = $("<td>");
     let $class = $("<td>");
-    $type.html('Runtime');
+    $type.html(type);
     if(show_position){
         $line.html(token.row);
         $col.html(token.col);
@@ -514,6 +512,7 @@ function play_instruction(instruction,debug = false) {
                 return true; //We perform the jump back.
             }else{ //The stack is empty. This can only mean we finished the execution of 3D code.
                 end_3d(true);
+                compiling = false;
                 return false;
             }
             break;

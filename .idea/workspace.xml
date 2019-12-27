@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="" />
+    <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/Fibonacci_3D.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/js/_Y_Compiler_Utility.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_3D_grammar.jison" beforeDir="false" afterPath="$PROJECT_DIR$/_3D_grammar.jison" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/js/_3D_Utility.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Utility.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/js/_3D_grammar.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_grammar.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/auxiliar.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,7 +89,7 @@
       <workItem from="1577407911880" duration="8000" />
       <workItem from="1577417445200" duration="2403000" />
       <workItem from="1577420096649" duration="371000" />
-      <workItem from="1577420545297" duration="1246000" />
+      <workItem from="1577420545297" duration="14295000" />
     </task>
     <servers />
   </component>
