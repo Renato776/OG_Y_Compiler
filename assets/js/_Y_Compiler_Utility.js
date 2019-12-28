@@ -112,6 +112,30 @@ function add_source_tab(source, fileName) {
     mirrors[tabs.length] = mirror;
     current_source_mirror = mirror;
     current_source_tab = tabs.length;
-    archives[file_name] = {mirror:mirror,directory:directory,tab:current_source_tab};
+    let l = file_name.split('/');
+    l = l[l.length-1];
+    archives[file_name] = {mirror:mirror,directory:directory,tab:current_source_tab,name:l};
     tabs[tabs.length] = "ST"+tabs.length;
+}
+function save_file() {
+    if(current_source_mirror == null)return;
+    else {
+        Object.values(archives).forEach(
+            value => {
+                if(value.tab==current_source_tab){
+                    download(value.name,current_source_mirror.getValue());
+                    return;
+                }
+            }
+        );
+    }
+}
+function download(filename, text) {
+    let element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
 }

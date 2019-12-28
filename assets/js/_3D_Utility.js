@@ -191,6 +191,8 @@ function initialize(){
     $("#Classes_Body").empty();
     $("#Classes_Header").empty();
     $("#SYMBOL_TABLE_HEADER").empty();
+    $("#OPTIMIZACION_BODY").empty();
+    $("#OPTIMIZACION_HEADER").empty();
     current_line = null; //We set current_line back to null
     show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S"); //We load default segment
     show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H"); //We load default segment
@@ -206,6 +208,7 @@ function initialize(){
     $("#Folders_Classes_Button").click(show_tab);
     $("#create_folder_button").click(addFolder);
     $("#create_file_button").click(create_file);
+    $("#Guardar_Button").click(save_file);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
 }
