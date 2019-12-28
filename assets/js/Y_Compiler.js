@@ -219,8 +219,10 @@ const Import_Solver = {
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
+        $("#Classes_Header").empty(); //We clear the classes header.
+        $("#Classes_Body").empty(); //We clear the classes body.
         clear_object(classes); //We clear the class list.
-        classes['Object'] = Object_Class;
+        classes['Object'] = Object_Class; //We load the Default Object class. Here we could also load the String Object.
         class_counter = 0;
         selected_class = null;
         this.already_imported.length = 0;
@@ -291,6 +293,7 @@ function compile_source() {
         return;
     }
     let unified_source = $("#Unified_Source").html();
+    download("Unified_Source_Test.txt",unified_source);
     try{
         _Aux_Grammar.parse(unified_source);
     }catch (e) {

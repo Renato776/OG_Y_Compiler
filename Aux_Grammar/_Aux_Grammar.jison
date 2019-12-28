@@ -15,8 +15,8 @@
 (("public"|"private"|"protected")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*      return 'CLASS_DECL';
 "{"										return 'LEFT_BRACE';
 "}"										return 'RIGHT_BRACE';
-"###"[^\r\n]+							{location_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'ANYTHING';}
 "####END"								{location_solver.end_import(yylloc.first_line-1); return 'ANYTHING';}
+"###"[^\r\n]+							{location_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'ANYTHING';}
 
 <<EOF>>                 return 'EOF';
 

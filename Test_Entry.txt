@@ -1,0 +1,66 @@
+/principal/begin.java:
+
+
+import "Functions.java"
+import "UI/Lista.java"
+public class myOwnClass {
+	stuff....
+    .....{}...
+    ...more stuff {} .....
+}
+public class AnotherClass {
+	..random stuff
+    .........more stuff.
+    {}.......
+}
+
+/Main.java:
+
+import "principal/Begin.java"
+public class myClass{
+	public void myFunc(){
+    	if(this!=null)return null;
+        else {
+        	do{
+            	this.list.append(idk);
+            } while(this + 5 > 8);
+            return this;
+        }
+    }
+    public myClass(){
+    	ksdf{
+        } else {
+        	sdfsdf{
+            	;lsdf
+            }
+        }
+    }
+}
+class myOtherClass extends myClass{
+	private void doNothing(){
+    	return stuff;
+    }
+    private myClass(){
+    	this.algo = stuff;
+        this.somethingElse = idk;
+        else {
+     		sdfsdf{};   
+        }
+    }
+}
+
+/principal/Functions.java::
+
+class RandomClass{
+	...Just felt like making....
+    ........A random class......
+    Don't mind me.....
+}
+
+/principal/UI/Lista.java
+
+class YetAnotherClass{
+	..Don't know what...
+    ...Else to write within
+    ....A random __class__ like this.....
+}

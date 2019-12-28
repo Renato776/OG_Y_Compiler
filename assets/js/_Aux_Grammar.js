@@ -596,9 +596,9 @@ case 2:return 7;
 break;
 case 3:return 9;
 break;
-case 4:location_solver.begin_import(aux_token,yy_.yylloc.first_line-1); return 11;
+case 4:location_solver.end_import(yy_.yylloc.first_line-1); return 11;
 break;
-case 5:location_solver.end_import(yy_.yylloc.first_line-1); return 11;
+case 5:location_solver.begin_import(yy_.yytext.trim(),yy_.yylloc.first_line-1); return 11;
 break;
 case 6:return 5;
 break;
@@ -606,7 +606,7 @@ case 7:return 11;
 break;
 }
 },
-rules: [/^(?:((public|private|protected)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+extends[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:((public|private|protected)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:\{)/,/^(?:\})/,/^(?:###[^\r\n]+)/,/^(?:####END\b)/,/^(?:$)/,/^(?:[^])/],
+rules: [/^(?:((public|private|protected)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+extends[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:((public|private|protected)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:\{)/,/^(?:\})/,/^(?:####END\b)/,/^(?:###[^\r\n]+)/,/^(?:$)/,/^(?:[^])/],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7],"inclusive":true}}
 });
 return lexer;
