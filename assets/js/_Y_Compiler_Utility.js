@@ -140,3 +140,11 @@ function download(filename, text) {
     element.click();
     document.body.removeChild(element);
 }
+function clear_object(obj) {
+    Object.keys(obj).forEach(key => {
+        delete obj[key];
+    });
+}
+function isFunction(functionToCheck) {
+    return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+}

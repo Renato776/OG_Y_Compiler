@@ -584,9 +584,6 @@ stateStackSize:function stateStackSize() {
 options: {},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 var YYSTATE=YY_START;
-let aux_token = yy_.yytext;
-aux_token = aux_token.trim();
-if(aux_token!="")location_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 switch($avoiding_name_collisions) {
 case 0: return 10; 
 break;
@@ -596,9 +593,9 @@ case 2:return 7;
 break;
 case 3:return 9;
 break;
-case 4:location_solver.begin_import(aux_token,yy_.yylloc.first_line-1); return 11;
+case 4:location_solver.begin_import(yy_.yy_.yytext.trim(),yy_.yy_.yylloc.first_line-1); return 11;
 break;
-case 5:location_solver.end_import(yy_.yylloc.first_line-1); return 11;
+case 5:location_solver.end_import(yy_.yy_.yylloc.first_line-1); return 11;
 break;
 case 6:return 5;
 break;

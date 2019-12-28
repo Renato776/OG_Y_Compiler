@@ -33,6 +33,11 @@
  * class, if not found will throw an error. You can, however select a class from the class table to use it as the Main method
  * vessel.
  * */
+/**
+ let aux_token = yy_.yytext;
+ aux_token = aux_token.trim();
+ if(aux_token!="")location_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
+ **/
 let _token_tracker = [];
 function _import_exception(message) {
     console.log(message);
@@ -40,6 +45,34 @@ function _import_exception(message) {
 function _log(message) {
     _current_line = new line(message);
     append_to_main_console();
+}
+function class_header() {
+    let $row = $("<tr>");
+    let $location = $("<td>");
+    $location.html('File');
+    let $name = $("<td>");
+    $name.html('Name');
+    let $parent = $("<td>");
+    $parent.html('Parent');
+    $row.append($name);
+    $row.append($parent);
+    $row.append($location);
+    $row.addClass('Class_Header');
+    return $row;
+}
+function select_class(e) {
+    let t = $(e.target)[0];
+    if(t.localName!='td')return; //If it isn't a td the next instructions won't work!
+    t = $(t.parentElement);
+    let target = t.attr('id');
+    if(selected_class == target){
+        selected_class = null;
+        $("#"+t.attr('id')).removeClass('Selected_Class');
+        return;
+    }
+    if(selected_class!=null)$("#"+selected_class).removeClass('Selected_Class');
+    selected_class = target;
+    $("#"+t.attr('id')).addClass('Selected_Class');
 }
 function _pre_compiling_syntactical_error(){
     let t = _token_tracker.pop();
@@ -116,14 +149,31 @@ const location_solver = {
     }
 };
 let class_counter = 0;
-const _class = function (name,parent = null) {
+const _class = function (name,parent = null,location = "Unknown") {
+  class_counter++;
   this.name = name;
   this.id = class_counter;
   this.cc = -1;
-  if(parent!=null)this.sub_class = true;
-  else this.sub_class = false;
-  this.parent = parent;
-  class_counter++;
+  this.sub_class = true; //Even the top most classes are children of Object.
+  if(parent!=null)this.parent = parent;
+  else this.parent = "Object";
+  this.location = location;
+  this.fields = {},
+  this.get_visualization = function(){
+    let $row = $("<tr>");
+    let $name = $("<td>");
+    $name.html(this.name);
+    let $location = $("<td>");
+    $location.html(this.location);
+    let $parent = $("<td>");
+    $parent.html(this.parent);
+    $row.attr("id",this.name);
+    $row.click(select_class);
+    $row.append($name);
+    $row.append($parent);
+    $row.append($location);
+    return $row;
+  };
 };
 const error_entry = function (type,line,col,details,_class,file) {
     let $row = $("<tr>");
@@ -148,7 +198,8 @@ const error_entry = function (type,line,col,details,_class,file) {
     return $row;
 };
 const _pre_compiling_exception = function(message){
-    let $row = new error_entry('Semantic','N/A','N/A',message,'N/A','N/A');
+    let t = _token_tracker.pop();
+    let $row = new error_entry('Semantic',t.row,t.col,message,'N/A',t.file);
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
     this.semantic = true;
@@ -168,8 +219,10 @@ const Import_Solver = {
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
-        classes.clear(); //We clear the class list.
+        clear_object(classes); //We clear the class list.
+        classes['Object'] = Object_Class;
         class_counter = 0;
+        selected_class = null;
         this.already_imported.length = 0;
         this.import_tracker.length = 0;
         let cf = get_current_file();
@@ -220,12 +273,12 @@ function pre_register_class(class_token, sub_class) {
         let name = names[0].trim();
         let parent = names[1].trim();
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
-        classes[name] = new _class(name,parent);
+        classes[name] = new _class(name,parent,_token_tracker[_token_tracker.length-1].file);
         return "\n&&&"+name+"^"+parent+"\n";
     }else{
         let name = class_token.trim();
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
-        classes[name] = new _class(name,null);
+        classes[name] = new _class(name,null,_token_tracker[_token_tracker.length-1].file);
         return "\n&&&"+name+"\n";
     }
 }
@@ -244,5 +297,9 @@ function compile_source() {
         if(!("semantic" in e))_pre_compiling_syntactical_error(); //Syntactical error.
         return;
     }
-    console.log("Registered classes: \n"+$("#Unified_Source").html());
+    $("#Classes_Header").append(class_header());
+    Object.values(classes).forEach(c=>{
+        $("#Classes_Body").append(c.get_visualization());
+    });
+    _log("Pre-Compilation process finished successfully!");
 }
