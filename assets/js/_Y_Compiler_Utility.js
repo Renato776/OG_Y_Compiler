@@ -7,8 +7,12 @@ let current_folder = null;
 let current_class = null;
 let current_source_mirror = null;
 let loading_file_name = null;
+function addFolder() {
+   // $("#folderDialog").show(500);
+    alert("Trying to add a new folder!");
+}
 function getFile(event) {
-    const input = event.target
+    const input = event.target;
     if ('files' in input && input.files.length > 0) {
         loading_file_name = input.files[0].name;
         placeFileContent(input.files[0]);
@@ -22,10 +26,10 @@ function placeFileContent(file) {
 }
 
 function readFileContent(file) {
-    const reader = new FileReader()
+    const reader = new FileReader();
     return new Promise((resolve, reject) => {
-        reader.onload = event => resolve(event.target.result)
-        reader.onerror = error => reject(error)
+        reader.onload = event => resolve(event.target.result);
+        reader.onerror = error => reject(error);
         reader.readAsText(file)
     })
 }

@@ -9,8 +9,6 @@
     <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="assets/css/BasicButton.css">
     <link rel="stylesheet" href="assets/css/jquery.toast.min.css">
-    <link rel="stylesheet" href="assets/css/Accordion-3338arvorept-1.css">
-    <link rel="stylesheet" href="assets/css/Accordion-3338arvorept.css">
 </head>
 
 <body>
@@ -31,7 +29,7 @@
         <button class="btn btn-danger Secondary_Options" id="Optimizacion_Button" style="border: none;width: auto;height: auto;background-color: #face1a;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;" type="button" RValue="OPTIMIZACION">Optimizacion</button>
     </div>
     <div class="col">
-            <button class="btn btn-danger Secondary_Options" id="Folders_Classes_Button" style="border: none;width: auto;height: auto;background-color: #face1a;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;" type="button" RValue="FOLDERS_CLASSES">Folders & Classes</button></div>
+            <button class="btn btn-danger Secondary_Options" id="Folders_Classes_Button" style="border: none;width: auto;height: auto;background-color: #face1a;color: rgb(0,0,0);margin: auto;padding-left: 2.5em;padding-right: 2.5em;" type="button" RValue="FOLDERS_CLASSES">Folders & Classes</button>
     </div>
     </div>
     <div class="row Debug_Container_Hide" id="SYMBOL_TABLE">
@@ -136,15 +134,16 @@
         </div>
     </div>
     <div class="row Debug_Container_Hide" id="FOLDERS_CLASSES">
-    <div class="col">
-        <div class="row">
+        <div class="col">
+            <div class="row">
             <div class="col">
-                <div class="row">
-                    <div class="col FolderHeaderContainer"><button class="btn btn-link border-pretty" id="AddFolderButton" type="button">Add Folder </button></div>
+                <div id="folderDialog">
+                    <input type="text" id="folder_name" name="folder_name" placeholder="principal"></input>
+                    <button type="button" id="create_folder_button">Add Folder</button>
                 </div>
             </div>
-        </div>
-        <div class="row">
+            </div>
+            <div class="row">
             <div class="col">
                 <div class="row">
                     <div class="col Display_Title"><label class="col-form-label Inline_Title Display_Title">Classes</label></div>
@@ -175,8 +174,8 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
-</div>
     <div class="row" id="MAIN">
         <div class="col">
             <div class="row">
@@ -729,8 +728,7 @@ L9:
     </div> 
     </div>
     </div>
-    </div>
-    </div>
+</div>
     <script src="assets/js/jquery.min.js"></script>
     <script src="assets/js/jquery.toast.min.js"></script>
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>

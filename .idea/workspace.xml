@@ -2,10 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/assets/css/Accordion-3338arvorept-1.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/css/Accordion-3338arvorept.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/css/Accordion-3338arvorept-1.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/css/Accordion-3338arvorept.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/css/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/assets/css/styles.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/_3D_Utility.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Utility.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/js/_Y_Compiler_Utility.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_Y_Compiler_Utility.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -85,7 +87,7 @@
       <workItem from="1577407911880" duration="8000" />
       <workItem from="1577417445200" duration="2403000" />
       <workItem from="1577420096649" duration="371000" />
-      <workItem from="1577420545297" duration="17297000" />
+      <workItem from="1577420545297" duration="21530000" />
     </task>
     <servers />
   </component>

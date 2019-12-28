@@ -202,11 +202,6 @@ function initialize(){
     $("#Folders_Classes_Button").click(show_tab);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
-    /*
-    $.toast({
-        text :"Toast messages installed successfully!"
-    });
-    */
 }
 $( document ).ready(function() {
     initialize();
