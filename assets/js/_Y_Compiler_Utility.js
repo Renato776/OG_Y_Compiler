@@ -117,17 +117,18 @@ function add_source_tab(source, fileName) {
     archives[file_name] = {mirror:mirror,directory:directory,tab:current_source_tab,name:l};
     tabs[tabs.length] = "ST"+tabs.length;
 }
+function get_current_file() {
+    let values = Object.values(archives);
+    for(let i = 0; i<values.length; i++){
+        if(values[i].tab==current_source_tab)return values[i];
+    }
+    return null;
+}
 function save_file() {
     if(current_source_mirror == null)return;
     else {
-        Object.values(archives).forEach(
-            value => {
-                if(value.tab==current_source_tab){
-                    download(value.name,current_source_mirror.getValue());
-                    return;
-                }
-            }
-        );
+        let cf = get_current_file();
+        download(cf.name,current_source_mirror.getValue());
     }
 }
 function download(filename, text) {

@@ -8,17 +8,18 @@ function append_to_3D_console(){
     $("#Debug_Console").append(current_line2);
 }
 //endregion
-//region Directives
-let CAP_HEAP = false;
+//region Directives for 3D
+let CAP_HEAP = true;
 let CAP_HEAP_DISPLAY = true;
 let CAP_STACK_DISPLAY = true;
+let CAP_INSTRUCTION_EXECUTION = true;
 let MAX_HEAP = 150000;
-let MAX_TRY_CATCH = 50; //At default you can only use up to 50 nested Try Catch blocks.
 let MAX_CACHE = 300; //At default you can only use a cache of up to 300 cells.
 let MAX_HEAP_DISPLAY = 2000; //At default you can only graph up to 2000 cells in the heap.
 let MAX_STACK_DISPLAY = 1000; //At default you can only graph up to 1000 cells in the stack.
-let INSTRUCTION_MAX = 50000*3; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences.
-let CAP_INSTRUCTION_EXECUTION = true;
+let INSTRUCTION_MAX = 50000*3; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences in a single run.
+let FORCE_ENTRY_PROC = null;
+let FORCE_ENTRY_POINT = null;
 //endregion
 //region Constants for 3D.
 const function_names = []; //This array will always be empty before and after parsing. There's no need to empty it after parsing.
@@ -67,6 +68,7 @@ let CodeMirror_Main = null;
 let CodeMirror_Execute = null;
 let token_tracker = [];
 let current_tab = null;
+let main_file = ""; //This variable should have the name of the file where we started the compilation process.
 //endregion
 //region Global Utility Functions for 3D
 /*

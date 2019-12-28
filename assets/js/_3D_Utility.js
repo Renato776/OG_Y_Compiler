@@ -209,6 +209,7 @@ function initialize(){
     $("#create_folder_button").click(addFolder);
     $("#create_file_button").click(create_file);
     $("#Guardar_Button").click(save_file);
+    $("#Compilar_Main").click(compile_source);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
 }
