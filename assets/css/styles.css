@@ -4,14 +4,21 @@
   color: rgb(19,0,136);
   margin-bottom: 1em;
 }
-#create_folder_button {
+#create_folder_button,#create_file_button {
   border: none;
   font-size: large;
 }
-
-#folderDialog {
+#folderDialog,#create_file_dialog {
   text-align: center;
   background-color: rgb(0,255,240);
+  font-family: serif;
+  padding: 1em 0px;
+  width:100%;
+  margin: auto;
+}
+#create_file_dialog {
+  text-align: center;
+  background-color: lawngreen;
   font-family: serif;
   padding: 1em 0px;
   width:100%;

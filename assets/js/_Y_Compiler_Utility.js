@@ -7,6 +7,10 @@ let current_folder = null;
 let current_class = null;
 let current_source_mirror = null;
 let loading_file_name = null;
+function create_file() {
+    let file_name = $("#file_name").val();
+    add_source_tab("", file_name);
+}
 function select_folder(folder) {
     let selected_folder = folder.target;
     selected_folder = $(selected_folder);
@@ -46,7 +50,7 @@ function getFile(event) {
 
 function placeFileContent(file) {
     readFileContent(file).then(content => {
-        add_source_tab(content);
+        add_source_tab(content,loading_file_name);
     }).catch(error => console.log(error))
 }
 
@@ -68,7 +72,7 @@ function switch_source_tab(tab) {
     current_source_tab = Number(target);
     current_source_mirror = mirrors[current_source_tab];
 }
-function add_source_tab(source) {
+function add_source_tab(source, fileName) {
     /*
     *Every source tab textArea container has ID= ST+tabNo.
     * The textArea itself has ID = Area+tabNo.
@@ -76,6 +80,11 @@ function add_source_tab(source) {
     * This method creates a new tab, and replaces the textArea in there by a code mirror.
     * It also hides any previous tab (if any) And loads the click function to it.
     * */
+    let directory;
+    if(current_folder==null)directory = "/";
+    else directory = current_folder+"/";
+    let file_name = directory+fileName;
+    if(file_name in archives)return; //Already exists another file with same name and same directory.
     if(current_source_tab!=null){
         $("#"+tabs[current_source_tab]).addClass('Debug_Container_Hide');
     }
@@ -91,10 +100,6 @@ function add_source_tab(source) {
         "RValue": ""+tabs.length,
         "type": "button"
     });
-    let directory;
-    if(current_folder==null)directory = "/";
-    else directory = current_folder+"/";
-    let file_name = directory+loading_file_name;
     $tabTitle.append(file_name);
     $tabTitle.click(switch_source_tab);
     $("#Tab_titles").append($tabTitle);

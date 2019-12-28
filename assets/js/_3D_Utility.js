@@ -205,6 +205,7 @@ function initialize(){
     $("#Optimizacion_Button").click(show_tab);
     $("#Folders_Classes_Button").click(show_tab);
     $("#create_folder_button").click(addFolder);
+    $("#create_file_button").click(create_file);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
 }
