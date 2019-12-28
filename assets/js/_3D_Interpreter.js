@@ -7,6 +7,9 @@ function append_to_3D_console(){
     $("#Ejecutar_Console").append(current_line);
     $("#Debug_Console").append(current_line2);
 }
+function append_to_main_console(){
+    $("#Main_Console").append(_current_line);
+}
 //endregion
 //region Directives for 3D
 let CAP_HEAP = true;
@@ -22,6 +25,13 @@ let FORCE_ENTRY_PROC = null;
 let FORCE_ENTRY_POINT = null;
 //endregion
 //region Constants for 3D.
+const classes = {
+    clear:function () {
+        Object.keys(this).forEach(key => {
+            if(key!='clear')delete this[key];
+        });
+    }
+};
 const function_names = []; //This array will always be empty before and after parsing. There's no need to empty it after parsing.
 const instructions = {
     clear:function () {
@@ -63,6 +73,7 @@ let STACK = [];
 let INSTRUCTION_STACK = [];
 let current_line = null;
 let current_line2 = null;
+let _current_line = null;
 let CodeMirror_3D = null;
 let CodeMirror_Main = null;
 let CodeMirror_Execute = null;
@@ -275,6 +286,8 @@ const _3D_Exception = function (token,message,show_position = false,type = 'Runt
     let $col = $("<td>");
     let $details = $("<td>");
     let $class = $("<td>");
+    let $file = $("<td>");
+    $file.html('N/A');
     $type.html(type);
     if(show_position){
         $line.html(token.row);
@@ -291,6 +304,7 @@ const _3D_Exception = function (token,message,show_position = false,type = 'Runt
     $row.append($line);
     $row.append($col);
     $row.append($class);
+    $row.append($file);
     $("#ErrorTableBody").append($row);
     log("An error occurred during code execution. See error tab for details.");
 };
