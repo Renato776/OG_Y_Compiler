@@ -187,6 +187,10 @@ function initialize(){
     $("#Main_Console").empty();
     $("#Current_Instruction").empty();
     $("#ErrorTableBody").empty();
+    $("#SYMBOL_TABLE_BODY").empty();
+    $("#Classes_Body").empty();
+    $("#Classes_Header").empty();
+    $("#SYMBOL_TABLE_HEADER").empty();
     current_line = null; //We set current_line back to null
     show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S"); //We load default segment
     show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H"); //We load default segment
@@ -200,6 +204,7 @@ function initialize(){
     $("#AST_Button").click(show_tab);
     $("#Optimizacion_Button").click(show_tab);
     $("#Folders_Classes_Button").click(show_tab);
+    $("#create_folder_button").click(addFolder);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
 }

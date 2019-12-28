@@ -136,10 +136,12 @@
     <div class="row Debug_Container_Hide" id="FOLDERS_CLASSES">
         <div class="col">
             <div class="row">
-            <div class="col">
-                <div id="folderDialog">
-                    <input type="text" id="folder_name" name="folder_name" placeholder="principal"></input>
-                    <button type="button" id="create_folder_button">Add Folder</button>
+            <div class="col" id="folderContainer">
+                <div class = "row" id="folderDialog">
+                    <div style="margin:auto;">
+                        <input type="text" id="folder_name" name="folder_name" placeholder="principal"></input>
+                        <button type="button" id="create_folder_button">Add Folder</button>
+                    </div>
                 </div>
             </div>
             </div>
@@ -152,13 +154,13 @@
                     <div class="col">
                         <div class="table-responsive">
                             <table class="table">
-                                <thead>
+                                <thead id = "Classes_Header">
                                 <tr>
                                     <th>Column 1</th>
                                     <th>Column 2</th>
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id ="Classes_Body">
                                 <tr>
                                     <td>Cell 1</td>
                                     <td>Cell 2</td>

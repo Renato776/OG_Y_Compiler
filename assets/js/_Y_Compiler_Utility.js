@@ -1,15 +1,40 @@
 const mirrors = [];
 const tabs = [];
-const folders = [];
-const archives = [];
+const folders = {};
+const archives = {};
 let current_source_tab = null;
 let current_folder = null;
 let current_class = null;
 let current_source_mirror = null;
 let loading_file_name = null;
+function select_folder(folder) {
+    let selected_folder = folder.target;
+    selected_folder = $(selected_folder);
+    selected_folder = selected_folder.html();
+    if(current_folder!=null){
+        folders[current_folder].attr("style","background-color:white; color:auto; font-weight:auto;");
+        if(current_folder==selected_folder){
+            current_folder = null;
+            return;
+        }
+    }
+    current_folder = selected_folder;
+    folders[current_folder].attr("style","background-color:#220080; color:white; font-weight; font-weight:bold;");
+}
 function addFolder() {
-   // $("#folderDialog").show(500);
-    alert("Trying to add a new folder!");
+    let folder_name = $("#folder_name").val();
+    folder_name = folder_name.trim();
+    if(folder_name=="")return;
+    let parent;
+    if(current_folder == null)parent = "";
+    else parent = current_folder;
+    folder_name = parent+"/"+folder_name;
+    if(folder_name in folders)return;
+    $folder = $("<div>",{"class":"row","id":folder_name,"style":"background-color:white;"});
+    $folder.append(folder_name);
+    $folder.click(select_folder);
+    $("#folderContainer").append($folder);
+    folders[folder_name] = $folder;
 }
 function getFile(event) {
     const input = event.target;
@@ -66,7 +91,11 @@ function add_source_tab(source) {
         "RValue": ""+tabs.length,
         "type": "button"
     });
-    $tabTitle.append(loading_file_name);
+    let directory;
+    if(current_folder==null)directory = "/";
+    else directory = current_folder+"/";
+    let file_name = directory+loading_file_name;
+    $tabTitle.append(file_name);
     $tabTitle.click(switch_source_tab);
     $("#Tab_titles").append($tabTitle);
     let mirror = CodeMirror.fromTextArea($("#"+"Area"+tabs.length)[0], {
@@ -78,5 +107,6 @@ function add_source_tab(source) {
     mirrors[tabs.length] = mirror;
     current_source_mirror = mirror;
     current_source_tab = tabs.length;
+    archives[file_name] = {mirror:mirror,directory:directory,tab:current_source_tab};
     tabs[tabs.length] = "ST"+tabs.length;
 }
