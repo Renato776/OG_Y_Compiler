@@ -33,6 +33,7 @@
  * class, if not found will throw an error. You can, however select a class from the class table to use it as the Main method
  * vessel.
  * */
+let _token_tracker = [];
 function _import_exception(message) {
     console.log(message);
 }
@@ -40,7 +41,14 @@ function _log(message) {
     _current_line = new line(message);
     append_to_main_console();
 }
-const _token = function (name,col,row,text, format = false, empty = false) {
+function _pre_compiling_syntactical_error(){
+    let t = _token_tracker.pop();
+    if(t == undefined)throw "Fatal ERROR! Somehow managed to throw an exception before any token has been parsed!!";
+    let $row = new error_entry('Syntactical',t.row,t.col,"Unexpected symbol: "+t.text,t._class,t.file);
+    $("#ErrorTableBody").append($row);
+    _log("One or more errors occurred during compilation. See error tab for details.");
+}
+const _token = function (name,col,row,text, _class = "N/A",format = false, empty = false) {
     if(empty){
         this.name = "empty";
         this.text = "";
@@ -55,6 +63,7 @@ const _token = function (name,col,row,text, format = false, empty = false) {
     this.file = location_solver.peek_size_tracker().name;
     if(format) this.text = digest(text);
     else this.text = text;
+    this._class = _class;
 };
 const location_solver = {
     size_tracker:[],
@@ -87,19 +96,23 @@ const location_solver = {
         return res;
     },
     calculate_relative_position:function(position){
-        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2;
+        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -1;
         if(this.size_tracker.length==1)position = position + 1; //True only if I'm importing in main file.
         return position;
     },
     debug:function(name,yytext,yyline,yycolumn){
         this.column = yycolumn;
-
+        this.line = this.calculate_relative_position(yyline);
+        _token_tracker.push(new _token(name,this.column,this.line,yytext));
     },
     initialize: function(){
         this.size_tracker.length = 0;
-        this.imported_text = 0;
+        this.imported_text.length = 0;
         this.column = 0;
         this.line = 0;
+        this.imported_text.push([]); //We add a brand new List to the import scope.
+        let cf = get_current_file();
+        this.size_tracker.push({name:cf.directory+cf.name,location:0});
     }
 };
 let class_counter = 0;
@@ -151,6 +164,7 @@ const Import_Solver = {
     already_imported: [],
     import_tracker:[],
     initialize: function(){
+        _token_tracker = [];
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
@@ -227,7 +241,7 @@ function compile_source() {
     try{
         _Aux_Grammar.parse(unified_source);
     }catch (e) {
-        if(!("semantic" in e))console.log(e); //Syntactical error.
+        if(!("semantic" in e))_pre_compiling_syntactical_error(); //Syntactical error.
         return;
     }
     console.log("Registered classes: \n"+$("#Unified_Source").html());
