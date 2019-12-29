@@ -7,16 +7,16 @@
 
 %%
 
-//STRING REGEX: "\""([^"\""\\]|\\.)*"\""
-//WHITE_SPACE REGEX: [ \r\t]
 /* keywords */
 
 (("public"|"private"|"protected")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+"extends"[ \r\t]+([a-zA-Z]|_)+[0-9]*    { return 'SUB_CLASS_DECL'; }
 (("public"|"private"|"protected")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*      return 'CLASS_DECL';
 "{"										return 'LEFT_BRACE';
 "}"										return 'RIGHT_BRACE';
-"###"[^\r\n]+							{location_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'ANYTHING';}
 "####END"								{location_solver.end_import(yylloc.first_line-1); return 'ANYTHING';}
+"###"[^\r\n]+							{location_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'ANYTHING';}
+[ \r\t]+                                return 'WHITE_SPACE';
+\n                                      return 'NEW_LINE';
 
 <<EOF>>                 return 'EOF';
 
@@ -30,18 +30,27 @@
 
 %% /* Definición de la gramática */
 
-s_0 : program EOF {$("#Unified_Source").html($1);};
+s_0 : program separator EOF {$("#Unified_Source").html($1+$2);};
 
-program : program  CLASS_DECL LEFT_BRACE stmtL RIGHT_BRACE {$$ = $1 + pre_register_class($2,false) + $4 +"\n&&&&END\n";}
-		| program  SUB_CLASS_DECL LEFT_BRACE stmtL RIGHT_BRACE {$$ = $1 + pre_register_class($2,true) + $4 +"\n&&&&END\n";}
-		| program ANYTHING {$$ = $1 + $2;}
-		|/*Empty*/ {$$ = "";}
+program : program  separator CLASS_DECL separator LEFT_BRACE stmtL RIGHT_BRACE
+            {$$ = $1 +$2 + pre_register_class($3,false)+$4 + $6 +"\n&&&&END\n";}
+		| program  separator SUB_CLASS_DECL separator LEFT_BRACE stmtL RIGHT_BRACE
+		    {$$ = $1 +$2 + pre_register_class($3,true)+$4 + $6 +"\n&&&&END\n";}
+		| program  separator ANYTHING {$$ = $1 + $2 + $3;}
+		| /*Empty*/ {$$ = "";}
 		;
-		
+
+separator : separator WHITE_SPACE {$$ = $1+$2;}
+            | separator NEW_LINE {$$ = $1+$2;}
+            | /*Empty*/ {$$ = "";}
+            ;
+
 stmtL : stmtL stmt {$$ = $1 + $2;}
 		| /*Empty*/ {$$ = ""; }
 		;
 
 stmt : ANYTHING {$$ = $1;}
 	| LEFT_BRACE stmtL RIGHT_BRACE {$$ = "{"+$2+"}";}
+	| NEW_LINE { $$ = $1; }
+	| WHITE_SPACE { $$ = $1; }
 	;

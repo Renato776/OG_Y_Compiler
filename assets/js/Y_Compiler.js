@@ -219,6 +219,8 @@ const Import_Solver = {
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
+        $("#Classes_Body").empty();
+        $("#Classes_Header").empty();
         clear_object(classes); //We clear the class list.
         classes['Object'] = Object_Class;
         class_counter = 0;
