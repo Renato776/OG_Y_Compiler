@@ -221,8 +221,8 @@ const Import_Solver = {
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
-        $("#Classes_Header").empty(); //We clear the classes header.
-        $("#Classes_Body").empty(); //We clear the classes body.
+        $("#Classes_Body").empty();
+        $("#Classes_Header").empty();
         clear_object(classes); //We clear the class list.
         classes['Object'] = Object_Class; //We load the Default Object class. Here we could also load the String Object.
         class_counter = 0;
