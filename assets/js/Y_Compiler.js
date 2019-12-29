@@ -38,10 +38,37 @@
  aux_token = aux_token.trim();
  if(aux_token!="")location_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
  **/
+/**
+ * Note:
+ *All declared Arrays will NO longer be completely unique. If two declared array's have
+ * the same dimension and the same true_type, then both will make reference to the same
+ * array type. Info regarding the array size will no longer be handled by the compiler itself.
+ * Therefore all arrays will only hold information needed to check if they're compatible or not.
+ * **/
 let _token_tracker = [];
 let _token_stack = [];
+let SymbolTable = [];
+const native_functions = [];
+const CHAR_ARRAY = 'array|char';
+const INTEGER = 'integer';
+const DOUBLE = 'real';
+const CHAR = 'char';
+const STRING = 'String';
+const BOOLEAN = 'boolean';
+const VOID = 'void';
+const NULL = 'null';
 let class_counter = 0;
 //region Object constructors used for Compilation.
+const _field = function (category,name,visibility,type,owner,index = -1) { //Static fields aren't put here.
+    this.category = category;
+    this.name = name;
+    this.owner = owner;
+    this.inherited = false;
+    this.visibility = visibility;
+    this.type = type;
+    this.index = index;
+    this.offset = -1; //It must be filled externally after loading the field.
+};
 const _class = function (name,parent = null,location = "Unknown") {
     class_counter++;
     this.name = name;
@@ -132,6 +159,31 @@ const _pre_compiling_exception = function(message){
     this.semantic = true;
 };
 //endregion
+function apply_native_functions() {
+    //Fills all native classes with their respective native methods/fields
+    native_functions.forEach(native=>{
+       classes[native.owner].fields[native.name] = native;
+    });
+}
+function load_native_functions() {
+    native_functions.push( new _field('method','equals','public',BOOLEAN,'Object',-1));
+    native_functions.push( new _field('method','getClass','public',STRING,'Object',-1));
+    native_functions.push( new _field('method','toString','public',STRING,'Object',-1));
+    native_functions.push( new _field('method','toCharArray','public',CHAR_ARRAY,'String',-1));
+    native_functions.push( new _field('method','length','public',INTEGER,'String',-1));
+    native_functions.push( new _field('method','toUpperCase','public','String','String',-1));
+    native_functions.push( new _field('method','toLowerCase','public','String','String',-1));
+}
+function compile_native_functions() {
+    /*
+    * This method takes all native functions and implements them in the SymbolTable.
+    * */
+}
+function evaluate_native_functions() {
+    /*
+    * This method takes all native functions and outputs 3D code for each based on the Symbol Table.
+    * */
+}
 function _import_exception(message) {
     console.log(message);
 }
@@ -182,7 +234,6 @@ function _pre_compiling_syntactical_error(e){
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
 }
-
 const Object_Class = {
     name: 'Object',
     id: 0,
@@ -194,7 +245,7 @@ const Object_Class = {
     ancestors:[],
     get_visualization : get_class_visualization
 };
-
+const String_Class = new _class('String','Object','Built-in');
 function get_class_visualization() {
     let $row = $("<tr>");
     let $name = $("<td>");
@@ -280,14 +331,17 @@ const Import_Solver = {
     import_tracker:[],
     initialize: function(){
         _token_tracker = [];
+        SymbolTable = [];
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
         $("#Classes_Body").empty();
         $("#Classes_Header").empty();
         clear_object(classes); //We clear the class list.
-        classes['Object'] = Object_Class; //We load the Default Object class. Here we could also load the String Object.
-        class_counter = 0;
+        classes['Object'] = Object_Class; //We add default Object class.
+        classes['String'] = String_Class; //We add default String class.
+        apply_native_functions(); //We load default fields/methods for the primitive classes.
+        class_counter = 1;
         selected_class = null;
         this.already_imported.length = 0;
         this.import_tracker.length = 0;
@@ -341,12 +395,12 @@ function pre_register_class(class_token, sub_class) {
         let parent = names[1].trim();
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
         classes[name] = new _class(name,parent,_token_tracker[_token_tracker.length-1].file);
-        return "\n&&&"+name+"^"+parent+"\n";
+        return "&&&"+name+"^"+parent;
     }else{
         let name = class_token.trim();
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
         classes[name] = new _class(name,null,_token_tracker[_token_tracker.length-1].file);
-        return "\n&&&"+name+"\n";
+        return "&&&"+name;
     }
 }
 const token_solver = {
@@ -479,7 +533,9 @@ function compile_source() {
         // if(!("semantic" in e))_pre_compiling_syntactical_error(e); //Syntactical error.
         return;
     }
-    let pre_compiled_source = $("#Unified_Source").html();
     prepare_all_classes();
+    let pre_compiled_source = $("#Unified_Source").html();
+    //Compile....
+    compile_native_functions();
     graph_all_classes();
 }

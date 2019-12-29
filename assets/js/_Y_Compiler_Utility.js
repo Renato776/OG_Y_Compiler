@@ -4,7 +4,6 @@ const folders = {};
 const archives = {};
 let current_source_tab = null;
 let current_folder = null;
-let current_class = null;
 let current_source_mirror = null;
 let loading_file_name = null;
 function create_file() {
