@@ -39,6 +39,99 @@
  if(aux_token!="")location_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
  **/
 let _token_tracker = [];
+let _token_stack = [];
+let class_counter = 0;
+//region Object constructors used for Compilation.
+const _class = function (name,parent = null,location = "Unknown") {
+    class_counter++;
+    this.name = name;
+    this.id = class_counter;
+    this.cc = -1;
+    this.sub_class = true; //Even the top most classes are children of Object.
+    if(parent!=null)this.parent = parent;
+    else this.parent = "Object";
+    this.location = location;
+    this.fields = {};
+    this.ancestors = [];
+    this.get_visualization = get_class_visualization;
+};
+const _token = function (name,col,row,text, _class = "N/A",format = false, empty = false) {
+    if(empty){
+        this.name = "empty";
+        this.text = "";
+        this.col = "0";
+        this.row = "0";
+        this.file = "program";
+        return this;
+    }
+    this.name = name;
+    this.col = col;
+    this.row = row;
+    this.file = location_solver.peek_size_tracker().name;
+    if(format) this.text = digest(text);
+    else this.text = text;
+    this._class = _class;
+};
+const Node = function (name) {
+    this.children = [];
+    if(typeof name == "string"){ //Normal constructor
+        this.name = name;
+        this.token = false;
+    }else{ //Leaf constructor (name is actually a token!)
+        this.token = true;
+        this.name = name.name;
+        this.col = name.col;
+        this.row = name.row;
+        this.file = name.file;
+        this.text = name.text;
+        this._class = name._class;
+    }
+    this.add = function (node) {
+        this.children.push(node);
+    };
+    this.fuse = function (node) {
+        node.children.forEach(n=>{
+           this.add(n);
+        });
+    };
+    this.get_token = function () {
+        if(this.token)return this;
+        return this.children[0].get_token();
+    };
+    this.get_visualization = function () {
+      return "Name: "+this.name+" Leaf: "+this.token;
+    };
+};
+const error_entry = function (type,line,col,details,_class,file) {
+    let $row = $("<tr>");
+    let $type = $("<td>");
+    let $line = $("<td>");
+    let $col = $("<td>");
+    let $details = $("<td>");
+    let $class = $("<td>");
+    let $file = $("<td>");
+    $type.html(type);
+    $line.html(line);
+    $col.html(col);
+    $class.html(_class);
+    $details.html(details);
+    $file.html(file);
+    $row.append($type);
+    $row.append($details);
+    $row.append($line);
+    $row.append($col);
+    $row.append($class);
+    $row.append($file);
+    return $row;
+};
+const _pre_compiling_exception = function(message){
+    let t = _token_tracker.pop();
+    let $row = new error_entry('Semantic',t.row,t.col,message,'N/A',t.file);
+    $("#ErrorTableBody").append($row);
+    _log("One or more errors occurred during compilation. See error tab for details.");
+    this.semantic = true;
+};
+//endregion
 function _import_exception(message) {
     console.log(message);
 }
@@ -50,6 +143,10 @@ function class_header() {
     let $row = $("<tr>");
     let $location = $("<td>");
     $location.html('File');
+    let $cc = $("<td>");
+    $cc.html('CC');
+    let $id = $("<td>");
+    $id.html('ID');
     let $name = $("<td>");
     $name.html('Name');
     let $parent = $("<td>");
@@ -57,6 +154,8 @@ function class_header() {
     $row.append($name);
     $row.append($parent);
     $row.append($location);
+    $row.append($cc);
+    $row.append($id);
     $row.addClass('Class_Header');
     return $row;
 }
@@ -81,23 +180,41 @@ function _pre_compiling_syntactical_error(){
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
 }
-const _token = function (name,col,row,text, _class = "N/A",format = false, empty = false) {
-    if(empty){
-        this.name = "empty";
-        this.text = "";
-        this.col = "0";
-        this.row = "0";
-        this.file = "program";
-        return this;
-    }
-    this.name = name;
-    this.col = col;
-    this.row = row;
-    this.file = location_solver.peek_size_tracker().name;
-    if(format) this.text = digest(text);
-    else this.text = text;
-    this._class = _class;
+
+const Object_Class = {
+    name: 'Object',
+    id: 0,
+    cc: 1,
+    sub_class: false,
+    parent: 'N/A',
+    location: 'Built-in',
+    fields:{},
+    ancestors:[],
+    get_visualization : get_class_visualization
 };
+
+function get_class_visualization() {
+    let $row = $("<tr>");
+    let $name = $("<td>");
+    $name.html(this.name);
+    let $location = $("<td>");
+    $location.html(this.location);
+    let $parent = $("<td>");
+    $parent.html(this.parent);
+    let $cc = $("<td>");
+    $cc.html(this.cc);
+    let $id = $("<td>");
+    $id.html(this.id);
+    $row.attr("id", this.name);
+    $row.click(select_class);
+    $row.append($name);
+    $row.append($parent);
+    $row.append($location);
+    $row.append($cc);
+    $row.append($id);
+    return $row;
+}
+
 const location_solver = {
     size_tracker:[],
     imported_text:[],
@@ -148,62 +265,7 @@ const location_solver = {
         this.size_tracker.push({name:cf.directory+cf.name,location:0});
     }
 };
-let class_counter = 0;
-const _class = function (name,parent = null,location = "Unknown") {
-  class_counter++;
-  this.name = name;
-  this.id = class_counter;
-  this.cc = -1;
-  this.sub_class = true; //Even the top most classes are children of Object.
-  if(parent!=null)this.parent = parent;
-  else this.parent = "Object";
-  this.location = location;
-  this.fields = {},
-  this.get_visualization = function(){
-    let $row = $("<tr>");
-    let $name = $("<td>");
-    $name.html(this.name);
-    let $location = $("<td>");
-    $location.html(this.location);
-    let $parent = $("<td>");
-    $parent.html(this.parent);
-    $row.attr("id",this.name);
-    $row.click(select_class);
-    $row.append($name);
-    $row.append($parent);
-    $row.append($location);
-    return $row;
-  };
-};
-const error_entry = function (type,line,col,details,_class,file) {
-    let $row = $("<tr>");
-    let $type = $("<td>");
-    let $line = $("<td>");
-    let $col = $("<td>");
-    let $details = $("<td>");
-    let $class = $("<td>");
-    let $file = $("<td>");
-    $type.html(type);
-    $line.html(line);
-    $col.html(col);
-    $class.html(_class);
-    $details.html(details);
-    $file.html(file);
-    $row.append($type);
-    $row.append($details);
-    $row.append($line);
-    $row.append($col);
-    $row.append($class);
-    $row.append($file);
-    return $row;
-};
-const _pre_compiling_exception = function(message){
-    let t = _token_tracker.pop();
-    let $row = new error_entry('Semantic',t.row,t.col,message,'N/A',t.file);
-    $("#ErrorTableBody").append($row);
-    _log("One or more errors occurred during compilation. See error tab for details.");
-    this.semantic = true;
-};
+
 function digest(string) { //We scape the characters (if any)
     return string.replace('\\n','\n')
         .replace('\\\\','\\')
@@ -284,6 +346,119 @@ function pre_register_class(class_token, sub_class) {
         return "\n&&&"+name+"\n";
     }
 }
+const token_solver = {
+    size_tracker:[],
+    imported_text:[],
+    class_tracker:[],
+    column: 0,
+    line: 0,
+    peek_size_tracker: function () {
+        return this.size_tracker[this.size_tracker.length-1];
+    },
+    peek_imported_text: function(){
+        return this.imported_text[this.imported_text.length-1];
+    },
+    begin_import:function(token,line){
+        token = token.trim();
+        token = token.substring(3); //We get the name of the file.
+        this.imported_text.push([]); //We add a brand new List to the import scope.
+        this.size_tracker.push({name:token,location:line});
+    },
+    end_import: function(line){
+        let import_size = line - this.peek_size_tracker().location;
+        this.imported_text.pop(); //We dismiss this import's size.
+        this.peek_imported_text().push(import_size); //We add the size of the evaluated import to the parent tracker.
+        this.size_tracker.pop(); //We dismiss the old import.
+    },
+    get_previous_imports_size:function(){
+        let res = 0;
+        this.peek_imported_text().forEach(size=>{
+            res += size;
+        });
+        return res;
+    },
+    begin_class:function(token){
+        token = token.substring(3); //We remove the Ampersands
+        let tokens = token.split('^'); //We get the name and the parent's name.
+        if(tokens.length==2)if(!(tokens[1] in classes))
+            throw new _pre_compiling_exception("Parent Class: "+tokens[1]+" Does NOT exist. Compilation failed.");
+        this.class_tracker.push(tokens[0]); //We push the name of the class
+    },
+    end_class:function(){
+      this.class_tracker.pop();
+    },
+    calculate_relative_position:function(position){
+        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -3;
+        if(this.size_tracker.length==1)position = position + 1; //True only if I'm importing in main file.
+        return position;
+    },
+    peek_class_tracker:function(){
+        return this.class_tracker[this.class_tracker.length-1];
+    },
+    debug:function(yytext,yyline,yycolumn){
+        this.column = yycolumn;
+        this.line = this.calculate_relative_position(yyline);
+        _token_tracker.push(new _token('token',this.column,this.line,yytext,this.peek_class_tracker()));
+    },
+    peek_token_tracker : function(){
+      return _token_tracker[_token_tracker.length-1];
+    },
+    register_important_token:function(name){
+        let t = this.peek_token_tracker();
+        if(name=='string'||name=='char')t.text = digest(t.text);
+        t.name = name;
+        _token_stack.push(t);
+    },
+    initialize:function () {
+        this.line = 0;
+        this.column = 0;
+        this.class_tracker = [];
+        this.imported_text = [];
+        this.size_tracker = [];
+        _token_stack = [];
+        _token_tracker = [];
+    }
+};
+function graph_all_classes() {
+    $("#Classes_Header").append(class_header());
+    Object.values(classes).forEach(c=>{
+        $("#Classes_Body").append(c.get_visualization());
+    });
+}
+function prepare_all_classes() {
+    /*
+    * This function prepares all classes for them to be ready when SymbolTable compilation starts.
+    * By preparing all classes I mean: Give all classes an appropriate CC. Also, giving all classes
+    * a list of ancestors. Object has an empty list and the rest must have at least Object as an ancestor in the list.
+    * Also at this point all references to parent are valid references. References to non-existant parents have
+    * been alerted and removed at this point.
+    * */
+    //1) Fill the ancestor list for every class.
+    let cs = Object.values(classes);
+    for(let i = 1; i< cs.length;i++){ //We start at 1 to skip Object class.
+        let c = cs[i];
+        let parent = classes[c.parent];
+        while(parent.sub_class){
+            c.ancestors.push(parent);
+            parent = classes[parent.parent];
+        }
+        c.ancestors.push(classes['Object']); //Object is always an ancestor and always goes at the end.
+    }
+    //2) Order the classes by descendant depth (Object goes first at 0, superior classes goes second at 1 first children second at 2 and so on.
+    let ordered = sorting.mergeSort(Object.values(classes),compare_classes_by_level);
+    let isFirst = true;
+    let nextPrime = 2;
+    ordered.forEach(c=>{
+        if(!isFirst){
+            if(c.ancestors.length==1){ //Only one ancestor: The Object class.
+                nextPrime = getNextPrime(nextPrime);
+                c.cc = nextPrime;
+            }else{ //Two or more ancestors:
+                c.cc = classes[c.parent].cc*2;
+            }
+        }else isFirst = false;
+    });
+}
 function compile_source() {
     if(current_source_mirror==null)return; //There's nothing to compile in the first place.
     Import_Solver.initialize();
@@ -299,9 +474,7 @@ function compile_source() {
         if(!("semantic" in e))_pre_compiling_syntactical_error(); //Syntactical error.
         return;
     }
-    $("#Classes_Header").append(class_header());
-    Object.values(classes).forEach(c=>{
-        $("#Classes_Body").append(c.get_visualization());
-    });
-    _log("Pre-Compilation process finished successfully!");
+    let pre_compiled_source = $("#Unified_Source").html();
+    prepare_all_classes();
+    graph_all_classes();
 }

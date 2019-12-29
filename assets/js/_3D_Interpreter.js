@@ -26,30 +26,6 @@ let FORCE_ENTRY_POINT = null;
 let selected_class = null;
 //endregion
 //region Constants for 3D.
-const Object_Class = {
-    name: 'Object',
-    id: 0,
-    cc: 1,
-    sub_class: false,
-    parent: 'N/A',
-    location: 'Built-in',
-    fields:{},
-    get_visualization : function(){
-    let $row = $("<tr>");
-    let $name = $("<td>");
-    $name.html(this.name);
-    let $location = $("<td>");
-    $location.html(this.location);
-    let $parent = $("<td>");
-    $parent.html(this.parent);
-    $row.attr("id",this.name);
-    $row.click(select_class);
-    $row.append($name);
-    $row.append($parent);
-    $row.append($location);
-    return $row;
-    }
-};
 const classes = {};
 const function_names = []; //This array will always be empty before and after parsing. There's no need to empty it after parsing.
 const instructions = {
