@@ -173,6 +173,7 @@ function stop_3D(){ //Resets execution.
 //endregion
 //region On document ready.
 function initialize(){
+    load_native_functions();
     $("#Iniciar_3D").click(begin_3D);
     $("#Siguiente_3D").click(next_3D);
     $("#Saltar_3D").click(jump_3D);

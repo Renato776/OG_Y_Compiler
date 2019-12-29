@@ -87,10 +87,10 @@ case 1:
 $("#Unified_Source").html($$[$0-2]+$$[$0-1]);
 break;
 case 2:
-this.$ = $$[$0-6] +$$[$0-5] + pre_register_class($$[$0-4],false)+$$[$0-3] + $$[$0-1] +"\n&&&&END\n";
+this.$ = $$[$0-6] +$$[$0-5] + pre_register_class($$[$0-4],false)+$$[$0-3] + $$[$0-1] +"&&&&END";
 break;
 case 3:
-this.$ = $$[$0-6] +$$[$0-5] + pre_register_class($$[$0-4],true)+$$[$0-3] + $$[$0-1] +"\n&&&&END\n";
+this.$ = $$[$0-6] +$$[$0-5] + pre_register_class($$[$0-4],true)+$$[$0-3] + $$[$0-1] +"&&&&END";
 break;
 case 4:
 this.$ = $$[$0-2] + $$[$0-1] + $$[$0];
