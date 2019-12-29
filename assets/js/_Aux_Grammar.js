@@ -72,45 +72,24 @@
   }
 */
 var _Aux_Grammar = (function(){
-var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[5,6,10,11],$V1=[7,9,11],$V2=[2,7],$V3=[1,14],$V4=[1,13];
+var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[5,10,11,12,13,14,15],$V1=[7,9,10,13,15],$V2=[2,13],$V3=[1,20],$V4=[1,19],$V5=[1,21],$V6=[1,22];
 var parser = {trace: function trace () { },
 yy: {},
-symbols_: {"error":2,"s_0":3,"program":4,"EOF":5,"CLASS_DECL":6,"LEFT_BRACE":7,"stmtL":8,"RIGHT_BRACE":9,"SUB_CLASS_DECL":10,"ANYTHING":11,"stmt":12,"$accept":0,"$end":1},
-terminals_: {2:"error",5:"EOF",6:"CLASS_DECL",7:"LEFT_BRACE",9:"RIGHT_BRACE",10:"SUB_CLASS_DECL",11:"ANYTHING"},
-productions_: [0,[3,2],[4,5],[4,5],[4,2],[4,0],[8,2],[8,0],[12,1],[12,3]],
+symbols_: {"error":2,"s_0":3,"program":4,"EOF":5,"CLASS_DECL":6,"LEFT_BRACE":7,"stmtL":8,"RIGHT_BRACE":9,"ANYTHING":10,"IMPORT_END":11,"IMPORT_START":12,"ID":13,"CLASS":14,"VISIBILITY":15,"EXTENDS":16,"stmt":17,"$accept":0,"$end":1},
+terminals_: {2:"error",5:"EOF",7:"LEFT_BRACE",9:"RIGHT_BRACE",10:"ANYTHING",11:"IMPORT_END",12:"IMPORT_START",13:"ID",14:"CLASS",15:"VISIBILITY",16:"EXTENDS"},
+productions_: [0,[3,2],[4,5],[4,2],[4,2],[4,2],[4,2],[4,0],[6,2],[6,3],[6,4],[6,5],[8,2],[8,0],[17,1],[17,3],[17,1],[17,1]],
 performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
 /* this == yyval */
 
 var $0 = $$.length - 1;
 switch (yystate) {
 case 1:
-$("#Unified_Source").html($$[$0-1]);
-break;
-case 2:
-this.$ = $$[$0-4] + pre_register_class($$[$0-3],false) + $$[$0-1] +"\n&&&&END\n";
-break;
-case 3:
-this.$ = $$[$0-4] + pre_register_class($$[$0-3],true) + $$[$0-1] +"\n&&&&END\n";
-break;
-case 4: case 6:
-this.$ = $$[$0-1] + $$[$0];
-break;
-case 5:
-this.$ = "";
-break;
-case 7:
-this.$ = ""; 
-break;
-case 8:
-this.$ = $$[$0];
-break;
-case 9:
-this.$ = "{"+$$[$0-1]+"}";
+console.log('Parsed successfully!');
 break;
 }
 },
-table: [o($V0,[2,5],{3:1,4:2}),{1:[3]},{5:[1,3],6:[1,4],10:[1,5],11:[1,6]},{1:[2,1]},{7:[1,7]},{7:[1,8]},o($V0,[2,4]),o($V1,$V2,{8:9}),o($V1,$V2,{8:10}),{7:$V3,9:[1,11],11:$V4,12:12},{7:$V3,9:[1,15],11:$V4,12:12},o($V0,[2,2]),o($V1,[2,6]),o($V1,[2,8]),o($V1,$V2,{8:16}),o($V0,[2,3]),{7:$V3,9:[1,17],11:$V4,12:12},o($V1,[2,9])],
-defaultActions: {3:[2,1]},
+table: [o($V0,[2,7],{3:1,4:2}),{1:[3]},{5:[1,3],6:4,10:[1,5],11:[1,6],12:[1,7],13:[1,8],14:[1,9],15:[1,10]},{1:[2,1]},{7:[1,11]},o($V0,[2,3]),o($V0,[2,4]),o($V0,[2,5]),o($V0,[2,6]),{13:[1,12]},{14:[1,13]},o($V1,$V2,{8:14}),{7:[2,8],16:[1,15]},{13:[1,16]},{7:$V3,9:[1,17],10:$V4,13:$V5,15:$V6,17:18},{13:[1,23]},{7:[2,9],16:[1,24]},o($V0,[2,2]),o($V1,[2,12]),o($V1,[2,14]),o($V1,$V2,{8:25}),o($V1,[2,16]),o($V1,[2,17]),{7:[2,10]},{13:[1,26]},{7:$V3,9:[1,27],10:$V4,13:$V5,15:$V6,17:18},{7:[2,11]},o($V1,[2,15])],
+defaultActions: {3:[2,1],23:[2,10],26:[2,11]},
 parseError: function parseError (str, hash) {
     if (hash.recoverable) {
         this.trace(str);
@@ -584,30 +563,31 @@ stateStackSize:function stateStackSize() {
 options: {},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 var YYSTATE=YY_START;
-let aux_token = yy_.yytext;
-aux_token = aux_token.trim();
-if(aux_token!="")location_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 switch($avoiding_name_collisions) {
-case 0: return 10; 
+case 0:return 16;
 break;
-case 1:return 6;
+case 1:return 14;
 break;
-case 2:return 7;
+case 2:return 15;
 break;
-case 3:return 9;
+case 3:return 7;
 break;
-case 4:location_solver.end_import(yy_.yylloc.first_line-1); return 11;
+case 4:return 9;
 break;
-case 5:location_solver.begin_import(yy_.yytext.trim(),yy_.yylloc.first_line-1); return 11;
+case 5:return 11;
 break;
-case 6:return 5;
+case 6:return 12;
 break;
-case 7:return 11;
+case 7:return 13;
+break;
+case 8:return 5;
+break;
+case 9:return 10;
 break;
 }
 },
-rules: [/^(?:((public|private|protected)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+extends[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:((public|private|protected)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:\{)/,/^(?:\})/,/^(?:####END\b)/,/^(?:###[^\r\n]+)/,/^(?:$)/,/^(?:[^])/],
-conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7],"inclusive":true}}
+rules: [/^(?:extends\b)/,/^(?:class\b)/,/^(?:public\b)/,/^(?:\{)/,/^(?:\})/,/^(?:####END\b)/,/^(?:###[^\r\n]+)/,/^(?:([a-zA-Z]|_)+[0-9]*\b)/,/^(?:$)/,/^(?:[^])/],
+conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9],"inclusive":true}}
 });
 return lexer;
 })();

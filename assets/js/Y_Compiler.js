@@ -74,8 +74,10 @@ function select_class(e) {
     selected_class = target;
     $("#"+t.attr('id')).addClass('Selected_Class');
 }
-function _pre_compiling_syntactical_error(){
-    let t = _token_tracker.pop();
+function _pre_compiling_syntactical_error(e){
+    //let t = _token_tracker.pop();
+    console.log(e);
+    return;
     if(t == undefined)throw "Fatal ERROR! Somehow managed to throw an exception before any token has been parsed!!";
     let $row = new error_entry('Syntactical',t.row,t.col,"Unexpected symbol: "+t.text,t._class,t.file);
     $("#ErrorTableBody").append($row);
@@ -264,6 +266,7 @@ const Import_Solver = {
     }
 };
 function pre_register_class(class_token, sub_class) {
+    return class_token+"Changed";web
     class_token = class_token.replace('protected','')
         .replace('public','')
         .replace('private','')
@@ -293,11 +296,12 @@ function compile_source() {
         return;
     }
     let unified_source = $("#Unified_Source").html();
-    download("Unified_Source_Test.txt",unified_source);
+   // download("Unified_Source_Test.txt",unified_source);
     try{
         _Aux_Grammar.parse(unified_source);
     }catch (e) {
-        if(!("semantic" in e))_pre_compiling_syntactical_error(); //Syntactical error.
+        console.log(e);
+        // if(!("semantic" in e))_pre_compiling_syntactical_error(e); //Syntactical error.
         return;
     }
     $("#Classes_Header").append(class_header());
