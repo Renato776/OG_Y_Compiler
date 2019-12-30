@@ -9,6 +9,16 @@
 
 %%
 
+"#UNCAP_HEAP"									{CAP_HEAP = false; }
+"#UNCAP_HEAP_DISPLAY"							{CAP_HEAP_DISPLAY = false;}
+"#UNCAP_STACK_DISPLAY"							{CAP_STACK_DISPLAY = false;}
+"#UNCAP_INSTRUCTION_EXECUTION"					{CAP_INSTRUCTION_EXECUTION = false;}
+"#MAX_HEAP"[ \r\t]+[0-9]+ 						{MAX_HEAP = Number(yytext.substring(9).trim());}
+"#MAX_HEAP_DISPLAY"[ \r\t]+[0-9]+ 				{MAX_HEAP_DISPLAY = Number(yytext.substring(17).trim());}
+"#MAX_STACK_DISPLAY"[ \r\t]+[0-9]+ 				{MAX_STACK_DISPLAY = Number(yytext.substring(18).trim());}
+"#MAX_INSTRUCTION"[ \r\t]+[0-9]+ 				{INSTRUCTION_MAX = Number(yytext.substring(16).trim());}
+"#FORCE_ENTRY_PROC"[ \r\t]+([a-zA-Z]|_)+[0-9]*	{FORCE_ENTRY_PROC=yytext.substring(17).trim();}
+"#FORCE_ENTRY_POINT"[ \r\t]+[0-9]+				{FORCE_ENTRY_POINT=yytext.substring(17).trim();}
 ";".*              {/*ignore*/}
 "proc"           return 'PROC';
 "{"           return 'LEFT_BRACE';

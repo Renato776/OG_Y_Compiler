@@ -17,7 +17,6 @@ let CAP_HEAP_DISPLAY = true;
 let CAP_STACK_DISPLAY = true;
 let CAP_INSTRUCTION_EXECUTION = true;
 let MAX_HEAP = 150000;
-let MAX_CACHE = 300; //At default you can only use a cache of up to 300 cells.
 let MAX_HEAP_DISPLAY = 2000; //At default you can only graph up to 2000 cells in the heap.
 let MAX_STACK_DISPLAY = 1000; //At default you can only graph up to 1000 cells in the stack.
 let INSTRUCTION_MAX = 50000*3; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences in a single run.
