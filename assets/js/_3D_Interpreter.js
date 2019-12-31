@@ -269,7 +269,7 @@ function log(message) {
 //region Object constructors for 3D code.
 const _3D_Token = function (text, row, col, negative = false) {
   this.text = text;
-  this.row = row;
+  this.row = row - 1;
   this.col = col;
   this.negative = negative;
 };

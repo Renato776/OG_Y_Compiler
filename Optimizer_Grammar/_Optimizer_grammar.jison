@@ -99,7 +99,7 @@ labelList:
     $$ = $1+$2+":";
     }
     |LABEL DOSPUNTOS {
-    $$ = $1":";
+    $$ = $1+":";
     Optimizer.label_stack.push($1);
     }
     ;
@@ -138,16 +138,16 @@ standard: ID ASIGNACION value SUM value {
         $$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$3,$3,$5,'+',$1)); //name,token,a,b,op,c
         }
         | ID ASIGNACION value MINUS value {
-       	$$ = Optimizer.resolve_arithmetic_reduction("standard",$3,$3,$5,'-',$1)); //name,token,a,b,op,c
+       	$$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$3,$3,$5,'-',$1)); //name,token,a,b,op,c
         }
         | ID ASIGNACION value MULTIPLY value {
-       	$$ = Optimizer.resolve_arithmetic_reduction("standard",$3,$3,$5,'*',$1)); //name,token,a,b,op,c
+       	$$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$3,$3,$5,'*',$1)); //name,token,a,b,op,c
         }
         | ID ASIGNACION value DIVIDE value {
-        $$ = Optimizer.resolve_arithmetic_reduction("standard",$3,$3,$5,'/',$1)); //name,token,a,b,op,c
+        $$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$3,$3,$5,'/',$1)); //name,token,a,b,op,c
         }
         | ID ASIGNACION value MOD value {
-        $$ = Optimizer.resolve_arithmetic_reduction("standard",$3,$3,$5,'%',$1)); //name,token,a,b,op,c where c is text not a token
+        $$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$3,$3,$5,'%',$1)); //name,token,a,b,op,c where c is text not a token
         }
         ;
 
@@ -194,6 +194,7 @@ goto : GOTO LABEL {
         $$ = new Instruction("goto",new _3D_Token($2,@2.first_line,@2.first_column),$2);
         Optimizer.goto_started = true;
         Optimizer.instruction_stack.push($$);
+        Optimizer.label_stack = [];
         };
 
 call : CALL ID {

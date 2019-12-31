@@ -78,22 +78,22 @@ inicio : InstrL EOF {};
 
 InstrL:
 	 InstrL Instr {
-	  instructions[$2.token.row-1] = $2;
+	  instructions[$2.token.row] = $2;
 	  }
 	| Instr {
-	 instructions[$1.token.row-1] = $1; //Register Instruction in the Instruction List.
+	 instructions[$1.token.row] = $1; //Register Instruction in the Instruction List.
 	 }
 ;
 
 Instr:
     labelList stmt {
      $1.forEach(label=>{
-     labels[label.text] = $2.token.row-1; //We register the labels.
+     labels[label.text] = $2.token.row; //We register the labels.
      });
      $$ = $2;
      }
     |procDef stmt {
-    labels[$1.text] = $2.token.row-1; //We register the proc
+    labels[$1.text] = $2.token.row; //We register the proc
     $$ = $2;
     }
     |stmt { $$ = $1; }
