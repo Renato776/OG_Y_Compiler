@@ -273,7 +273,7 @@ const _3D_Token = function (text, row, col, negative = false) {
   this.col = col;
   this.negative = negative;
 };
-const _3D_Exception = function (token,message,show_position = false,type = 'Runtime') {
+const _3D_Exception = function (token,message,show_position = false,type = 'Runtime',optimizing=false) {
    let $row = $("<tr>");
     let $type = $("<td>");
     let $line = $("<td>");
@@ -300,7 +300,9 @@ const _3D_Exception = function (token,message,show_position = false,type = 'Runt
     $row.append($class);
     $row.append($file);
     $("#ErrorTableBody").append($row);
-    log("An error occurred during code execution. See error tab for details.");
+    if(optimizing){
+        $("#Optimized_code").html('An error has occurred during optimization. See error tab for details.');
+    }else log("An error occurred during code execution. See error tab for details.");
 };
 const Instruction = function (name,token,param1=null,param2=null,param3=null,param4=null) {
     this.name = name;

@@ -4,6 +4,7 @@ const Optimizer = {
     label_stack : [],
     goto_started:false,
     initialize:function(){
+        token_tracker = [];
         this.instruction_stack = [];
         this.unused_instructions = [];
         this.label_stack = [];
@@ -18,10 +19,12 @@ const Optimizer = {
         let $result = $("<td>");
         $rule.html(rule);
         $details.html(details);
+        $details.addClass('Optimized_cell')
         $result.html(result);
         $row.append($rule);
         $row.append($details);
         $row.append($result);
+        $row.addClass('Optimized_field');
         $("#OPTIMIZACION_BODY").append($row);
     },
     load_optimization_header : function(){
@@ -151,12 +154,6 @@ const Optimizer = {
         let top = this.instruction_stack.pop();
         if(bottom==undefined)return;
         if(top==undefined){this.instruction_stack.push(bottom);return;}
-        if(top.signature==bottom.signature){ //Both are exactly the same instruction, one can be removed.
-            this.instruction_stack.push(top);
-            this.log_optimization('Eliminacion de instrucciones redundantes',top.token.row+")"+top.signature+"<br>"
-            +bottom.token.row+")"+bottom.signature,'Ambas instrucciones son identicas. Se ha removido una.');
-            return;
-        }
         if(top.name == 'standard'&&bottom.name == 'standard'||
             (top.name=='GET_HEAP'&&bottom.name=='SET_HEAP')||
             (top.name=='GET_STACK'&&bottom.name=='SET_STACK')||
@@ -175,8 +172,7 @@ const Optimizer = {
                         isNaN(a)&&isNaN(b)||
                         !isNaN(aa)&&!isNaN(bb)||
                         !isNaN(a)&&!isNaN(b)||
-                        !(top.op=='+'&&bottom.op=='-')||
-                        !(top.op=='-'&&bottom.op=='+')){ //None of this scenarios can be reduced.
+                        !(top.op=='+'&&bottom.op=='-'||top.op=='-'&&bottom.op=='+')){ //None of this scenarios can be reduced.
                         this.instruction_stack.push(top);
                         this.instruction_stack.push(bottom);
                         return;
@@ -189,19 +185,27 @@ const Optimizer = {
                         let info = top.token.row+")"+top.signature+"<br>"+
                         bottom.token.row+")"+bottom.signature;
                         this.log_optimization('Eliminacion de instrucciones redundantes',info,'Ambas instrucciones han sido removidas.');
+                        if(top.signature.includes('proc')){
+                            //The top instruction is an anchor for a proc definition. If we remove it
+                            //we break the whole code.
+                            //Therefore we must keep the proc definition and discard the rest.
+                            top.signature = top.signature.slice(0,top.signature.indexOf('{')+1);
+                            this.instruction_stack.push(top);
+                        }
                         return;
                     }
                 }
             }else if ((top.name=='GET_HEAP'&&bottom.name=='SET_HEAP')|| (top.name=='GET_STACK'&&bottom.name=='SET_STACK')){
                 if(top.address==bottom.address&&top.vessel==bottom.value.text){
                     //The addresses are the same and the value is the same as the vessel, therefore the second instruction is redundant.
+                    this.instruction_stack.push(top);
                     let info = top.token.row+")"+top.signature+"<br>"+
                         bottom.token.row+")"+bottom.signature;
                     this.log_optimization('Eliminacion de instrucciones redundantes de carga & almacenamiento',info,'La segunda instruccion es redundante y ha sido removida.');
                     return;
                 }
             }else if(top.name=='assignation'&&bottom.name=='assignation'){
-                if(top.vessel==bottom.value.text&&bottom.vessel==top.value.text){
+                if(top.vessel==bottom.value.text&&bottom.vessel==top.value.text||top.signature==bottom.signature){
                     //Redundant assignation.
                     this.instruction_stack.push(top);
                     this.log_optimization('Eliminacion de instrucciones redundantes',
@@ -231,6 +235,8 @@ function Optimize() {
     try{
         _Optimizer_grammar.parse(unOptimizedCode);
     }catch (e) {
-        console.log(e);
+        $("#Optimized_code").empty();
+        let t = token_tracker.pop();
+        new _3D_Exception(t,"Unexpected symbol: "+t.text,true,'Syntactical',true);
     }
 }

@@ -16,6 +16,17 @@
   width:100%;
   margin: auto;
 }
+.Optimized_field {
+  text-align: justify;
+}
+.Optimized_field td{
+  border-color: aquamarine;
+  border:solid;
+}
+.Optimized_cell {
+  /*border-color: aquamarine;*/
+  /*border:solid;*/
+}
 .Selected_Class{
   background: #24ff00;
 }
