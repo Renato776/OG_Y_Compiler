@@ -9,8 +9,8 @@
 
 /* keywords */
 
-(("public"|"private"|"protected")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+"extends"[ \r\t]+([a-zA-Z]|_)+[0-9]*    { return 'SUB_CLASS_DECL'; }
-(("public"|"private"|"protected")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*      return 'CLASS_DECL';
+(("public"|"private"|"protected")[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+"extends"[ \r\t]+([a-zA-Z]|_)+[0-9]*    { return 'SUB_CLASS_DECL'; }
+(("public"|"private"|"protected")[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*      return 'CLASS_DECL';
 "{"										return 'LEFT_BRACE';
 "}"										return 'RIGHT_BRACE';
 "####END"								{location_solver.end_import(yylloc.first_line-1); return 'ANYTHING';}
