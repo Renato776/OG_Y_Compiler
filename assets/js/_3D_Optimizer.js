@@ -8,6 +8,8 @@ const Optimizer = {
         this.unused_instructions = [];
         this.label_stack = [];
         this.goto_started = false;
+        $("#OPTIMIZACION_BODY").empty();
+        $("#OPTIMIZACION_HEADER").empty();
     },
     log_optimization : function(rule,details,result){
         let $row = $("<tr>");
@@ -22,6 +24,20 @@ const Optimizer = {
         $row.append($result);
         $("#OPTIMIZACION_BODY").append($row);
     },
+    load_optimization_header : function(){
+      let $row = $("<tr>");
+      let $rule = $("<td>");
+      let $details = $("<td>");
+      let $result = $("<td>");
+      $rule.html('Regla');
+      $details.html('Detalles');
+      $result.html('Resultado');
+      $row.append($rule);
+      $row.append($details);
+      $row.append($result);
+      $row.addClass('Class_Header');
+      $("#OPTIMIZACION_HEADER").append($row);
+    },
     peek_instruction_stack :function () {
         return this.instruction_stack[this.instruction_stack.length-1];
     },
@@ -35,6 +51,7 @@ const Optimizer = {
     },
     resolve_unreachable_code :function () {
         //Dispose of all elements in the unused instruction stack and log details regarding the operation.
+        this.unused_instructions = this.unused_instructions.slice(1); //We remove the 0 entry as it is the same goto that started the block.
         if(this.unused_instructions.length==0)return; //There's nothing to be done, code is already optimized.
         let info = "";
         this.unused_instructions.forEach(instr=>{
@@ -84,6 +101,8 @@ const Optimizer = {
             }
             optimized = new Instruction('assignation',instruction.token,instruction.c,new _3D_Token(r,
                 instruction.token.row,instruction.token.col));
+        }else{
+            return instruction; //Else it can't be optimized.
         }
         this.log_optimization('Simplificacion Algebraica',
             instruction.token.row+")"+instruction.signature,optimized.token.row+")"+optimized.signature);
@@ -199,11 +218,11 @@ const Optimizer = {
         /*
         * This method takes the instruction stack and outputs the 3D represantation.
         * */
+        this.load_optimization_header();
         this.instruction_stack.forEach(i=>{
            $("#Optimized_code").append(i.signature+" <br> ");
         });
         $("#Optimized_code").removeClass('Debug_Container_Hide');
-        console.log($("#Optimized_code").val());
     }
 };
 function Optimize() {

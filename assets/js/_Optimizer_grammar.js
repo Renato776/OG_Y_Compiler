@@ -121,7 +121,7 @@ case 8:
 break;
 case 9:
 
-    this.$ = $$[$0-1]":";
+    this.$ = $$[$0-1]+":";
     Optimizer.label_stack.push($$[$0-1]);
     
 break;
@@ -150,22 +150,22 @@ case 27:
 break;
 case 28:
 
-       	this.$ = Optimizer.resolve_arithmetic_reduction("standard",$$[$0-2],$$[$0-2],$$[$0],'-',$$[$0-4])); //name,token,a,b,op,c
+       	this.$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$$[$0-2],$$[$0-2],$$[$0],'-',$$[$0-4])); //name,token,a,b,op,c
         
 break;
 case 29:
 
-       	this.$ = Optimizer.resolve_arithmetic_reduction("standard",$$[$0-2],$$[$0-2],$$[$0],'*',$$[$0-4])); //name,token,a,b,op,c
+       	this.$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$$[$0-2],$$[$0-2],$$[$0],'*',$$[$0-4])); //name,token,a,b,op,c
         
 break;
 case 30:
 
-        this.$ = Optimizer.resolve_arithmetic_reduction("standard",$$[$0-2],$$[$0-2],$$[$0],'/',$$[$0-4])); //name,token,a,b,op,c
+        this.$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$$[$0-2],$$[$0-2],$$[$0],'/',$$[$0-4])); //name,token,a,b,op,c
         
 break;
 case 31:
 
-        this.$ = Optimizer.resolve_arithmetic_reduction("standard",$$[$0-2],$$[$0-2],$$[$0],'%',$$[$0-4])); //name,token,a,b,op,c where c is text not a token
+        this.$ = Optimizer.resolve_arithmetic_reduction(new Instruction("standard",$$[$0-2],$$[$0-2],$$[$0],'%',$$[$0-4])); //name,token,a,b,op,c where c is text not a token
         
 break;
 case 32: case 41:
@@ -203,6 +203,7 @@ case 44:
         this.$ = new Instruction("goto",new _3D_Token($$[$0],_$[$0].first_line,_$[$0].first_column),$$[$0]);
         Optimizer.goto_started = true;
         Optimizer.instruction_stack.push(this.$);
+        Optimizer.label_stack = [];
         
 break;
 case 45:
