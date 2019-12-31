@@ -7,7 +7,7 @@ function append_to_3D_console(){
     $("#Ejecutar_Console").append(current_line);
     $("#Debug_Console").append(current_line2);
 }
-function append_to_main_console(){
+function append_to_main_console(){F
     $("#Main_Console").append(_current_line);
 }
 //endregion
@@ -306,11 +306,11 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
     this.name = name;
     this.token = token;
     switch (name) {
-    case "standard":
+        case "standard":
         this.a = param1; //A token
         this.b = param2; //A token
         this.op = param3; //Text
-        this.c = param4; //A temp name
+        this.c = param4; //A temp name aka text.
         this.signature = this.c+" = "+get_signature(this.a)+this.op+get_signature(this.b);
         break;
     case "assignation":
@@ -343,7 +343,7 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
         this.b = param2; //A token
         this.op = param3; //Text
         this.target = param4; //A label name
-        this.signature = "if("+get_signature(this.a)+this.op+get_signature(this.b)+") goto "+this.target;
+        this.signature = "if "+get_signature(this.a)+this.op+get_signature(this.b)+" goto "+this.target;
         break;
     case "goto":
         this.target = param1; //A label name
@@ -362,6 +362,9 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
         this.value = param2; //A token
         this.signature = "print("+this.format+","+get_signature(this.value)+")";
         break;
+    case "exit":
+        this.exitCode = param1; //exit code
+        this.signature = "exit ("+this.exitCode+" )";
     default:
         break;
     }
