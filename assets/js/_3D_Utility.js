@@ -211,6 +211,7 @@ function initialize(){
     $("#create_file_button").click(create_file);
     $("#Guardar_Button").click(save_file);
     $("#Compilar_Main").click(compile_source);
+    $("#Optimization_button").click(Optimize);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
 }
