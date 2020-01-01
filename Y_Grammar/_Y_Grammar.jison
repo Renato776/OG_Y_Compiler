@@ -12,10 +12,10 @@
 "//"[^\r\n]*													{/*Inline Comment, ignore.*/}
 "/*"([^"*/"])*"*/"													{/*Block Comment, ignore.*/}
 (("public"|"private"|"protected")[ \r\t]+)?("static"[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"@"([a-zA-Z]|_)+[0-9]*   {token_solver.register_important_token('type'); return 'TYPE';}
-"&&&"([a-zA-Z]|_)+[0-9]*("^"([a-zA-Z]|_)+[0-9]*)?				{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
+"&&&@"([a-zA-Z]|_)+[0-9]*			{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
 "&&&&END"														{token_solver.end_class(); return 'END_CLASS';}
 "####END"								{token_solver.end_import(yylloc.first_line-1); return 'END_IMPORT';}
-"###"[^\r\n]+							{token_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'BEGIN_IMPORT';}
+"###"("/"("@")?([a-zA-Z]|_)+[0-9]*("."([a-zA-Z]|_)+)?)+		{token_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'BEGIN_IMPORT';}
 ("true"|"false")						{token_solver.register_important_token('boolean'); return 'BOOLEAN';}
 "null"								{token_solver.register_important_token('null'); return 'NULL';}
 "'"([^"'"\\]|\\.)*"'"				{token_solver.register_important_token('char'); return 'CHAR';}
