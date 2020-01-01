@@ -84,7 +84,15 @@ const _class = function (name,parent = null,location = "Unknown") {
     this.final = false;
     this.get_visualization = get_class_visualization;
 };
-const _token = function (name,col,row,text, _class = "N/A",format = false, empty = false) {
+const _token = function (name,col,row,text, _class = "N/A",format = false, empty = false, unfinished=null) {
+    if(unfinished!=null){ //This constructor can only happen after one or more tokens have been successfully compiled.
+        this.text = "";
+        this.name = "";
+        this.col = unfinished.col;
+        this.row = unfinished.row;
+        this.file = unfinished.file;
+        this._class = unfinished._class;
+    }
     if(empty){
         this.name = "empty";
         this.text = "";
@@ -101,7 +109,7 @@ const _token = function (name,col,row,text, _class = "N/A",format = false, empty
     else this.text = text;
     this._class = _class;
 };
-const Node = function (name) {
+const _Node = function (name) {
     this.children = [];
     if(typeof name == "string"){ //Normal constructor
         this.name = name;
@@ -156,6 +164,13 @@ const error_entry = function (type,line,col,details,_class,file) {
 const _pre_compiling_exception = function(message){
     let t = _token_tracker.pop();
     let $row = new error_entry('Semantic',t.row,t.col,message,'N/A',t.file);
+    $("#ErrorTableBody").append($row);
+    _log("One or more errors occurred during compilation. See error tab for details.");
+    this.semantic = true;
+};
+const _compiling_exception = function (message) {
+    let t = _token_tracker.pop();
+    let $row = new error_entry('Semantic',t.row,t.col,message,t._class,t.file);
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
     this.semantic = true;
@@ -447,9 +462,17 @@ const token_solver = {
     peek_imported_text: function(){
         return this.imported_text[this.imported_text.length-1];
     },
+    peek_token_tracker : function(){
+        return _token_tracker[_token_tracker.length-1];
+    },
+    peek_class_tracker:function(){
+        if(this.class_tracker.length==0)return 'Built-in';
+        return this.class_tracker[this.class_tracker.length-1];
+    },
     begin_import:function(token,line){
         token = token.trim();
         token = token.substring(3); //We get the name of the file.
+        token = token.replace('@','');// We remove any @ that might appear as a result of preparing all types.
         this.imported_text.push([]); //We add a brand new List to the import scope.
         this.size_tracker.push({name:token,location:line});
     },
@@ -477,20 +500,14 @@ const token_solver = {
       this.class_tracker.pop();
     },
     calculate_relative_position:function(position){
-        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -3;
+        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2;
         if(this.size_tracker.length==1)position = position + 1; //True only if I'm importing in main file.
         return position;
-    },
-    peek_class_tracker:function(){
-        return this.class_tracker[this.class_tracker.length-1];
     },
     debug:function(yytext,yyline,yycolumn){
         this.column = yycolumn;
         this.line = this.calculate_relative_position(yyline);
         _token_tracker.push(new _token('token',this.column,this.line,yytext,this.peek_class_tracker()));
-    },
-    peek_token_tracker : function(){
-      return _token_tracker[_token_tracker.length-1];
     },
     register_important_token:function(name){
         let t = this.peek_token_tracker();
@@ -506,7 +523,9 @@ const token_solver = {
         this.size_tracker = [];
         _token_stack = [];
         _token_tracker = [];
-        Compiler.initialize();
+        this.imported_text.push([]); //We add a brand new List to the import scope.
+        let cf = get_current_file();
+        this.size_tracker.push({name:cf.directory+cf.name,location:0});
     }
 };
 function graph_all_classes() {
@@ -581,12 +600,14 @@ function compile_source() {
     }
     prepare_all_classes();
     Compiler.initialize();
+    token_solver.initialize();
     let pre_compiled_source = $("#Unified_Source").html();
     pre_compiled_source = prepare_all_types(pre_compiled_source);
     try {
         _Y_Grammar.parse(pre_compiled_source);
     }catch (e) {
-        if(!("semantic" in e))_pre_compiling_syntactical_error();
+        console.log(e);
+       //if(!("semantic" in e))_pre_compiling_syntactical_error();
     }
     //Perform inheritance.
     graph_all_classes();
