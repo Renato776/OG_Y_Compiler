@@ -80,6 +80,8 @@ const _class = function (name,parent = null,location = "Unknown") {
     this.location = location;
     this.fields = {};
     this.ancestors = [];
+    this.abstract = false;
+    this.final = false;
     this.get_visualization = get_class_visualization;
 };
 const _token = function (name,col,row,text, _class = "N/A",format = false, empty = false) {
@@ -203,9 +205,15 @@ function class_header() {
     $name.html('Name');
     let $parent = $("<td>");
     $parent.html('Parent');
+    let $abstract = $("<td>");
+    let $final = $("<td>");
+    $abstract.html('Abstract');
+    $final.html('Final');
     $row.append($name);
     $row.append($parent);
     $row.append($location);
+    $row.append($abstract);
+    $row.append($final);
     $row.append($cc);
     $row.append($id);
     $row.addClass('Class_Header');
@@ -243,6 +251,8 @@ const Object_Class = {
     location: 'Built-in',
     fields:{},
     ancestors:[],
+    abstract:false,
+    final:false,
     get_visualization : get_class_visualization
 };
 const String_Class = new _class('String','Object','Built-in');
@@ -258,11 +268,17 @@ function get_class_visualization() {
     $cc.html(this.cc);
     let $id = $("<td>");
     $id.html(this.id);
+    let $abstract = $("<td>");
+    let $final = $("<td>");
+    $abstract.html(this.abstract);
+    $final.html(this.final);
     $row.attr("id", this.name);
     $row.click(select_class);
     $row.append($name);
     $row.append($parent);
     $row.append($location);
+    $row.append($abstract);
+    $row.append($final);
     $row.append($cc);
     $row.append($id);
     return $row;
@@ -389,19 +405,38 @@ function pre_register_class(class_token, sub_class) {
         .trim() //Removed visibility keyword (if any)
         .replace('class','')
         .trim();  //Removed class keyword & trimmed.
+    let abstract = false;
+    let final = false;
+    if(class_token.includes('abstract')){
+        class_token = class_token.replace('abstract','').trim();
+        abstract = true;
+    }
+    if(class_token.includes('final')){
+        class_token = class_token.replace('final','').trim();
+        final = true;
+    }
+    let name;
+    let result;
+    let result_signature;
     if(sub_class){
         let names = class_token.split('extends');
-        let name = names[0].trim();
+        name = names[0].trim();
         let parent = names[1].trim();
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
-        classes[name] = new _class(name,parent,_token_tracker[_token_tracker.length-1].file);
-        return "&&&"+name+"^"+parent;
+        result = new _class(name,parent,_token_tracker[_token_tracker.length-1].file);
+        result_signature= "&&&"+name+"^"+parent;
     }else{
-        let name = class_token.trim();
+        name = class_token.trim();
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
-        classes[name] = new _class(name,null,_token_tracker[_token_tracker.length-1].file);
-        return "&&&"+name;
+        result = new _class(name,null,_token_tracker[_token_tracker.length-1].file);
+        result_signature =  "&&&"+name;
     }
+    if(abstract&&final)throw new _pre_compiling_exception("Cannot declare a class abstract and final at the same time." +
+        "Class: "+name);
+    result.abstract = abstract;
+    result.final = abstract;
+    classes[name] = result;
+    return result_signature;
 }
 const token_solver = {
     size_tracker:[],
@@ -516,6 +551,9 @@ function prepare_all_classes() {
         }else isFirst = false;
     });
 }
+const Compiler = {
+
+};
 function compile_source() {
     if(current_source_mirror==null)return; //There's nothing to compile in the first place.
     Import_Solver.initialize();
