@@ -7,7 +7,7 @@ function append_to_3D_console(){
     $("#Ejecutar_Console").append(current_line);
     $("#Debug_Console").append(current_line2);
 }
-function append_to_main_console(){F
+function append_to_main_console(){
     $("#Main_Console").append(_current_line);
 }
 //endregion
