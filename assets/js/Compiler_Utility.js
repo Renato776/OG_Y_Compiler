@@ -8,7 +8,7 @@
  * 2.-Parse the output from the first step (again) but this time it is merely to remove
  * a formal class declaration from: class name [extends id] {content}
  * to:
- * &&&ID^ID | &&&ID
+ * &&&ID
  * content
  * &&&&END
  * As you can see the class & extends keywords have been removed the new token specifies all
@@ -163,7 +163,9 @@ const error_entry = function (type,line,col,details,_class,file) {
 };
 const _pre_compiling_exception = function(message){
     let t = _token_tracker.pop();
-    let $row = new error_entry('Semantic',t.row,t.col,message,'N/A',t.file);
+    let $row;
+    if(t!=undefined) $row = new error_entry('Semantic',t.row,t.col,message,'N/A',t.file);
+    else $row = new error_entry('Semantic','N/A','N/A',message,'N/A','N/A');
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
     this.semantic = true;
@@ -436,7 +438,7 @@ function pre_register_class(class_token, sub_class) {
         let parent = names[1].trim();
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
         result = new _class(name,parent,_token_tracker[_token_tracker.length-1].file);
-        result_signature= "&&&"+name+"^"+parent;
+        result_signature= "&&&"+name;
     }else{
         name = class_token.trim();
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
@@ -490,11 +492,8 @@ const token_solver = {
         return res;
     },
     begin_class:function(token){
-        token = token.substring(3); //We remove the Ampersands
-        let tokens = token.split('^'); //We get the name and the parent's name.
-        if(tokens.length==2)if(!(tokens[1] in classes))
-            throw new _pre_compiling_exception("Parent Class: "+tokens[1]+" Does NOT exist. Compilation failed.");
-        this.class_tracker.push(tokens[0]); //We push the name of the class
+        token = token.substring(4); //We remove the Ampersands and the @
+        this.class_tracker.push(token); //We push the name of the class
     },
     end_class:function(){
       this.class_tracker.pop();
@@ -535,6 +534,12 @@ function graph_all_classes() {
     });
 }
 function prepare_all_classes() {
+    //0) Verify all parents from all classes exist.
+    _token_tracker = [];
+    Object.values(classes).forEach(c=>{
+        if(!(c.parent in classes)&&c.name!='Object') throw new _pre_compiling_exception('Parent class :'+c.parent+" from class: "+c.name+" " +
+            "Does NOT exist. Compilation failed.");
+    });
     /*
     * This function prepares all classes for them to be ready when SymbolTable compilation starts.
     * By preparing all classes I mean: Give all classes an appropriate CC. Also, giving all classes
@@ -578,8 +583,6 @@ function prepare_all_types(source) {
     });
     Object.keys(Compiler.classes).forEach(c=>{
        source = source.replace(c,"@"+c);
-       source = source.replace("&&&@"+c,"&&&"+c);
-       source = source.replace("^@"+c,"^"+c);
     });
     return source;
 }
@@ -606,9 +609,14 @@ function compile_source() {
     try {
         _Y_Grammar.parse(pre_compiled_source);
     }catch (e) {
-        console.log(e);
-       //if(!("semantic" in e))_pre_compiling_syntactical_error();
+       if(!("semantic" in e)){
+           _pre_compiling_syntactical_error();
+           console.log(e);
+       }
     }
+    let root = Compiler.root;
+    console.log('Everything seems fine!!');
+    console.log(root);
     //Perform inheritance.
     graph_all_classes();
     compile_native_functions();
