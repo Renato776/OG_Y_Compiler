@@ -71,7 +71,7 @@
     recoverable: (boolean: TRUE when the parser has a error recovery rule available for this particular error)
   }
 */
-var Y_Grammar = (function(){
+var _Y_Grammar = (function(){
 var o=function(k,v,o,l){for(o=o||{},l=k.length;l--;o[k[l]]=v);return o},$V0=[5,8,10],$V1=[1,7],$V2=[12,17],$V3=[1,20],$V4=[1,22],$V5=[22,31],$V6=[2,27],$V7=[1,28],$V8=[1,55],$V9=[1,41],$Va=[1,53],$Vb=[1,39],$Vc=[1,40],$Vd=[1,36],$Ve=[1,37],$Vf=[1,43],$Vg=[1,44],$Vh=[1,45],$Vi=[1,46],$Vj=[1,47],$Vk=[1,48],$Vl=[1,49],$Vm=[1,57],$Vn=[19,23,27,29],$Vo=[1,77],$Vp=[1,78],$Vq=[1,64],$Vr=[1,65],$Vs=[1,66],$Vt=[1,67],$Vu=[1,68],$Vv=[1,69],$Vw=[1,70],$Vx=[1,71],$Vy=[1,72],$Vz=[1,73],$VA=[1,74],$VB=[1,75],$VC=[1,76],$VD=[22,23,26,30,31,51,59,64,65,71,72,73,74,75,76,77,78,79,80,81,82,83,85],$VE=[1,87],$VF=[22,23,26,27,30,31,51,59,64,65,66,71,72,73,74,75,76,77,78,79,80,81,82,83,85],$VG=[2,88],$VH=[1,121],$VI=[22,26,31],$VJ=[17,19,24,26,46,47,48,49,55,61,62],$VK=[2,29],$VL=[22,23,26,30,31,51,59,71,72,76,77,78,79,80,81,82,83,85],$VM=[22,23,26,30,31,51,59,71,72,73,74,76,77,78,79,80,81,82,83,85],$VN=[22,23,26,30,31,51,59,76,77,78,79,80,81,82,83,85],$VO=[1,155],$VP=[1,154],$VQ=[1,156],$VR=[1,157],$VS=[1,158],$VT=[1,159],$VU=[1,160],$VV=[1,161],$VW=[1,162],$VX=[22,23,26,29,30,31,51,59,64,65,71,72,73,74,75,76,77,78,79,80,81,82,83,85],$VY=[22,23,26,27,29,30,31,51,59,64,65,66,71,72,73,74,75,76,77,78,79,80,81,82,83,85],$VZ=[17,19,24,26,46,47,48,49,55,58,60,61,62],$V_=[1,171],$V$=[1,172],$V01=[1,173],$V11=[17,19,24,26,46,47,48,49,54,55,58,60,61,62],$V21=[17,19,20,24,26,46,47,48,49,55,58,60,61,62,64,65,72,84,88,89,90,91,92,93,94],$V31=[26,58,60];
 var parser = {trace: function trace () { },
 yy: {},
@@ -852,6 +852,9 @@ stateStackSize:function stateStackSize() {
 options: {},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 var YYSTATE=YY_START;
+let aux_token = yy_.yytext;
+aux_token = aux_token.trim();
+if(aux_token!="")token_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 switch($avoiding_name_collisions) {
 case 0:/*Inline Comment, ignore.*/
 break;
@@ -984,9 +987,9 @@ return new Parser;
 
 
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
-exports.parser = Y_Grammar;
-exports.Parser = Y_Grammar.Parser;
-exports.parse = function () { return Y_Grammar.parse.apply(Y_Grammar, arguments); };
+exports.parser = _Y_Grammar;
+exports.Parser = _Y_Grammar.Parser;
+exports.parse = function () { return _Y_Grammar.parse.apply(_Y_Grammar, arguments); };
 exports.main = function commonjsMain (args) {
     if (!args[1]) {
         console.log('Usage: '+args[0]+' FILE');
