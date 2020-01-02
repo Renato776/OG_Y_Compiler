@@ -46,10 +46,10 @@
 "-"									return 'MINUS';
 "?"									return 'TERNARIO';
 "%"									return 'MOD';
-">"									return 'MAYORQUE';
-"<"									return 'MENORQUE';
-">="								return 'MAYORIGUAL';
-"<="								return 'MENORIGUAL';
+"&gt;"									return 'MAYORQ';
+"&lt;"									return 'MENORQ';
+"&gt;="								return 'MAYORIGUAL';
+"&lt;="								return 'MENORIGUAL';
 "=="								return 'COMPARACION';
 "!="								return 'DISTINTO';
 "!"									return 'NOT';
@@ -201,7 +201,7 @@ variableDef : TYPE ID dimList ASIGNACION Exp SEMI {$$ = Compiler.variableDef(
 					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3,$5);}
 			| TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.variableDef(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
-					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,$5);}
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,$4);}
 			| TYPE ID dimList SEMI {$$ = Compiler.variableDef(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
 					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3,null);}
@@ -220,7 +220,7 @@ breakStmt: BREAK SEMI {$$ = new _Node("break");};
 
 continueStmt : CONTINUE SEMI {$$ = new _Node("continue");};
 
-ifStmt : IF LPAREN Exp RPAREN basicStmt elseIfChain elseStmt {
+ifStmt : IF LEFT_PAREN Exp RIGHT_PAREN basicStmt elseIfChain elseStmt {
 		$$ = new _Node("ifStmt");
 		$$.add(new _Node("if"));
 		$$.children[0].add($3);
@@ -230,7 +230,7 @@ ifStmt : IF LPAREN Exp RPAREN basicStmt elseIfChain elseStmt {
 		}
 		;
 
-elseIfChain : elseIfChain ELSE IF LPAREN Exp RPAREN basicStmt {
+elseIfChain : elseIfChain ELSE IF LEFT_PAREN Exp RIGHT_PAREN basicStmt {
 				$$ = $1; 
 				$$.children.push(new _Node("if"));
 				$$.children[$$.children.length-1].add($5);
@@ -239,11 +239,11 @@ elseIfChain : elseIfChain ELSE IF LPAREN Exp RPAREN basicStmt {
 				| /*Empty*/ {$$ = new _Node("elseIfChain");}
 				;
 				
-elseStmt : ELSE basicStmt {$$ = new _Node("else"); $$.children[0].add($2);}
+elseStmt : ELSE basicStmt {$$ = new _Node("else"); $$.add($2);}
 			| /*Empty*/ {$$ = null;}
 			;
 			
-switchStmt : SWITCH LPAREN Exp RPAREN LEFT_BRACE caseL RIGHT_BRACE {
+switchStmt : SWITCH LEFT_PAREN Exp RIGHT_PAREN LEFT_BRACE caseL RIGHT_BRACE {
 			$$ = new _Node("switch");
 			$$.add($3);
 			$$.add($6);
@@ -262,14 +262,14 @@ caseDecl : CASE Exp COLON stmtL  {
 		| DEFAULT COLON stmtL {$$ = new _Node("default"); $$.add($3);}
 		;
 
-whileStmt : WHILE LPAREN Exp RPAREN block {
+whileStmt : WHILE LEFT_PAREN Exp RIGHT_PAREN block {
 			$$ = new _Node("while");
 			$$.add($3);
 			$$.add($5);
 			}
 			;
 
-forStmt : FOR LPAREN variableDef Exp SEMI update RPAREN block{
+forStmt : FOR LEFT_PAREN variableDef Exp SEMI update RIGHT_PAREN block{
 			$$ = new _Node("for");
 			$$.add($3);
 			$$.add($4);

@@ -1,3 +1,78 @@
+const  END = "---end---";
+const SUB_BLOCK = "---sub_block---";
+const semantic_exception = function (message,token) {
+    token = token.get_token();
+    let e = new error_entry('Semantic',token.row,token.col,message,token._class,token.file);
+    $("#ErrorTableBody").append(e);
+    _log('One or more errors occurred during compilation. See error tab for details');
+};
+const basic_details = function (type,offset) {
+  return {visibility:'public',inherited:false,final:false,type:type,offset:offset};
+};
+const Row = function (name,variable=false,details) {
+    this.name = name;
+    this.block = false;
+    this.param = false;
+    this.variable = variable;
+    this.offset = -1;
+    this.type = null;
+    this.func = false;
+    this.by_reference = false;
+    this.instructions = null;
+    this.initalized = false;
+    this.size = -1;
+    this.true_end = -1;
+    this.inherited = false;
+    this.final = false;
+    this.visibility = 'public';
+    if(variable){
+        this.visibility = details.visibility;
+        this.final = details.final;
+        this.type = details.type;
+        this.offset = details.offset;
+        this.inherited = details.inherited;
+        Compiler.advance_scope();
+    }
+    this.get_header = function () {
+        return " <tr>\n" +
+            "    <td>index</td>\n" +
+            "    <td>block</td>\n" +
+            "    <td>func</td>\n" +
+            "    <td>param</td>\n" +
+            "    <td>variable</td>\n" +
+            "    <td>name</td>\n" +
+            "    <td>offset</td>\n" +
+            "    <td>type</td>\n" +
+            "    <td>by_reference</td>\n" +
+            "    <td>inherited</td>\n" +
+            "    <td>true_end</td>\n" +
+            "    <td>size</td>\n" +
+            "    <td>final</td>\n" +
+            "    <td>visibility</td>\n" +
+            "  </tr>";
+    };
+    this.get_visualization = function(index){
+        return  "<tr>" +
+            "<td>"+index+") </td>\n" +
+            "<td>"+this.block+"</td>" +
+            "<td>"+this.func+"</td>" +
+            "<td>"+this.param+"</td>" +
+            "<td>"+this.variable+"</td> " +
+            "<td>"+this.name+"</td>" +
+            "<td> "+this.offset+"</td>" +
+            "<td> "+this.type+"</td> " +
+            "<td> "+this.by_reference+"</td>" +
+            "<td> "+this.inherited+"</td>"+
+            "<td> "+this.true_end+"</td> " +
+            "<td> "+this.size+"</td>"+
+            "<td> "+this.final+"</td>"+
+            "<td> "+this.visibility+"</td>"+
+            "</tr>";
+    };
+    this.is_not_end = function () {
+      return !this.name.includes(END);
+    };
+};
 const empty_node = function (model) {
     return new _token(null,null,null,null,null,null,false,model);
 };
@@ -63,6 +138,74 @@ const Compiler = {
     abstract_regex : new RegExp('[ \r\t]abstract[ \r\t]'),
     final_regex : new RegExp('[ \r\t]final[ \r\t]'),
     type_regex: new RegExp('@[a-zA-Z_]+[0-9]*'),
+    sub_block_count :[],
+    SymbolTable:[],
+    scope:[],
+    scope_tracker:[],
+    Row:0,
+    scope_offset:[],
+    stack:[],
+    evaluation_stack:[],
+    keywords:[],
+    advance_scope:function(){
+        let s = this.scope_offset.pop();
+        s++;
+        this.scope_offset.push(s);
+    },
+    reset_scope_offset:function(){
+        this.scope_offset.push(0);
+    },
+    advance:function(){
+        this.Row++;
+    },
+    peek:function(array){
+        return array[array.length-1];
+    },
+    end_block: function(end,block_name){
+        let block_end = new Row(END+block_name);
+        block_end.true_end = end;
+        this.SymbolTable[this.Row] = block_end;
+        this.advance();
+    },
+    get_type:function(details){
+        /*This method takes a details node and returns the type of the token held within.*/
+        let res = details.children[4].text;
+        return res;
+    },
+    get_visibility:function(details){
+        /*Same as get_type but returns visibility instead.*/
+        return details.children[0].text;
+    },
+    get_final:function(details){
+        /*Same as get_type but returns final instead.*/
+        return details.children[3].text;
+    },
+    get_class:function(node){
+        /*This method takes a node and if it isn't a token it traverses down de tree until a token is found.
+        * Then, it returns the class at which that token is associated with.*/
+        if(node.token)return node._class;
+        if(node.children.length==0)return 'Built-In'; //Should never happen. However, in theory, you could get a node that is not token and yet has no children.
+        return this.get_class(node.children[0]);
+    },
+    get_details:function(node){
+      /*
+      * Returns an Object holding the extracted visibility, final & type details.
+      * node is a details node.
+      * */
+      return {final:this.get_final(node),visibility:this.get_visibility(node),type:this.get_type(node),inherited:false};
+    },
+    peek_scope_offset:function(){
+        return this.peek(this.scope_offset);
+    },
+    is_valid_name:function(id,token){
+        if(id in this.keywords)throw new semantic_exception("Id: "+id+" Cannot be used because: "+this.keywords[id],token);
+        //Alright, now we gotta check the id isn't used within the same scope:
+        //current scope is starts at the index held in the head of the stack.
+        //Any other scope below are parent scopes.
+        let i = this.get_var_index(this.peek(this.scope),id);
+        if(i!=-1) throw new semantic_exception("Id: " + id + " Has already been declared in this scope.",token);
+        return true;
+    },
     initialize:function () {
         $("#AST_Container").empty();
         this.color_stack = [];
@@ -77,6 +220,23 @@ const Compiler = {
         this.types["int"] = new type('int');
         this.types["double"] = new type('double');
         this.types["boolean"] = new type('boolean');
+        this.Row = 0;
+        this.SymbolTable = [];
+        this.scope = [];
+        this.scope_tracker = [];
+        this.stack=[];
+        this.evaluation_stack=[];
+        this.load_keywords();
+    },
+    load_keywords:function(){
+        this.keywords = {};
+        this.keywords['this'] = "reserved keyword for referencing the current object.";
+        this.keywords['static'] = "member modifier.";
+        this.keywords['abstract'] = "member modifier.";
+        this.keywords['final'] = "member modifier";
+        this.keywords['public'] = "visibility modifier";
+        this.keywords['private'] = "visibility modifier";
+        this.keywords['protected'] = "visibility modifier";
     },
     extract_type:function(type_text){
         return type_text.match(this.type_regex)[0].substring(1);
@@ -166,7 +326,7 @@ const Compiler = {
         res.add(new _Node(target));
         res.add(paramL);
         res.add(stmtL);
-       // return res;
+        return res;
     },
     fieldDecl:function (type_token,name,dim,exp) { //prod: TYPE ID dimList SEMI
         let processed_details = this.resolve_modifiers(type_token,dim);
@@ -276,5 +436,281 @@ const Compiler = {
         if (this.root == null) return;
         this.root.printTree();
         $("#AST_Container").html(this.ast_visualization);
+    },
+    build_symbolTable:function() {
+        /*
+        * This basically calls visit_node(root); and that's pretty
+        * much it. However, it also catches any exception that might occur during the symbol table
+        * compilation. It also calls the symbol table graphing method if compilation is successful.
+        * */
+        try {
+            this.visit_node(this.root);
+        }catch (e) {
+            return;
+        }
+        //Graph Symbol Table.
+    },
+    visit_node:function (node) {
+     /*
+     * The bread & butter of the Symbol Table compilation. A recursive method that
+     * builds the symbol table for the program based on the AST.
+     * */
+     switch (node.name) {
+         case "program":
+         {
+             this.sub_block_count = [];
+             this.sub_block_count.push(0);
+             this.Row = 0;
+             let first_row = new Row('program');
+             this.SymbolTable[this.Row] = first_row;
+             let block_start = this.Row;
+             this.scope.push(block_start);
+             this.scope_tracker.push(block_start); //remember to reverse the scope_tracker after finishing the symbol table compilation.
+             this.reset_scope_offset(); //We add the first scope.
+             this.advance(); //We advance to the next position.
+             this.stack.push(node.name);
+             node.children.forEach(n=>{
+                this.visit_node(n);
+             });
+             this.stack.pop();
+             this.end_block(block_start-1, "program");
+             first_row.true_end = this.Row;
+             this.sub_block_count.pop();
+             console.log('Symbol Table built successfully!');
+         }
+             return;
+         case "staticField": //static fields belong to the symbol table as if they were global variables. Their signature is className.name
+         {
+             let name = node.children[1].text; //We retrieve the name
+             let _class = this.get_class(node);
+             name = _class+"."+name; //We set the field's signature.
+             let details = this.get_details(node.children[0]);
+             details.offset = this.peek_scope_offset();
+             if(!this.is_valid_name(name,node))return; //If the name is not valid we abort the compilation of the variable.
+             let var_row = new Row(name,true,details);
+             if(node.children.length==3)var_row.instructions = node.children[2];
+             this.SymbolTable[this.Row] = var_row;
+             this.advance();
+         }
+         case "staticMethod":
+         {
+             //First child: details node
+             //Second child: Function's name
+             //Third child: paramDefL
+             //Fourth child: InstructionBlock
+             //Alright, we first get the type of the function:
+             let details = this.get_details(node.children[0]);
+             let _class = this.get_class(node);
+             let func_type = details.type; //We get the type name
+             let fun_name = node.children[1].text;
+             //Start calculating the function's signature here:
+             let func_signature = _class+".static."+fun_name;
+             this.stack.push("signature_compilation"); //We add context so that the signature is merely compiled but nothing is added to the Symbol table.
+             this.visit_node(node.children[2]);
+             this.stack.pop();
+             let unfinished_signature = this.evaluation_stack.pop();
+             func_signature = func_signature+unfinished_signature; //Complete function signature.
+             if(!this.is_valid_name(func_signature,node))return; //If the function is repeated we stop the function compilation.
+             //The function has been approved. We proceed:
+             this.sub_block_count.push(0); //We reset the sub_block_count to 0.
+             //Next we store the index for this function:
+             let func_index = this.Row;
+             this.SymbolTable[func_index] = new Row(func_signature);
+             this.SymbolTable[func_index].func = true; //We indicate it is a function.
+             this.SymbolTable[func_index].type = func_type;
+             this.scope.push(func_index);
+             this.scope_tracker.push(func_index);
+             //Now, we make the index advance, so that we can put vars and parameters where they belong:
+             this.advance();
+             //Alright, next we reset the offset:
+             this.reset_scope_offset();
+             //Alright, now we add the parameters:
+             this.stack.push('parameter_compilation');
+             this.visit_node(node.children[2]); //We visit the param Def again, but this time for actual compilation purposes.
+             this.stack.pop();
+             //Alright, the parameters have been added successfully. Now, we compile the inner sub_blocks:
+             this.stack.push("function_locals_compilation");
+             this.visit_node(node.children[3]);
+             this.stack.pop();
+             //At this point all locals have been successfully compiled.
+             this.scope.pop(); //We leave this function and return scope to parent.
+             //Now, we must copy the parent's variables. Yes, all of them.
+             //At this point, scope.peek() has the index of the immediate parent function,
+             //be it the program itself or another function.
+             //We must copy them all, including parameters.
+             this.fill_parent_references();
+             //Alright parent references have been successfully loaded, however, before we set the true_end, we must add the ending block:
+             this.end_block(func_index-1,func_signature);
+             //Alright, we can now set the true_end and finish.
+             this.SymbolTable[func_index].true_end = this.Row;
+             this.sub_block_count.pop();
+             this.scope_offset.pop();
+         }
+             return;
+         case 'paramDefList':
+             if(this.peek(this.stack)=='signature_compilation'){
+                 //The params aren't compiled into the symbol table yet. They're merely retrieved & united to form the signature.
+                 let unfinished_signature = "";
+                 node.children.forEach(param=>{
+                     let param_type_name = param.children[0].text;
+                    unfinished_signature+='-'+param_type_name;
+                 });
+                 this.evaluation_stack.push(unfinished_signature);
+                 return;
+             }else{ //Alright time to compile the parameters and add them to the Symbol table.
+                 node.children.forEach(param=>{
+                     let param_type_name = param.children[0].text;
+                     let name = param.children[1].text;
+                     try{
+                         this.is_valid_name(name,node);
+                         let var_row = new Row(name,true,new basic_details(param_type_name,this.peek_scope_offset()));
+                         var_row.param = true;
+                         this.SymbolTable[this.Row] = var_row;
+                         this.advance();
+                     } catch(e){} //If the name is not valid we abort the compilation of the param and go to the next one.
+                 });
+             }
+             return;
+     }
+    },
+    get_var_index:function (scope_index,var_name) {
+        //This method should perform as follows:
+        /*
+         * Given a Symbol Table s, the scope index i and a name n:
+         * Check the s[i].name == n. If so, return i;
+         * Else:
+         * Traverse s, one step at a time. aka i++;
+         * Foreach s[i] if s[i] is a block. Check s[i].name == n;
+         * If they are the same return i. Otherwise,
+         * if s[i].fin exists, jump to s[i].fin. This is: i = s[i].fin;
+         * And proceed like normal.
+         * If s[i].fin does not exist, then return and n was not found.
+         * If however, s[i] is not a block, Simply check s[i].name and return i
+         * if s[i].name == n; Otherwise, advance (i++) and check the next row until
+         * n is found, we reach the end of s or a block without fin is found.
+         * */
+        let res = -1;
+        let searching_sub_block = scope_index<0;
+        scope_index = Math.abs(scope_index);
+        let is_the_parent_itself = true;
+        let true_scope = this.SymbolTable[scope_index];
+        if(true_scope.true_end != -1 && !searching_sub_block){
+            //The current scope has already been compiled.
+            while(scope_index < true_scope.true_end){
+                let row = this.SymbolTable[scope_index];
+                if(row == null||row==undefined)return -1;
+                if(row.variable){
+                    if(row.name==var_name){
+                        return scope_index;
+                    }
+                }else if(row.block){
+                    if(row.name==var_name)return scope_index;
+                    if(is_the_parent_itself){
+                        is_the_parent_itself = false;
+                    }else{
+                        if(row.true_end != -1){
+                            //This means the block has already been compiled, therefore we can skip it:
+                            //Alright, we'll just skip it:
+                            scope_index = row.true_end - 1;
+                        }else{
+                            //This means we found a child block which hasn't been compiled yet.
+                            //This means, there's no further space in the current scope that
+                            //we haven't checked yet.
+                            return -1;
+                        }
+                    }
+                }else{
+                    return -1;
+                }
+                scope_index++;
+            }
+            //Alright, we finished checking the scope and it wasn't found:
+            return -1;
+        }else{
+            //We haven't finished compiling the scope:
+            while (scope_index < this.SymbolTable.length){
+                let row = this.SymbolTable[scope_index];
+                if(row == null||row == undefined)return -1;
+                if(row.variable){
+                    if(row.name==var_name){
+                        return scope_index;
+                    }
+                }else if(row.block){
+                    if(is_the_parent_itself&&!searching_sub_block){
+                        if(row.name==var_name)return scope_index;
+                        is_the_parent_itself = false;
+                    }else{
+                        if(row.true_end != -1){
+                            if(row.name==var_name)return scope_index;
+                            //This means the block has already been compiled, therefore we can skip it:
+                            //Alright, we'll just skip it:
+                            scope_index = row.true_end - 1;
+                        }else{
+                            //This means we found a child block which hasn't been compiled yet.
+                            //This means, there's no further space in the current scope that
+                            //we haven't checked yet.
+                            return -1;
+                        }
+                    }
+                }else{
+                    return -1;
+                }
+                scope_index++;
+            }
+        }
+        return -1;
+    },
+    fill_parent_references:function () {
+        /*
+         * This method must be called after all locals have been declared within a block.
+         * aka after all children of the block have been valuated.
+         * This method will copy all locals from all parent scopes. Starting at the immediate parent
+         * and recursing all the way up to the program itself.
+         *
+         * It is rather simple, since at this point the parent functions are most likely not finished yet,
+         * I must simply iterate trough all rows of each parent index and add them to the new one.
+         * If I find the beginning of a block, I skip it if it has been compiled or if it is still being compiled,
+         * I return.
+         * */
+        let i = this.scope.length-1;
+        let parent;
+        while(i>=0){
+            parent = this.scope[i];
+            let row = this.SymbolTable[parent];
+            if(row == null||row==undefined)return;
+            if(row.block){
+                if(row.true_end == -1){ //The parent shouldn't be fully compiled at this point.
+                    let c = parent+1;
+                    while(c<this.SymbolTable.length){
+                        let sub_row = this.SymbolTable[c];
+                        if(sub_row == null||sub_row==undefined)break;
+                        if(sub_row.variable){
+                            //Alright, let's copy it:
+                            let details = {
+                                offset:this.peek_scope_offset(),
+                                type:sub_row.type,
+                                inherited:true,
+                                final:sub_row.final,
+                                visibility:sub_row.visibility
+                            };
+                            let new_row = new Row(sub_row.name,true,details);
+                            new_row.param = sub_row.by_reference;
+                            this.SymbolTable[this.Row] = new_row;
+                            this.advance();
+                        }else{
+                            if((sub_row.true_end != -1)&&sub_row.is_not_end()){ //We check that it isn't the ending block, just to make sure. Even tough I'm pretty confident it should never happen.
+                                //skip it:
+                                c = sub_row.true_end -1;
+                            }else{
+                                //We break and go to the next parent:
+                                break;
+                            }
+                        }
+                        c++;
+                    }
+                }
+            }
+            i--;
+        }
     }
 };
