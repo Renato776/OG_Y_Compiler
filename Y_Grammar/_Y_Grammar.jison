@@ -12,8 +12,8 @@
 "//"[^\r\n]*													{/*Inline Comment, ignore.*/}
 "/*"([^"*/"])*"*/"													{/*Block Comment, ignore.*/}
 (("public"|"private"|"protected")[ \r\t]+)?("static"[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"@"([a-zA-Z]|_)+[0-9]*   {token_solver.register_important_token('type'); return 'TYPE';}
-"&&&@"([a-zA-Z]|_)+[0-9]*			{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
-"&&&&END"														{token_solver.end_class(); return 'END_CLASS';}
+"&amp;&amp;&amp;@"([a-zA-Z]|_)+[0-9]*			{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
+"&amp;&amp;&amp;&amp;END"														{token_solver.end_class(); return 'END_CLASS';}
 "####END"								{token_solver.end_import(yylloc.first_line-1); return 'END_IMPORT';}
 "###"("/"("@")?([a-zA-Z]|_)+[0-9]*("."([a-zA-Z]|_)+)?)+		{token_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'BEGIN_IMPORT';}
 ("true"|"false")						{token_solver.register_important_token('boolean'); return 'BOOLEAN';}
@@ -53,7 +53,7 @@
 "=="								return 'COMPARACION';
 "!="								return 'DISTINTO';
 "!"									return 'NOT';
-"&&"								return 'AND';
+"&amp;&amp;"						return 'AND';
 "||"								return 'OR';
 "="									return 'ASIGNACION';
 ";"									return 'SEMI';
@@ -66,6 +66,7 @@
 [0-9]+									{token_solver.register_important_token('integer'); return 'INTEGER';}
 [0-9]+("."[0-9]*)?						{token_solver.register_important_token('double'); return 'DOUBLE';}
 <<EOF>>                 			return 'EOF';
+.										{_pre_compiling_lexical_exception();}
 
 /lex
 

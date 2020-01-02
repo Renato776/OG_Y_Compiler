@@ -170,6 +170,15 @@ const _pre_compiling_exception = function(message){
     _log("One or more errors occurred during compilation. See error tab for details.");
     this.semantic = true;
 };
+const _pre_compiling_lexical_exception = function () {
+    let t = _token_tracker[_token_tracker.length-1];
+    let $row;
+    if(t!=undefined) $row = new error_entry('Lexical',t.row,t.col,'Unrecognized symbol: '+t.text,'N/A',t.file);
+    else $row = new error_entry('Semantic','N/A','N/A','Fatal error. Unrecognized symbol with no context: '+t.text,'N/A','N/A');
+    $("#ErrorTableBody").append($row);
+    _log("One or more errors occurred during compilation. See error tab for details.");
+
+};
 const _compiling_exception = function (message) {
     let t = _token_tracker.pop();
     let $row = new error_entry('Semantic',t.row,t.col,message,t._class,t.file);
@@ -474,7 +483,7 @@ const token_solver = {
     begin_import:function(token,line){
         token = token.trim();
         token = token.substring(3); //We get the name of the file.
-        token = token.replace('@','');// We remove any @ that might appear as a result of preparing all types.
+        token = token.replace(new RegExp('@','gm'),'');// We remove any @ that might appear as a result of preparing all types.
         this.imported_text.push([]); //We add a brand new List to the import scope.
         this.size_tracker.push({name:token,location:line});
     },
@@ -492,7 +501,7 @@ const token_solver = {
         return res;
     },
     begin_class:function(token){
-        token = token.substring(4); //We remove the Ampersands and the @
+        token = token.replace(new RegExp('&amp;','gm'),'').replace('@','').trim(); //We remove the Ampersands and the @
         this.class_tracker.push(token); //We push the name of the class
     },
     end_class:function(){
@@ -573,17 +582,26 @@ function prepare_all_classes() {
         }else isFirst = false;
     });
 }
+function replace_class_token(match){
+    let begin = match[0];
+    let end = match[match.length-1];
+    let name = match.substring(1,match.length-1);
+    return begin+"@"+name+end;
+}
 function prepare_all_types(source) {
     /*
     * This method replaces all types & classes within the source code by
     * the @name.
     * */
+    let classRegex;
     Object.keys(Compiler.types).forEach(t=>{
-        source = source.replace(t,"@"+t);
+        classRegex =  new RegExp('[^a-zA-Z_]'+t+'[^a-zA-Z_]','gm');
+        source = source.replace(classRegex,replace_class_token);
     });
     Object.keys(Compiler.classes).forEach(c=>{
-       source = source.replace(c,"@"+c);
-    });
+        classRegex =  new RegExp('[^a-zA-Z_]'+c+'[^a-zA-Z_]','gm');
+        source = source.replace(classRegex,replace_class_token);
+      });
     return source;
 }
 function compile_source() {
@@ -601,7 +619,12 @@ function compile_source() {
         if(!("semantic" in e))_pre_compiling_syntactical_error(); //Syntactical error.
         return;
     }
-    prepare_all_classes();
+    try{
+        prepare_all_classes();
+    }
+    catch (e) {
+        return;
+    }
     Compiler.initialize();
     token_solver.initialize();
     let pre_compiled_source = $("#Unified_Source").html();
@@ -611,7 +634,6 @@ function compile_source() {
     }catch (e) {
        if(!("semantic" in e)){
            _pre_compiling_syntactical_error();
-           console.log(e);
        }
     }
     let root = Compiler.root;
