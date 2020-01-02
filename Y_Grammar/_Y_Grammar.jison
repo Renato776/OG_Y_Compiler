@@ -10,20 +10,16 @@
 /* keywords */
 
 "//"[^\r\n]*													{/*Inline Comment, ignore.*/}
-"/*"([^"*/"])*"*/"												{/*Block Comment, ignore.*/}
-"@"([a-zA-Z]|_)+[0-9]*   										{return 'TYPE';}
-"&amp;&amp;&amp;@"([a-zA-Z]|_)+[0-9]*							{return 'CLASS_BEGIN';}
-"&amp;&amp;&amp;&amp;END"										{token_solver.end_class(); return 'END_CLASS';}
-"####END"														{token_solver.end_import(yylloc.first_line-1); return 'END_IMPORT';}
-"###"("/"("@")?([a-zA-Z]|_)+[0-9]*("."([a-zA-Z]|_)+)?)+	  {token_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'BEGIN_IMPORT';}
-("true"|"false")												 return 'BOOLEAN';
-"null"															 return 'NULL';
-"'"([^"'"\\]|\\.)*"'"											 return 'CHAR';
-"\""([^"\""\\]|\\.)*"\""										 return 'STRING';
-("public"|"private"|"protected")	return 'VISIBILITY';
-"static"							return 'STATIC';
-"abstract"							return 'ABSTRACT';
-"final"								return 'FINAL';
+"/*"([^"*/"])*"*/"													{/*Block Comment, ignore.*/}
+(("public"|"private"|"protected")[ \r\t]+)?("static"[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"@"([a-zA-Z]|_)+[0-9]*   {return 'TYPE';}
+"&amp;&amp;&amp;@"([a-zA-Z]|_)+[0-9]*			{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
+"&amp;&amp;&amp;&amp;END"														{token_solver.end_class(); return 'END_CLASS';}
+"####END"								{token_solver.end_import(yylloc.first_line-1); return 'END_IMPORT';}
+"###"("/"("@")?([a-zA-Z]|_)+[0-9]*("."([a-zA-Z]|_)+)?)+		{token_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'BEGIN_IMPORT';}
+("true"|"false")						{return 'BOOLEAN';}
+"null"								{return 'NULL';}
+"'"([^"'"\\]|\\.)*"'"				{return 'CHAR';}
+"\""([^"\""\\]|\\.)*"\""			{return 'STRING';}
 "return"							return 'RETURN';
 "break"								return 'BREAK';
 "if"								return 'IF';
@@ -64,12 +60,12 @@
 ":"									return 'COLON';
 "."									return 'DOT';
 ","									return 'COMMA';	
-([a-zA-Z]|_)+[0-9]*						return 'ID';
+([a-zA-Z]|_)+[0-9]*						{return 'ID';}
 [ \r\t]+                                {/*WHITESPACE IGNORE*/}
 \n                                      {/*NEW LINE. IGNORE*/}
-[0-9]+									return 'INTEGER';
-[0-9]+("."[0-9]*)?						return 'DOUBLE';
-<<EOF>>                 			    return 'EOF';
+[0-9]+									{return 'INTEGER';}
+[0-9]+("."[0-9]*)?						{return 'DOUBLE';}
+<<EOF>>                 			     return 'EOF';
 .										{_pre_compiling_lexical_exception();}
 
 /lex
@@ -114,88 +110,56 @@ declList : declList methodDecl {$1.add($2); $$ = $1; }
 			|/*Empty*/ {$$ = new _Node("declList");}
 			;
 			
-abstractMethodDecl : VISIBILITY ABSTRACT TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {
-					$$ = Compiler.abstractMethodDecl(token_solver.build_token('visibility',$1,@1.first_line,@1.first_column),
-					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
-					token_solver.build_token('id',$5,@5.first_line,@5.first_column),$4,$7); 
-					}
-					| ABSTRACT TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {
-					$$ = Compiler.abstractMethodDecl(token_solver.build_token('visibility','public',@1.first_line,@1.first_column),
-					token_solver.build_token('type',$2,@2.first_line,@2.first_column),
-					token_solver.build_token('id',$4,@4.first_line,@4.first_column),$5,$6); 
-					}
-					VISIBILITY ABSTRACT TYPE ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {
-					$$ = Compiler.abstractMethodDecl(token_solver.build_token('visibility',$1,@1.first_line,@1.first_column),
-					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
-					token_solver.build_token('id',$4,@4.first_line,@4.first_column),0,$6); 
-					}
-					| ABSTRACT TYPE ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {
-					$$ = Compiler.abstractMethodDecl(token_solver.build_token('visibility','public',@1.first_line,@1.first_column),
-					token_solver.build_token('type',$2,@2.first_line,@2.first_column),
-					token_solver.build_token('id',$3,@3.first_line,@3.first_column),0,$5); 
-					}
+abstractMethodDecl : TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {$$ = Compiler.abstractMethodDecl(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$3,@3.first_line,@3.first_column),
+					$2,$5); }
+					|  TYPE ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {$$ = Compiler.abstractMethodDecl(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,$4);}
 					;
 
-methodDecl : VISIBILITY TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {
-					$$ = Compiler.methodDecl(token_solver.build_token('visibility',$1,@1.first_line,@1.first_column),
-					token_solver.build_token('type',$2,@2.first_line,@2.first_column),
-					token_solver.build_token('id',$4,@4.first_line,@4.first_column),$3,$6,$9); 
-					}
-			| TYPE ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {
-					$$ = Compiler.methodDecl(token_solver.build_token('visibility','public',@1.first_line,@1.first_column),
+methodDecl : TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {$$ = Compiler.methodDecl(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
-					token_solver.build_token('id',$3,@3.first_line,@3.first_column),$3,$6,$9); 
-					}
-			| VISIBILITY STATIC TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
-			| STATIC TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
+					token_solver.build_token('id',$3,@3.first_line,@3.first_column),$2,$5,$8); }
+			| TYPE ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {$$ = Compiler.methodDecl(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,$4,$7); }
 			;
 			
-			
-constructorDecl : VISIBILITY TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {$$ = Compiler.constructorDecl($3,$6); }
-				|  TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
+constructorDecl : TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {$$ = Compiler.constructorDecl(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),$3,$6); }
 				;
 			
-fieldDecl :   TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
-			| TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
-			| TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
-			| TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
-			| VISIBILITY TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
-			| VISIBILITY TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
-			| VISIBILITY TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
-			| VISIBILITY TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
-			| STATIC TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
-			| STATIC TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
-			| STATIC TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
-			| STATIC TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
-			| VISIBILITY STATIC TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
-			| VISIBILITY STATIC TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
-			| VISIBILITY STATIC TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
-			| VISIBILITY STATIC ID SEMI {$$ = Compiler.fieldDecl(0,null); }
-			| FINAL TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
-			| FINAL TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
-			| FINAL TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
-			| FINAL TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
-			| VISIBILITY FINAL TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
-			| VISIBILITY FINAL TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
-			| VISIBILITY FINAL TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
-			| VISIBILITY FINAL ID SEMI {$$ = Compiler.fieldDecl(0,null); }
-			| STATIC FINAL TYPE ID dimList ASIGNACION Exp SEMI
-			| STATIC FINAL TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
-			| STATIC FINAL TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
-			| STATIC FINAL TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
-			| VISIBILITY STATIC FINAL TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
-			| VISIBILITY STATIC FINAL TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
-			| VISIBILITY STATIC FINAL TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
-			| VISIBILITY STATIC FINAL ID SEMI {$$ = Compiler.fieldDecl(0,null); }
+fieldDecl : TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3,$5); }
+			| TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,$4); }
+			| TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3,null); }
+			| TYPE ID SEMI {$$ = Compiler.fieldDecl(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,null); }
 			;
 
 dimList : dimList LEFT_BRACKET RIGHT_BRACKET {$$ = $1 + 1;}
 			| LEFT_BRACKET RIGHT_BRACKET {$$ = 1;}
 			;
-paramDef : paramDef COMMA TYPE dimList ID {$$ = $1; $$.add(Compiler.paramDef($4));}
-			| paramDef COMMA TYPE ID {$$ = $1; $$.add(Compiler.paramDef(0));}
-			| TYPE dimList ID {$$ = new _Node("paramDefList"); $$.add(Compiler.paramDef($2));}
-			| TYPE ID {$$ = new _Node("paramDefList"); $$.add(Compiler.paramDef(0));}
+paramDef : paramDef COMMA TYPE dimList ID {$$ = $1; $$.add(Compiler.paramDef(
+					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
+					token_solver.build_token('id',$5,@5.first_line,@5.first_column),$4));}
+			| paramDef COMMA TYPE ID {$$ = $1; $$.add(Compiler.paramDef(
+					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
+					token_solver.build_token('id',$4,@4.first_line,@4.first_column),0));}
+			| TYPE dimList ID {$$ = new _Node("paramDefList"); $$.add(Compiler.paramDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$3,@3.first_line,@3.first_column),$2));}
+			| TYPE ID {$$ = new _Node("paramDefList"); $$.add(Compiler.paramDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0));}
 			| /*Empty*/ {$$ = new _Node("paramDefList");}
 			;
 
@@ -232,14 +196,22 @@ basicStmt :	block {$$ = $1;}
 block : LEFT_BRACE stmtL RIGHT_BRACE {$$ = $2;}
 		;
 
-variableDef : TYPE ID dimList ASIGNACION Exp SEMI {$$ = Compiler.variableDef($3,$5);}
-			| TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.variableDef(0,$5);}
-			| TYPE ID dimList SEMI {$$ = Compiler.variableDef($3,null);}
-			| TYPE ID SEMI {$$ = Compiler.variableDef(0,null);}
+variableDef : TYPE ID dimList ASIGNACION Exp SEMI {$$ = Compiler.variableDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3,$5);}
+			| TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.variableDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,$5);}
+			| TYPE ID dimList SEMI {$$ = Compiler.variableDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3,null);}
+			| TYPE ID SEMI {$$ = Compiler.variableDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,null);}
 			;
 			
-returnStmt : RETURN Exp SEMI {$$ = new _Node("Return"); $$.add($2);}
-			| RETURN SEMI {$$ = new _Node("Return");}
+returnStmt : RETURN Exp SEMI {$$ = new _Node("return"); $$.add($2);}
+			| RETURN SEMI {$$ = new _Node("return");}
 			;
 			
 assignationStmt : varChain ASIGNACION Exp SEMI {$$ = new _Node("assignation"); $$.add($1); $$.add($3);};
@@ -306,9 +278,12 @@ forStmt : FOR LPAREN variableDef Exp SEMI update RPAREN block{
 			}
 			;
 
-update : ID ASIGNACION Exp {$$ = new _Node("update"); $$.add(Compiler.update($3)); }
-			| ID AUTO_INCREMENTO {$$ = new _Node("update"); $$.add(Compiler.update(0)); }
-			| ID AUTO_DECREMENTO {$$ = new _Node("update"); $$.add(Compiler.update(1)); }
+update : ID ASIGNACION Exp {$$ = new _Node("update"); $$.add(Compiler.update(
+					token_solver.build_token('id',$1,@1.first_line,@1.first_column),$3)); }
+			| ID AUTO_INCREMENTO {$$ = new _Node("update"); $$.add(Compiler.update(
+					token_solver.build_token('id',$1,@1.first_line,@1.first_column),0)); }
+			| ID AUTO_DECREMENTO {$$ = new _Node("update"); $$.add(Compiler.update(
+					token_solver.build_token('id',$1,@1.first_line,@1.first_column),1)); }
 			;
 			
 autoStmt : varChain AUTO_INCREMENTO {$$ = new _Node("post-increment"); $$.add($1); }
@@ -317,12 +292,16 @@ autoStmt : varChain AUTO_INCREMENTO {$$ = new _Node("post-increment"); $$.add($1
 
 varChain : varChain DOT var {$$ = $1; $$.add($3); }
 			| var {$$ = new _Node("varChain"); $$.add($1); }
-			| TYPE DOT var {$$ = new _Node("varChain"); $$.add(Compiler.staticAccess($3));}
+			| TYPE DOT var {$$ = new _Node("varChain"); $$.add(Compiler.staticAccess(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),$3));}
 			;
 			
-var : ID {$$ = Compiler.varNode(true,null);}
-		| ID dimAccessL {$$ = Compiler.varNode(true,$2);}
-		| ID LEFT_PAREN paramList RIGHT_PAREN {$$ = Compiler.varNode(false,$3);}
+var : ID {$$ = Compiler.varNode(
+					token_solver.build_token('id',$1,@1.first_line,@1.first_column),true,null);}
+		| ID dimAccessL {$$ = Compiler.varNode(
+					token_solver.build_token('id',$1,@1.first_line,@1.first_column),true,$2);}
+		| ID LEFT_PAREN paramList RIGHT_PAREN {$$ = Compiler.varNode(
+					token_solver.build_token('id',$1,@1.first_line,@1.first_column),false,$3);}
 		;
 		
 dimAccessL : dimAccessL LEFT_BRACKET Exp RIGHT_BRACKET {$$ = $1; $$.add($3);}
@@ -334,7 +313,7 @@ paramList : paramList COMMA Exp {$$ = $1; $$.add($3);}
 			| /*Empty*/ {$$ = new _Node("paramList");}
 			;
 
-downcast : LEFT_PAREN TYPE RIGHT_PAREN {$$ = Compiler.downcast();};
+downcast : LEFT_PAREN TYPE RIGHT_PAREN {$$ = Compiler.downcast(token_solver.build_token('type',$2,@2.first_line,@2.first_column));};
 
 Exp : 	Exp PLUS Exp {$$ = new _Node("+"); $$.add($1); $$.add($3); }
 		| Exp MINUS Exp {$$ = new _Node("-"); $$.add($1); $$.add($3); }
@@ -365,13 +344,13 @@ Exp : 	Exp PLUS Exp {$$ = new _Node("+"); $$.add($1); $$.add($3); }
 		| atomic {$$ = $1;}
 		;
 
-atomic : INTEGER {$$ = Compiler.primitive();}
-		| DOUBLE {$$ = Compiler.primitive();}
-		| STRING {$$ = Compiler.primitive();}
-		| CHAR {$$ = Compiler.primitive();}
-		| NULL {$$ = Compiler.primitive();}
-		| BOOLEAN {$$ = Compiler.primitive();}
-		| NEW TYPE LEFT_PAREN paramList RIGHT_PAREN {$$ = Compiler.NEW($4);}
+atomic : INTEGER {$$ = Compiler.primitive(token_solver.build_token('integer',$1,@1.first_line,@1.first_column));}
+		| DOUBLE {$$ = Compiler.primitive(token_solver.build_token('double',$1,@1.first_line,@1.first_column));}
+		| STRING {$$ = Compiler.primitive(token_solver.build_token('string',$1,@1.first_line,@1.first_column));}
+		| CHAR {$$ = Compiler.primitive(token_solver.build_token('char',$1,@1.first_line,@1.first_column));}
+		| NULL {$$ = Compiler.primitive(token_solver.build_token('null',$1,@1.first_line,@1.first_column));}
+		| BOOLEAN {$$ = Compiler.primitive(token_solver.build_token('boolean',$1,@1.first_line,@1.first_column));}
+		| NEW TYPE LEFT_PAREN paramList RIGHT_PAREN {$$ = Compiler.NEW(token_solver.build_token('type',$2,@2.first_line,@2.first_column),$4);}
 		| varChain {$$ = $1;}
 		| inlineArrayDef {$$ = $1;}
 		;
@@ -383,5 +362,6 @@ inlineArrayDef: LEFT_BRACE paramList RIGHT_BRACE {$$ = new _Node("inlineArrayDef
 arrayInitialization : arrayInitialization LEFT_BRACKET Exp RIGHT_BRACKET {
 					$$ = $1; $$.children[1].add($3);
 					}
-					| NEW TYPE LEFT_BRACKET Exp RIGHT_BRACKET {$$ = Compiler.arrayInitialization($4);}
+					| NEW TYPE LEFT_BRACKET Exp RIGHT_BRACKET {$$ = Compiler.arrayInitialization(
+					token_solver.build_token('type',$2,@2.first_line,@2.first_column),$4);}
 					;

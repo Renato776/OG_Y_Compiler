@@ -52,6 +52,13 @@ const Compiler = {
     root: null,
     types:{},
     classes:{},
+    public_regex : new RegExp('^public[ \r\t]'),
+    private_regex : new RegExp('^private[ \r\t]'),
+    protected_regex : new RegExp('^protected[ \r\t]'),
+    static_regex : new RegExp('[ \r\t]static[ \r\t]'),
+    abstract_regex : new RegExp('[ \r\t]abstract[ \r\t]'),
+    final_regex : new RegExp('[ \r\t]final[ \r\t]'),
+    type_regex: new RegExp('@[a-zA-Z_]+[0-9]*'),
     initialize:function () {
         this.root = null;
         this.classes = classes;
@@ -61,22 +68,24 @@ const Compiler = {
         this.types["double"] = new type('double');
         this.types["boolean"] = new type('boolean');
     },
-    resolve_visibility:function(type_text){
-      /*
-      * This method removes the visibility modifiers from the type text and trims it.
-      * It returns the extracted visibility and the trimmed text as an array with two elements.
-      * [0] for visibility and [1] for the the modified text.
-      * */
-        let visibility = 'public';
-        if(type_text.includes('private')){
-            type_text = type_text.replace('private','');
-            visibility = 'private';
-        }else if(type_text.includes('protected')){
-            type_text = type_text.replace('protected','');
-            visibility = 'protected';
-        }else type_text = type_text.replace('public','');
-        type_text = type_text.trim();
-        return [visibility,type_text];
+    extract_type:function(type_text){
+        return type_text.match(this.type_regex)[0].substring(1);
+    },
+    resolve_modifiers:function(type_token,dim){
+       let type_text = type_token.text;
+       let visibility = 'public';
+       let final = false;
+       let abstract = false;
+       let _static = false;
+       if(this.private_regex.test(type_text))visibility = 'private';
+       if(this.protected_regex.test(type_text))visibility = 'protected';
+       if(this.final_regex.test(type_text))final = true;
+       if(this.abstract_regex.test(type_text))abstract = true;
+       if(this.static_regex.test(type_text))_static = true;
+       let true_type = new type(this.extract_type(type_text),dim);
+       if(!(true_type.signature in Compiler.types))Compiler.types[true_type.signature] = true_type; //We register the new type if not already registered.
+       let res = new details(visibility,_static,abstract,final,true_type.signature,type_token);
+       return {token:res,final:final,abstract:abstract,_static:_static,visibility:visibility,type:true_type.signature};
     },
     disable_modifiers:function(type_text){
         /*
@@ -84,14 +93,13 @@ const Compiler = {
         * and throws exception if any is found.
         * Afterwards it returns the type_text properly trimmed and without the @ at the beginning.
         * */
-        if(type_text.includes('public')||type_text.includes('private')||type_text.includes('protected'))
-            throw new _compiling_exception('Visibility modifiers not allowed here.');
-        if(type_text.includes('abstract')||type_text.includes('final'))
-            throw new _compiling_exception('abstract or final modifiers not allowed here.');
-        if(type_text.includes('static'))
-            throw new _compiling_exception('static keyword not allowed here.');
-        type_text = type_text.trim(); //Just in case.
-        return type_text.substring(1); //We remove the @
+        if(this.public_regex.test(type_text)
+        ||this.private_regex.test(type_text)
+        ||this.protected_regex.test(type_text)
+        ||this.final_regex.test(type_text)
+        ||this.abstract_regex.test(type_text)
+        ||this.static_regex.test(type_text))throw new _compiling_exception('Member modifiers not allowed here.');
+        return this.extract_type(type_text);
     },
     get_processed_type_node :function(type_signature, dim = 0, model){
         let true_type = new type(type_signature,dim);
@@ -101,113 +109,66 @@ const Compiler = {
         t.name = 'type';
         return new _Node(t);
     },
-    abstractMethodDecl:function (dim,paramL) { //Prod:: TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI
-        let name = _token_stack.pop(); //ID token
-        let type_token = _token_stack.pop(); //Type token
-        let type_text = type.text; //Type regex
-        if(!type_text.includes('abstract'))throw new _compiling_exception("method: "+name.text+" is missing method body, or declare abstract.");
-        let v = this.resolve_visibility(type_text);
-        let visibility = v[0]; //Extracted visibility
-        type_text = v[1]; //Trimmed and processed type_text
-        if(visibility=='private') throw new _compiling_exception("An abstract method cannot be private.");
-        if(type_text.includes('static'))throw new _compiling_exception("Cannot declare a method as abstract and static at the same time.");
-        type_text = type_text.replace('abstract','').trim();
-        type_text = type_text.substring(1); //We remove the @ at the beginning.
-        let true_type = new type(type_text,dim);
-        if(!(true_type.signature in Compiler.types))Compiler.types[true_type.signature] = true_type; //We register the new type if not already registered.
+    abstractMethodDecl:function (type_token,name,dim,paramL) { //Prod:: TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI
+        let processed_details = this.resolve_modifiers(type_token,dim);
+        if(!processed_details.abstract)throw new _compiling_exception("method: "+name.text+" is missing method body, or declare abstract.");
+        if(processed_details.visibility=='private') throw new _compiling_exception("An abstract method cannot be private.");
+        if(processed_details._static)throw new _compiling_exception("Cannot declare a method as abstract and static at the same time.");
         let res = new _Node("abstractMethod");
-        res.add(new details(visibility,false,true,false,true_type.signature,type_token));
+        res.add(processed_details.token);
         res.add(new _Node(name));
         res.add(paramL);
         return res;
     },
-    methodDecl:function (dim,paramL,stmtL) { //prod::  TYPE ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
-        let name = _token_stack.pop(); //ID token
-        let type_token = _token_stack.pop(); //Type token
-        let type_text = type_token.text;
-        let v = this.resolve_visibility(type_text);
-        let visibility = v[0]; //Extracted visibility
-        type_text = v[1]; //Trimmed and processed type_text
-        if(type_text.includes('abstract'))throw new _compiling_exception("An abstract method cannot be implemented in the same class it is declared on.");
-        if(type_text.includes('final'))throw new _compiling_exception('Final modifier cannot be applied to methods');
+    methodDecl:function (type_token,name,dim,paramL,stmtL) { //prod::  TYPE ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
+        let processed_details = this.resolve_modifiers(type_token,dim);
+        if(processed_details.abstract)throw new _compiling_exception("An abstract method cannot be implemented in the same class it is declared on.");
+        if(processed_details.final)throw new _compiling_exception('Final modifier cannot be applied to methods');
         let res;
-        if(type_text.includes('static')){ //static declaration
-            type_text = type_text.replace('static','').trim();
-            type_text = type_text.substring(1);
-            let true_type = new type(type_text,dim);
-            if(!(true_type.signature in Compiler.types))Compiler.types[true_type.signature] = true_type; //We register the new type if not already registered.
+        if(processed_details._static){ //static declaration
             res = new _Node("staticMethod");
-            res.add(new details(visibility,true,false,false,true_type.signature,type_token));
+            res.add(processed_details.token);
             res.add(new _Node(name));
             res.add(paramL);
             res.add(stmtL);
         }else{ //normal declaration
-            type_text = type_text.substring(1);
-            let true_type = new type(type_text,dim);
-            if(!(true_type.signature in Compiler.types))Compiler.types[true_type.signature] = true_type; //We register the new type if not already registered.
             res = new _Node("method");
-            res.add(new details(visibility,false,false,false,true_type.signature,type_token));
+            res.add(processed_details.token);
             res.add(new _Node(name));
             res.add(paramL);
             res.add(stmtL);
         }
         return res;
     },
-    constructorDecl:function (paramL,stmtL) { //prod:: TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
-        let type_token = _token_stack.pop(); //Type token
-        let type_text = type_token.text;
-        let v = this.resolve_visibility(type_text);
-        let visibility = v[0]; //Extracted visibility
-        type_text = v[1]; //Trimmed and processed type_text
-        if(type_text.includes('static'))throw new _compiling_exception('Cannot declare a constructor as static.');
-        if(type_text.includes('abstract'))throw new _compiling_exception('Cannot declare an abstract constructor.');
-        if(type_text.includes('final'))throw new _compiling_exception('Cannot declare a final constructor.');
-        type_text = type_text.substring(1);
-        if(type_text!=type_token._class)throw new _compiling_exception('The constructor must have the same name as the class which is making reference to.');
+    constructorDecl:function (type_token,paramL,stmtL) { //prod:: TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
+        let processed_details = this.resolve_modifiers(type_token,0);
+        if(processed_details._static)throw new _compiling_exception('Cannot declare a constructor as static.');
+        if(processed_details.abstract)throw new _compiling_exception('Cannot declare an abstract constructor.');
+        if(processed_details.final)throw new _compiling_exception('Cannot declare a final constructor.');
         let v_token = new empty_node(type_token);
         v_token.name = 'visibility';
-        v_token.text = visibility;
+        v_token.text = processed_details.visibility;
         let res = new _Node("constructor");
         res.add(new _Node(v_token));
         let target = new empty_node(type_token);
         v_token.name = 'target';
-        v_token.text = type_text;
+        v_token.text = processed_details.type;
         res.add(new _Node(target));
         res.add(paramL);
         res.add(stmtL);
     },
-    fieldDecl:function (dim,exp) { //prod: TYPE ID dimList SEMI
-        let name = _token_stack.pop(); //ID token
-        let type_token = _token_stack.pop(); //Type token
-        let type_text = type_token.text;
-        let v = this.resolve_visibility(type_text);
-        let visibility = v[0]; //Extracted visibility
-        type_text = v[1]; //Trimmed and processed type_text
-        if(type_text.includes('abstract'))throw new _compiling_exception('Cannot declare an abstract field.');
-        let final = false;
-        if(type_text.includes('final')){
-            type_text = type_text.replace('final','').trim();
-            final = true;
-        }
+    fieldDecl:function (type_token,name,dim,exp) { //prod: TYPE ID dimList SEMI
+        let processed_details = this.resolve_modifiers(type_token,dim);
+        if(processed_details.abstract)throw new _compiling_exception('Cannot declare an abstract field.');
         let res;
-        let _static = type_text.includes('static');
-        if(_static) { //static field
-            type_text = type_text.replace('static', '').trim();
-            res = new _Node('staticField');
-        }else res = new _Node('field');
-
-        type_text = type_text.substring(1);
-        let true_type = new type(type_text,dim);
-        if(!(true_type.signature in Compiler.types))Compiler.types[true_type.signature] = true_type; //We register the new type if not already registered.
-        let _details = new details(visibility,_static,false,final,true_type.signature,type_token);
-        res.add(_details);
+        if(processed_details._static)res = new _Node('staticField');
+        else res = new _Node('field');
+        res.add(processed_details.token);
         res.add(new _Node(name));
         if(exp!=null)res.add(exp);
         return res;
     },
-    paramDef:function (dim) { //prod:: TYPE ID COMMA ...
-        let name = _token_stack.pop(); //ID token
-        let type_token = _token_stack.pop(); //Type token
+    paramDef:function (type_token,name,dim) { //prod:: TYPE ID COMMA ...
         let type_text = type_token.text;
         let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),dim,type_token);
         let res = new _Node('param');
@@ -215,9 +176,7 @@ const Compiler = {
         res.add(new _Node(name));
         return res;
     },
-    variableDef:function (dim, exp = null) { //prod:: TYPE ID SEMI
-        let name = _token_stack.pop(); //ID token
-        let type_token = _token_stack.pop(); //Type token
+    variableDef:function (type_token,name,dim, exp = null) { //prod:: TYPE ID SEMI
         let type_text = type_token.text;
         let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),dim,type_token);
         let res = new _Node('variableDef');
@@ -226,8 +185,7 @@ const Compiler = {
         if(exp!=null)res.add(exp);
         return res;
     },
-    update:function (code) { //prod:: ID ++
-        let target = _token_stack.pop(); //ID token.
+    update:function (target,code) { //prod:: ID ++
         let res = new _Node('update');
         res.add(new _Node(target));
         if(isNaN(code)){ //Custom update
@@ -247,8 +205,7 @@ const Compiler = {
         }
         return res;
     },
-    staticAccess:function (target) { //Prod: Type DOT var
-        let type_token = _token_stack.pop(); //Type token
+    staticAccess:function (type_token,target) { //Prod: Type DOT var
         let type_text = type_token.text;
         let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),0,type_token);
         if(!(type_node.text in Compiler.classes))throw new _compiling_exception(type_node.text+" is not a class.");
@@ -257,9 +214,8 @@ const Compiler = {
         res.add(target);
         return res;
     },
-    varNode:function (fieldAccess, list) {
+    varNode:function (target,fieldAccess, list) {
         let res;
-        let target = _token_stack.pop(); //ID token
         let target_node = new _Node(target);
         if(fieldAccess){ //fieldAccess list is either null or a index expression list.
             if(list==null){ //normalAccess
@@ -277,20 +233,17 @@ const Compiler = {
         }
         return res;
     },
-    downcast:function () { //prod:: ( type )
+    downcast:function (type_token) { //prod:: ( type )
         let res = new _Node('downcast');
-        let type_token = _token_stack.pop(); //Type token
         let type_text = type_token.text;
         let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),0,type_token);
         res.add(type_node);
         return res;
     },
-    primitive :function () { //prod:: primitive
-        let primitive = _token_stack.pop();
+    primitive :function (primitive) { //prod:: primitive
         return new _Node(primitive);
     },
-    NEW : function (paramL) { //prod:: NEW TYPE LEFT_PAREN paramList RIGHT_PAREN
-        let type_token = _token_stack.pop(); //Type token
+    NEW : function (type_token,paramL) { //prod:: NEW TYPE LEFT_PAREN paramList RIGHT_PAREN
         let type_text = type_token.text;
         let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),0,type_token);
         let res = new _Node('new');
@@ -298,8 +251,7 @@ const Compiler = {
         res.add(paramL);
         return res;
     },
-    arrayInitialization:function (firstIndex) {//prod:: NEW TYPE LEFT_BRACKET Exp RIGHT_BRACKET
-        let type_token = _token_stack.pop(); //Type token
+    arrayInitialization:function (type_token,firstIndex) {//prod:: NEW TYPE LEFT_BRACKET Exp RIGHT_BRACKET
         let type_text = type_token.text;
         let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),0,type_token);
         let res = new _Node('arrayInitialization');
