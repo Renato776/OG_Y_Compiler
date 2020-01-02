@@ -52,6 +52,10 @@ const Compiler = {
     root: null,
     types:{},
     classes:{},
+    ast_visualization:"",
+    indenting:"",
+    color_stack:[],
+    aux_color_stack:[],
     public_regex : new RegExp('^public[ \r\t]'),
     private_regex : new RegExp('^private[ \r\t]'),
     protected_regex : new RegExp('^protected[ \r\t]'),
@@ -61,6 +65,10 @@ const Compiler = {
     type_regex: new RegExp('@[a-zA-Z_]+[0-9]*'),
     initialize:function () {
         $("#AST_Container").empty();
+        this.color_stack = [];
+        this.aux_color_stack = [];
+        this.ast_visualization = "";
+        this.indenting = "";
         this.root = null;
         this.classes = classes;
         this.types = {};
@@ -153,8 +161,8 @@ const Compiler = {
         let res = new _Node("constructor");
         res.add(new _Node(v_token));
         let target = new empty_node(type_token);
-        v_token.name = 'target';
-        v_token.text = processed_details.type;
+        target.name = 'target';
+        target.text = processed_details.type;
         res.add(new _Node(target));
         res.add(paramL);
         res.add(stmtL);
@@ -265,13 +273,8 @@ const Compiler = {
         return res;
     },
     build_nodeStructure:function () {
-        if (this.root==null)return {};
-        let base_structure = this.root.get_visualization();
-        let ast = {chart:{container:"#AST_Container",
-                levelSeparation: 45,
-                rootOrientation: "WEST",
-                siblingSeparation: 10},
-            nodeStructure:base_structure};
-        let my_chart = new Treant(ast);
+        if (this.root == null) return;
+        this.root.printTree();
+        $("#AST_Container").html(this.ast_visualization);
     }
 };

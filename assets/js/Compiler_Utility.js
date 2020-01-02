@@ -91,6 +91,7 @@ const _token = function (name,col,row,text, _class = "N/A",format = false, empty
         this.row = unfinished.row;
         this.file = unfinished.file;
         this._class = unfinished._class;
+        return this;
     }
     if(empty){
         this.name = "empty";
@@ -134,31 +135,61 @@ const _Node = function (name) {
         if(this.token)return this;
         return this.children[0].get_token();
     };
-    this.get_visualization = function () {
-      if(!this.token){
-        let res =  {text:{name:this.name},children:[]};
-        this.children.forEach(n=>{
-            if(n==undefined){
-                console.log('Yikes, n is indeed undefined.');
-                console.log(this);
-            }else res.children.push(n.get_visualization());
-        });
-        return res;
-      }else{
-          let showInfo = false;
-          let wrapper;
-          if(showInfo)wrapper = {text:{name:this.name},children:[{text:{name:this.text},children:[
-                      {text:{name:"info"},children:[
-                              {text:{name:"row"},children:[{text:{name:this.row}}]},
-                              {text:{name:"col"},children:[{text:{name:this.col}}]},
-                              {text:{name:"file"},children:[{text:{name:this.file}}]},
-                              {text:{name:"class"},children:[{text:{name:this._class}}]}
-                          ]}
-                  ]}]};
-          else wrapper = {text:{name:this.name},children:[{text:{name:this.text}}]};
-        return wrapper;
-      }
+    this.advance = function(){
+        Compiler.indenting = Compiler.indenting + "****";
     };
+    this.back = function(){
+        Compiler.indenting = Compiler.indenting.substring(0,Compiler.indenting.length-4);
+    };
+    this.begin = function(){
+        let res = "";
+        let $container = '<span class="node_container" style="background-color:';
+        let $display = '<span class = "node_display">';
+        let color = Compiler.color_stack.pop();
+        if(color==undefined)color = getRandomColor();
+        Compiler.aux_color_stack.push(color);
+        $container+=color+';">';
+        $display+=("+" + this.name)+"</span>";
+        $container+=$display+"</span>";
+        res =  Compiler.indenting + $container;
+        this.advance();
+        return res;
+    };
+    this.end = function(){
+        let res = "";
+        this.back();
+        let $container = '<span class="node_container" style="background-color:';
+        let $display = '<span class = "node_display">';
+        let color = Compiler.aux_color_stack.pop();
+        Compiler.color_stack.push(color);
+        $container+=color+';">';
+        $display+=("-" + this.name)+"</span>";
+        $container+=$display+"</span>";
+        res =  Compiler.indenting + $container;
+        return res;
+    };
+    this.printTree = function(){
+        if (this.token)
+        {
+            let $container = '<span class="node_container" style="background-color:';
+            let $display = '<span class = "node_display">';
+            let color = Compiler.color_stack.pop();
+            if(color==undefined)color = getRandomColor();
+            Compiler.color_stack.push(color);
+            $container+=color+';">';
+            $display+=(this.name+":"+this.text)+"</span>";
+            $container+=$display+"</span>";
+            Compiler.ast_visualization += (Compiler.indenting + $container)+"<br>";
+        }
+        else
+        {
+            Compiler.ast_visualization += this.begin()+"<br>\n";
+            this.children.forEach(child=>{
+                if(child!=undefined)child.printTree();
+            });
+            Compiler.ast_visualization += this.end()+"<br>\n";
+        }
+    }
 };
 const error_entry = function (type,line,col,details,_class,file) {
     let $row = $("<tr>");
@@ -385,7 +416,7 @@ function digest(string) { //We scape the characters (if any)
         .replace('\\\\','\\')
         .replace('\\t','\t')
         .replace('\\\"','"')
-        .replace('\\\'','\'');
+        .replace('\\\'','\'').substring(1,string.length-1);
 }
 const Import_Solver = {
     already_imported: [],
@@ -540,7 +571,7 @@ const token_solver = {
     build_token:function (name,text,line,col) {
         this.column = col;
         this.line = this.calculate_relative_position(line);
-        return new _token(name,this.col,this.line,text,this.peek_class_tracker());
+        return new _token(name,this.column,this.line,text,this.peek_class_tracker());
     },
     initialize:function () {
         this.line = 0;
@@ -621,6 +652,14 @@ function prepare_all_types(source) {
         source = source.replace(classRegex,replace_class_token);
       });
     return source;
+}
+function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
 }
 function compile_source() {
     if(current_source_mirror==null)return; //There's nothing to compile in the first place.
