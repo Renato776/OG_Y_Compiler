@@ -516,7 +516,7 @@ const token_solver = {
     build_token:function (name,text,line,col) {
         this.column = col;
         this.line = this.calculate_relative_position(line);
-        return new _token(name,this.col,this.line,text,this.peek_class_tracker())
+        return new _token(name,this.col,this.line,text,this.peek_class_tracker());
     },
     initialize:function () {
         this.line = 0;

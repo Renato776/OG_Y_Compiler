@@ -102,31 +102,49 @@ case 11:
 this.$ = new _Node("declList");
 break;
 case 12:
-this.$ = Compiler.abstractMethodDecl($$[$0-5],$$[$0-2]); 
+this.$ = Compiler.abstractMethodDecl(
+					token_solver.build_token('type',$$[$0-6],_$[$0-6].first_line,_$[$0-6].first_column),
+					token_solver.build_token('id',$$[$0-4],_$[$0-4].first_line,_$[$0-4].first_column),
+					$$[$0-5],$$[$0-2]); 
 break;
 case 13:
-this.$ = Compiler.abstractMethodDecl(0,$$[$0-2]);
+this.$ = Compiler.abstractMethodDecl(
+					token_solver.build_token('type',$$[$0-5],_$[$0-5].first_line,_$[$0-5].first_column),
+					token_solver.build_token('id',$$[$0-4],_$[$0-4].first_line,_$[$0-4].first_column),0,$$[$0-2]);
 break;
 case 14:
-this.$ = Compiler.methodDecl($$[$0-7],$$[$0-4],$$[$0-1]); 
+this.$ = Compiler.methodDecl(
+					token_solver.build_token('type',$$[$0-8],_$[$0-8].first_line,_$[$0-8].first_column),
+					token_solver.build_token('id',$$[$0-6],_$[$0-6].first_line,_$[$0-6].first_column),$$[$0-7],$$[$0-4],$$[$0-1]); 
 break;
 case 15:
-this.$ = Compiler.methodDecl(0,$$[$0-4],$$[$0-1]); 
+this.$ = Compiler.methodDecl(
+					token_solver.build_token('type',$$[$0-7],_$[$0-7].first_line,_$[$0-7].first_column),
+					token_solver.build_token('id',$$[$0-6],_$[$0-6].first_line,_$[$0-6].first_column),0,$$[$0-4],$$[$0-1]); 
 break;
 case 16:
-this.$ = Compiler.constructorDecl($$[$0-4],$$[$0-1]); 
+this.$ = Compiler.constructorDecl(
+					token_solver.build_token('type',$$[$0-6],_$[$0-6].first_line,_$[$0-6].first_column),$$[$0-4],$$[$0-1]); 
 break;
 case 17:
-this.$ = Compiler.fieldDecl($$[$0-3],$$[$0-1]); 
+this.$ = Compiler.fieldDecl(
+					token_solver.build_token('type',$$[$0-5],_$[$0-5].first_line,_$[$0-5].first_column),
+					token_solver.build_token('id',$$[$0-4],_$[$0-4].first_line,_$[$0-4].first_column),$$[$0-3],$$[$0-1]); 
 break;
 case 18:
-this.$ = Compiler.fieldDecl(0,$$[$0-1]); 
+this.$ = Compiler.fieldDecl(
+					token_solver.build_token('type',$$[$0-4],_$[$0-4].first_line,_$[$0-4].first_column),
+					token_solver.build_token('id',$$[$0-3],_$[$0-3].first_line,_$[$0-3].first_column),0,$$[$0-1]); 
 break;
 case 19:
-this.$ = Compiler.fieldDecl($$[$0-1],null); 
+this.$ = Compiler.fieldDecl(
+					token_solver.build_token('type',$$[$0-3],_$[$0-3].first_line,_$[$0-3].first_column),
+					token_solver.build_token('id',$$[$0-2],_$[$0-2].first_line,_$[$0-2].first_column),$$[$0-1],null); 
 break;
 case 20:
-this.$ = Compiler.fieldDecl(0,null); 
+this.$ = Compiler.fieldDecl(
+					token_solver.build_token('type',$$[$0-2],_$[$0-2].first_line,_$[$0-2].first_column),
+					token_solver.build_token('id',$$[$0-1],_$[$0-1].first_line,_$[$0-1].first_column),0,null); 
 break;
 case 21:
 this.$ = $$[$0-2] + 1;
@@ -135,16 +153,24 @@ case 22:
 this.$ = 1;
 break;
 case 23:
-this.$ = $$[$0-4]; this.$.add(Compiler.paramDef($$[$0-1]));
+this.$ = $$[$0-4]; this.$.add(Compiler.paramDef(
+					token_solver.build_token('type',$$[$0-2],_$[$0-2].first_line,_$[$0-2].first_column),
+					token_solver.build_token('id',$$[$0],_$[$0].first_line,_$[$0].first_column),$$[$0-1]));
 break;
 case 24:
-this.$ = $$[$0-3]; this.$.add(Compiler.paramDef(0));
+this.$ = $$[$0-3]; this.$.add(Compiler.paramDef(
+					token_solver.build_token('type',$$[$0-1],_$[$0-1].first_line,_$[$0-1].first_column),
+					token_solver.build_token('id',$$[$0],_$[$0].first_line,_$[$0].first_column),0));
 break;
 case 25:
-this.$ = new _Node("paramDefList"); this.$.add(Compiler.paramDef($$[$0-1]));
+this.$ = new _Node("paramDefList"); this.$.add(Compiler.paramDef(
+					token_solver.build_token('type',$$[$0-2],_$[$0-2].first_line,_$[$0-2].first_column),
+					token_solver.build_token('id',$$[$0],_$[$0].first_line,_$[$0].first_column),$$[$0-1]));
 break;
 case 26:
-this.$ = new _Node("paramDefList"); this.$.add(Compiler.paramDef(0));
+this.$ = new _Node("paramDefList"); this.$.add(Compiler.paramDef(
+					token_solver.build_token('type',$$[$0-1],_$[$0-1].first_line,_$[$0-1].first_column),
+					token_solver.build_token('id',$$[$0],_$[$0].first_line,_$[$0].first_column),0));
 break;
 case 27:
 this.$ = new _Node("paramDefList");
@@ -159,22 +185,30 @@ case 30: case 31: case 32: case 33: case 34: case 35: case 36: case 37: case 38:
 this.$ = $$[$0];
 break;
 case 53:
-this.$ = Compiler.variableDef($$[$0-3],$$[$0-1]);
+this.$ = Compiler.variableDef(
+					token_solver.build_token('type',$$[$0-5],_$[$0-5].first_line,_$[$0-5].first_column),
+					token_solver.build_token('id',$$[$0-4],_$[$0-4].first_line,_$[$0-4].first_column),$$[$0-3],$$[$0-1]);
 break;
 case 54:
-this.$ = Compiler.variableDef(0,$$[$0]);
+this.$ = Compiler.variableDef(
+					token_solver.build_token('type',$$[$0-4],_$[$0-4].first_line,_$[$0-4].first_column),
+					token_solver.build_token('id',$$[$0-3],_$[$0-3].first_line,_$[$0-3].first_column),0,$$[$0]);
 break;
 case 55:
-this.$ = Compiler.variableDef($$[$0-1],null);
+this.$ = Compiler.variableDef(
+					token_solver.build_token('type',$$[$0-3],_$[$0-3].first_line,_$[$0-3].first_column),
+					token_solver.build_token('id',$$[$0-2],_$[$0-2].first_line,_$[$0-2].first_column),$$[$0-1],null);
 break;
 case 56:
-this.$ = Compiler.variableDef(0,null);
+this.$ = Compiler.variableDef(
+					token_solver.build_token('type',$$[$0-2],_$[$0-2].first_line,_$[$0-2].first_column),
+					token_solver.build_token('id',$$[$0-1],_$[$0-1].first_line,_$[$0-1].first_column),0,null);
 break;
 case 57:
-this.$ = new _Node("Return"); this.$.add($$[$0-1]);
+this.$ = new _Node("return"); this.$.add($$[$0-1]);
 break;
 case 58:
-this.$ = new _Node("Return");
+this.$ = new _Node("return");
 break;
 case 59:
 this.$ = new _Node("assignation"); this.$.add($$[$0-3]); this.$.add($$[$0-1]);
@@ -249,13 +283,16 @@ case 73:
 			
 break;
 case 74:
-this.$ = new _Node("update"); this.$.add(Compiler.update($$[$0])); 
+this.$ = new _Node("update"); this.$.add(Compiler.update(
+					token_solver.build_token('id',$$[$0-2],_$[$0-2].first_line,_$[$0-2].first_column),$$[$0])); 
 break;
 case 75:
-this.$ = new _Node("update"); this.$.add(Compiler.update(0)); 
+this.$ = new _Node("update"); this.$.add(Compiler.update(
+					token_solver.build_token('id',$$[$0-1],_$[$0-1].first_line,_$[$0-1].first_column),0)); 
 break;
 case 76:
-this.$ = new _Node("update"); this.$.add(Compiler.update(1)); 
+this.$ = new _Node("update"); this.$.add(Compiler.update(
+					token_solver.build_token('id',$$[$0-1],_$[$0-1].first_line,_$[$0-1].first_column),1)); 
 break;
 case 77: case 109:
 this.$ = new _Node("post-increment"); this.$.add($$[$0-1]); 
@@ -270,16 +307,20 @@ case 80:
 this.$ = new _Node("varChain"); this.$.add($$[$0]); 
 break;
 case 81:
-this.$ = new _Node("varChain"); this.$.add(Compiler.staticAccess($$[$0]));
+this.$ = new _Node("varChain"); this.$.add(Compiler.staticAccess(
+					token_solver.build_token('type',$$[$0-2],_$[$0-2].first_line,_$[$0-2].first_column),$$[$0]));
 break;
 case 82:
-this.$ = Compiler.varNode(true,null);
+this.$ = Compiler.varNode(
+					token_solver.build_token('id',$$[$0],_$[$0].first_line,_$[$0].first_column),true,null);
 break;
 case 83:
-this.$ = Compiler.varNode(true,$$[$0]);
+this.$ = Compiler.varNode(
+					token_solver.build_token('id',$$[$0-1],_$[$0-1].first_line,_$[$0-1].first_column),true,$$[$0]);
 break;
 case 84:
-this.$ = Compiler.varNode(false,$$[$0-1]);
+this.$ = Compiler.varNode(
+					token_solver.build_token('id',$$[$0-3],_$[$0-3].first_line,_$[$0-3].first_column),false,$$[$0-1]);
 break;
 case 85:
 this.$ = $$[$0-3]; this.$.add($$[$0-1]);
@@ -297,7 +338,7 @@ case 89:
 this.$ = new _Node("paramList");
 break;
 case 90:
-this.$ = Compiler.downcast();
+this.$ = Compiler.downcast(token_solver.build_token('type',$$[$0-1],_$[$0-1].first_line,_$[$0-1].first_column));
 break;
 case 91:
 this.$ = new _Node("+"); this.$.add($$[$0-2]); this.$.add($$[$0]); 
@@ -366,11 +407,26 @@ this.$ = new _Node("ternario");
 		this.$.add($$[$0]);
 		
 break;
-case 114: case 115: case 116: case 117: case 118: case 119:
-this.$ = Compiler.primitive();
+case 114:
+this.$ = Compiler.primitive(token_solver.build_token('integer',$$[$0],_$[$0].first_line,_$[$0].first_column));
+break;
+case 115:
+this.$ = Compiler.primitive(token_solver.build_token('double',$$[$0],_$[$0].first_line,_$[$0].first_column));
+break;
+case 116:
+this.$ = Compiler.primitive(token_solver.build_token('string',$$[$0],_$[$0].first_line,_$[$0].first_column));
+break;
+case 117:
+this.$ = Compiler.primitive(token_solver.build_token('char',$$[$0],_$[$0].first_line,_$[$0].first_column));
+break;
+case 118:
+this.$ = Compiler.primitive(token_solver.build_token('null',$$[$0],_$[$0].first_line,_$[$0].first_column));
+break;
+case 119:
+this.$ = Compiler.primitive(token_solver.build_token('boolean',$$[$0],_$[$0].first_line,_$[$0].first_column));
 break;
 case 120:
-this.$ = Compiler.NEW($$[$0-1]);
+this.$ = Compiler.NEW(token_solver.build_token('type',$$[$0-3],_$[$0-3].first_line,_$[$0-3].first_column),$$[$0-1]);
 break;
 case 123:
 this.$ = new _Node("inlineArrayDef"); this.$.fuse($$[$0-1]);
@@ -381,7 +437,8 @@ case 125:
 					
 break;
 case 126:
-this.$ = Compiler.arrayInitialization($$[$0-1]);
+this.$ = Compiler.arrayInitialization(
+					token_solver.build_token('type',$$[$0-3],_$[$0-3].first_line,_$[$0-3].first_column),$$[$0-1]);
 break;
 }
 },
@@ -868,7 +925,7 @@ case 0:/*Inline Comment, ignore.*/
 break;
 case 1:/*Block Comment, ignore.*/
 break;
-case 2:token_solver.register_important_token('type'); return 17;
+case 2:return 17;
 break;
 case 3:token_solver.begin_class(yy_.yytext.trim()); return 10;
 break;
@@ -878,13 +935,13 @@ case 5:token_solver.end_import(yy_.yylloc.first_line-1); return 9;
 break;
 case 6:token_solver.begin_import(yy_.yytext.trim(),yy_.yylloc.first_line-1); return 8;
 break;
-case 7:token_solver.register_important_token('boolean'); return 93;
+case 7:return 93;
 break;
-case 8:token_solver.register_important_token('null'); return 92;
+case 8:return 92;
 break;
-case 9:token_solver.register_important_token('char'); return 91;
+case 9:return 91;
 break;
-case 10:token_solver.register_important_token('string'); return 90;
+case 10:return 90;
 break;
 case 11:return 46;
 break;
@@ -966,15 +1023,15 @@ case 49:return 66;
 break;
 case 50:return 31;	
 break;
-case 51:token_solver.register_important_token('id'); return 19;
+case 51:return 19;
 break;
 case 52:/*WHITESPACE IGNORE*/
 break;
 case 53:/*NEW LINE. IGNORE*/
 break;
-case 54:token_solver.register_important_token('integer'); return 88;
+case 54:return 88;
 break;
-case 55:token_solver.register_important_token('double'); return 89;
+case 55:return 89;
 break;
 case 56:return 5;
 break;
