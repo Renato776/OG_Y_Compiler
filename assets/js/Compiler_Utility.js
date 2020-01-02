@@ -135,7 +135,29 @@ const _Node = function (name) {
         return this.children[0].get_token();
     };
     this.get_visualization = function () {
-      return "Name: "+this.name+" Leaf: "+this.token;
+      if(!this.token){
+        let res =  {text:{name:this.name},children:[]};
+        this.children.forEach(n=>{
+            if(n==undefined){
+                console.log('Yikes, n is indeed undefined.');
+                console.log(this);
+            }else res.children.push(n.get_visualization());
+        });
+        return res;
+      }else{
+          let showInfo = false;
+          let wrapper;
+          if(showInfo)wrapper = {text:{name:this.name},children:[{text:{name:this.text},children:[
+                      {text:{name:"info"},children:[
+                              {text:{name:"row"},children:[{text:{name:this.row}}]},
+                              {text:{name:"col"},children:[{text:{name:this.col}}]},
+                              {text:{name:"file"},children:[{text:{name:this.file}}]},
+                              {text:{name:"class"},children:[{text:{name:this._class}}]}
+                          ]}
+                  ]}]};
+          else wrapper = {text:{name:this.name},children:[{text:{name:this.text}}]};
+        return wrapper;
+      }
     };
 };
 const error_entry = function (type,line,col,details,_class,file) {
@@ -376,10 +398,12 @@ const Import_Solver = {
         $("#ErrorTableBody").empty(); //We clear the previous error log.
         $("#Classes_Body").empty();
         $("#Classes_Header").empty();
+        $("#Unified_Source").empty();
         clear_object(classes); //We clear the class list.
         classes['Object'] = Object_Class; //We add default Object class.
         classes['String'] = String_Class; //We add default String class.
         apply_native_functions(); //We load default fields/methods for the primitive classes.
+        Compiler.initialize();
         class_counter = 1;
         selected_class = null;
         this.already_imported.length = 0;
@@ -629,10 +653,10 @@ function compile_source() {
        if(!("semantic" in e)){
            _pre_compiling_syntactical_error();
        }
+       console.log(e);
     }
-    let root = Compiler.root;
-    console.log('Everything seems fine!!');
-    console.log(root);
+    //let root = Compiler.root;
+    Compiler.build_nodeStructure();
     //Perform inheritance.
     graph_all_classes();
     compile_native_functions();

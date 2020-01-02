@@ -60,8 +60,10 @@ const Compiler = {
     final_regex : new RegExp('[ \r\t]final[ \r\t]'),
     type_regex: new RegExp('@[a-zA-Z_]+[0-9]*'),
     initialize:function () {
+        $("#AST_Container").empty();
         this.root = null;
         this.classes = classes;
+        this.types = {};
         this.types["void"] = new type('void');
         this.types["char"] = new type('char');
         this.types["int"] = new type('int');
@@ -156,6 +158,7 @@ const Compiler = {
         res.add(new _Node(target));
         res.add(paramL);
         res.add(stmtL);
+       // return res;
     },
     fieldDecl:function (type_token,name,dim,exp) { //prod: TYPE ID dimList SEMI
         let processed_details = this.resolve_modifiers(type_token,dim);
@@ -260,5 +263,15 @@ const Compiler = {
         indexL.add(firstIndex);
         res.add(indexL);
         return res;
+    },
+    build_nodeStructure:function () {
+        if (this.root==null)return {};
+        let base_structure = this.root.get_visualization();
+        let ast = {chart:{container:"#AST_Container",
+                levelSeparation: 45,
+                rootOrientation: "WEST",
+                siblingSeparation: 10},
+            nodeStructure:base_structure};
+        let my_chart = new Treant(ast);
     }
 };
