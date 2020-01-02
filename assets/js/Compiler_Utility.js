@@ -1,4 +1,10 @@
 /*
+*Y_Grammar action to perform before the switching of the token is performed.
+* let aux_token = yy_.yytext;
+aux_token = aux_token.trim();
+if(aux_token!="")token_solver.debug(aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
+* */
+/*
  * Steps to successfully compile the source code into 3D and outputs
  * the result directly to the Execution & Debugging tabs.
  * The cycle for successfully compiling source code would be:
@@ -46,7 +52,6 @@
  * Therefore all arrays will only hold information needed to check if they're compatible or not.
  * **/
 let _token_tracker = [];
-let SymbolTable = [];
 const native_functions = [];
 const CHAR_ARRAY = 'array|char';
 const INTEGER = 'integer';
@@ -96,8 +101,9 @@ const _token = function (name,col,row,text, _class = "N/A",format = false, empty
     if(empty){
         this.name = "empty";
         this.text = "";
-        this.col = "0";
-        this.row = "0";
+        this.col = "N/A";
+        this.row = "N/A";
+        this._class = 'N/A';
         this.file = "program";
         return this;
     }
@@ -133,6 +139,7 @@ const _Node = function (name) {
     };
     this.get_token = function () {
         if(this.token)return this;
+        if(this.children.length==0)return new _Node(new _token(null,null,null,null,null,null,true));
         return this.children[0].get_token();
     };
     this.advance = function(){
@@ -171,6 +178,7 @@ const _Node = function (name) {
     this.printTree = function(){
         if (this.token)
         {
+            console.log('printing leaf: '+this.name+"::"+this.text);
             let $container = '<span class="node_container" style="background-color:';
             let $display = '<span class = "node_display">';
             let color = Compiler.color_stack.pop();
@@ -314,7 +322,12 @@ function select_class(e) {
 function _pre_compiling_syntactical_error(){
     let t = _token_tracker.pop();
     if(t == undefined)throw "Fatal ERROR! Somehow managed to throw an exception before any token has been parsed!!";
-    let $row = new error_entry('Syntactical',t.row,t.col,"Unexpected symbol: "+t.text,t._class,t.file);
+    let $row;
+    if(t.text.includes('@')){
+        t.text = t.text.replace('@','').trim();
+        $row = new error_entry('Syntactical',t.row,t.col,"Unexpected type: "+t.text,t._class,t.file);
+    }
+    else $row = new error_entry('Syntactical',t.row,t.col,"Unexpected symbol: "+t.text,t._class,t.file);
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
 }
@@ -559,7 +572,7 @@ const token_solver = {
       this.class_tracker.pop();
     },
     calculate_relative_position:function(position){
-        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2;
+        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -1;
         if(this.size_tracker.length==1)position = position + 1; //True only if I'm importing in main file.
         return position;
     },
@@ -692,10 +705,9 @@ function compile_source() {
        if(!("semantic" in e)){
            _pre_compiling_syntactical_error();
        }
-       console.log(e);
     }
-    //let root = Compiler.root;
-    Compiler.build_nodeStructure();
+    Compiler.build_nodeStructure(); //aka graph AST
+    Compiler.build_symbolTable();
     //Perform inheritance.
     graph_all_classes();
     compile_native_functions();
