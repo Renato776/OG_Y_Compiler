@@ -46,7 +46,6 @@
  * Therefore all arrays will only hold information needed to check if they're compatible or not.
  * **/
 let _token_tracker = [];
-let _token_stack = [];
 let SymbolTable = [];
 const native_functions = [];
 const CHAR_ARRAY = 'array|char';
@@ -105,7 +104,7 @@ const _token = function (name,col,row,text, _class = "N/A",format = false, empty
     this.col = col;
     this.row = row;
     this.file = location_solver.peek_size_tracker().name;
-    if(format) this.text = digest(text);
+    if(this.name=='string'||this.name=='char') this.text = digest(text);
     else this.text = text;
     this._class = _class;
 };
@@ -473,9 +472,6 @@ const token_solver = {
     peek_imported_text: function(){
         return this.imported_text[this.imported_text.length-1];
     },
-    peek_token_tracker : function(){
-        return _token_tracker[_token_tracker.length-1];
-    },
     peek_class_tracker:function(){
         if(this.class_tracker.length==0)return 'Built-in';
         return this.class_tracker[this.class_tracker.length-1];
@@ -517,11 +513,10 @@ const token_solver = {
         this.line = this.calculate_relative_position(yyline);
         _token_tracker.push(new _token('token',this.column,this.line,yytext,this.peek_class_tracker()));
     },
-    register_important_token:function(name){
-        let t = this.peek_token_tracker();
-        if(name=='string'||name=='char')t.text = digest(t.text);
-        t.name = name;
-        _token_stack.push(t);
+    build_token:function (name,text,line,col) {
+        this.column = col;
+        this.line = this.calculate_relative_position(line);
+        return new _token(name,this.col,this.line,text,this.peek_class_tracker())
     },
     initialize:function () {
         this.line = 0;
@@ -529,7 +524,6 @@ const token_solver = {
         this.class_tracker = [];
         this.imported_text = [];
         this.size_tracker = [];
-        _token_stack = [];
         _token_tracker = [];
         this.imported_text.push([]); //We add a brand new List to the import scope.
         let cf = get_current_file();
