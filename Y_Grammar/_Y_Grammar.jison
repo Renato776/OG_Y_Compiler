@@ -10,16 +10,20 @@
 /* keywords */
 
 "//"[^\r\n]*													{/*Inline Comment, ignore.*/}
-"/*"([^"*/"])*"*/"													{/*Block Comment, ignore.*/}
-(("public"|"private"|"protected")[ \r\t]+)?("static"[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"@"([a-zA-Z]|_)+[0-9]*   {token_solver.register_important_token('type'); return 'TYPE';}
-"&amp;&amp;&amp;@"([a-zA-Z]|_)+[0-9]*			{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
-"&amp;&amp;&amp;&amp;END"														{token_solver.end_class(); return 'END_CLASS';}
-"####END"								{token_solver.end_import(yylloc.first_line-1); return 'END_IMPORT';}
-"###"("/"("@")?([a-zA-Z]|_)+[0-9]*("."([a-zA-Z]|_)+)?)+		{token_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'BEGIN_IMPORT';}
-("true"|"false")						{token_solver.register_important_token('boolean'); return 'BOOLEAN';}
-"null"								{token_solver.register_important_token('null'); return 'NULL';}
-"'"([^"'"\\]|\\.)*"'"				{token_solver.register_important_token('char'); return 'CHAR';}
-"\""([^"\""\\]|\\.)*"\""			{token_solver.register_important_token('string'); return 'STRING';}
+"/*"([^"*/"])*"*/"												{/*Block Comment, ignore.*/}
+"@"([a-zA-Z]|_)+[0-9]*   										{return 'TYPE';}
+"&amp;&amp;&amp;@"([a-zA-Z]|_)+[0-9]*							{return 'CLASS_BEGIN';}
+"&amp;&amp;&amp;&amp;END"										{token_solver.end_class(); return 'END_CLASS';}
+"####END"														{token_solver.end_import(yylloc.first_line-1); return 'END_IMPORT';}
+"###"("/"("@")?([a-zA-Z]|_)+[0-9]*("."([a-zA-Z]|_)+)?)+	  {token_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'BEGIN_IMPORT';}
+("true"|"false")												 return 'BOOLEAN';
+"null"															 return 'NULL';
+"'"([^"'"\\]|\\.)*"'"											 return 'CHAR';
+"\""([^"\""\\]|\\.)*"\""										 return 'STRING';
+("public"|"private"|"protected")	return 'VISIBILITY';
+"static"							return 'STATIC';
+"abstract"							return 'ABSTRACT';
+"final"								return 'FINAL';
 "return"							return 'RETURN';
 "break"								return 'BREAK';
 "if"								return 'IF';
@@ -60,12 +64,12 @@
 ":"									return 'COLON';
 "."									return 'DOT';
 ","									return 'COMMA';	
-([a-zA-Z]|_)+[0-9]*						{token_solver.register_important_token('id'); return 'ID';}
+([a-zA-Z]|_)+[0-9]*						return 'ID';
 [ \r\t]+                                {/*WHITESPACE IGNORE*/}
 \n                                      {/*NEW LINE. IGNORE*/}
-[0-9]+									{token_solver.register_important_token('integer'); return 'INTEGER';}
-[0-9]+("."[0-9]*)?						{token_solver.register_important_token('double'); return 'DOUBLE';}
-<<EOF>>                 			return 'EOF';
+[0-9]+									return 'INTEGER';
+[0-9]+("."[0-9]*)?						return 'DOUBLE';
+<<EOF>>                 			    return 'EOF';
 .										{_pre_compiling_lexical_exception();}
 
 /lex
@@ -110,21 +114,79 @@ declList : declList methodDecl {$1.add($2); $$ = $1; }
 			|/*Empty*/ {$$ = new _Node("declList");}
 			;
 			
-abstractMethodDecl : TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {$$ = Compiler.abstractMethodDecl($2,$5); }
-					|  TYPE ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {$$ = Compiler.abstractMethodDecl(0,$4);}
+abstractMethodDecl : VISIBILITY ABSTRACT TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {
+					$$ = Compiler.abstractMethodDecl(token_solver.build_token('visibility',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
+					token_solver.build_token('id',$5,@5.first_line,@5.first_column),$4,$7); 
+					}
+					| ABSTRACT TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {
+					$$ = Compiler.abstractMethodDecl(token_solver.build_token('visibility','public',@1.first_line,@1.first_column),
+					token_solver.build_token('type',$2,@2.first_line,@2.first_column),
+					token_solver.build_token('id',$4,@4.first_line,@4.first_column),$5,$6); 
+					}
+					VISIBILITY ABSTRACT TYPE ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {
+					$$ = Compiler.abstractMethodDecl(token_solver.build_token('visibility',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
+					token_solver.build_token('id',$4,@4.first_line,@4.first_column),0,$6); 
+					}
+					| ABSTRACT TYPE ID LEFT_PAREN paramDef RIGHT_PAREN SEMI {
+					$$ = Compiler.abstractMethodDecl(token_solver.build_token('visibility','public',@1.first_line,@1.first_column),
+					token_solver.build_token('type',$2,@2.first_line,@2.first_column),
+					token_solver.build_token('id',$3,@3.first_line,@3.first_column),0,$5); 
+					}
 					;
 
-methodDecl : TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {$$ = Compiler.methodDecl($2,$5,$8); }
-			| TYPE ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {$$ = Compiler.methodDecl(0,$4,$7); }
+methodDecl : VISIBILITY TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {
+					$$ = Compiler.methodDecl(token_solver.build_token('visibility',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('type',$2,@2.first_line,@2.first_column),
+					token_solver.build_token('id',$4,@4.first_line,@4.first_column),$3,$6,$9); 
+					}
+			| TYPE ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {
+					$$ = Compiler.methodDecl(token_solver.build_token('visibility','public',@1.first_line,@1.first_column),
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$3,@3.first_line,@3.first_column),$3,$6,$9); 
+					}
+			| VISIBILITY STATIC TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
+			| STATIC TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
 			;
 			
-constructorDecl : TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {$$ = Compiler.constructorDecl($3,$6); }
+			
+constructorDecl : VISIBILITY TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE {$$ = Compiler.constructorDecl($3,$6); }
+				|  TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
 				;
 			
-fieldDecl : TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
+fieldDecl :   TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
 			| TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
 			| TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
 			| TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
+			| VISIBILITY TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
+			| VISIBILITY TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
+			| VISIBILITY TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
+			| VISIBILITY TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
+			| STATIC TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
+			| STATIC TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
+			| STATIC TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
+			| STATIC TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
+			| VISIBILITY STATIC TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
+			| VISIBILITY STATIC TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
+			| VISIBILITY STATIC TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
+			| VISIBILITY STATIC ID SEMI {$$ = Compiler.fieldDecl(0,null); }
+			| FINAL TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
+			| FINAL TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
+			| FINAL TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
+			| FINAL TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
+			| VISIBILITY FINAL TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
+			| VISIBILITY FINAL TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
+			| VISIBILITY FINAL TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
+			| VISIBILITY FINAL ID SEMI {$$ = Compiler.fieldDecl(0,null); }
+			| STATIC FINAL TYPE ID dimList ASIGNACION Exp SEMI
+			| STATIC FINAL TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
+			| STATIC FINAL TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
+			| STATIC FINAL TYPE ID SEMI {$$ = Compiler.fieldDecl(0,null); }
+			| VISIBILITY STATIC FINAL TYPE ID dimList ASIGNACION Exp SEMI  {$$ = Compiler.fieldDecl($3,$5); }
+			| VISIBILITY STATIC FINAL TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.fieldDecl(0,$4); }
+			| VISIBILITY STATIC FINAL TYPE ID dimList SEMI  {$$ = Compiler.fieldDecl($3,null); }
+			| VISIBILITY STATIC FINAL ID SEMI {$$ = Compiler.fieldDecl(0,null); }
 			;
 
 dimList : dimList LEFT_BRACKET RIGHT_BRACKET {$$ = $1 + 1;}
