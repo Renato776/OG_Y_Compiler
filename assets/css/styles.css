@@ -8,6 +8,17 @@
   border: none;
   font-size: large;
 }
+#AST_Container{
+  text-align: left;
+  font-size: large;
+}
+.node_display{
+  background-color: white;
+}
+.node_container{
+  line-height: 3em;
+  padding: 0.5em;
+}
 #folderDialog,#create_file_dialog {
   text-align: center;
   background-color: rgb(0,255,240);
