@@ -161,7 +161,7 @@ const Compiler = {
         type_text = v[1]; //Trimmed and processed type_text
         if(type_text.includes('static'))throw new _compiling_exception('Cannot declare a constructor as static.');
         if(type_text.includes('abstract'))throw new _compiling_exception('Cannot declare an abstract constructor.');
-        if(type_text.includes('static'))throw new _compiling_exception('Cannot declare a final constructor.');
+        if(type_text.includes('final'))throw new _compiling_exception('Cannot declare a final constructor.');
         type_text = type_text.substring(1);
         if(type_text!=type_token._class)throw new _compiling_exception('The constructor must have the same name as the class which is making reference to.');
         let v_token = new empty_node(type_token);
