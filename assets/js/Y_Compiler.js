@@ -17,7 +17,6 @@ const Row = function (name,variable=false,details) {
     this.offset = -1;
     this.type = null;
     this.func = false;
-    this.by_reference = false;
     this.instructions = null;
     this.initalized = false;
     this.size = -1;
@@ -32,7 +31,7 @@ const Row = function (name,variable=false,details) {
         this.offset = details.offset;
         this.inherited = details.inherited;
         Compiler.advance_scope();
-    }
+    }else this.block = true;
     this.get_header = function () {
         return " <tr>\n" +
             "    <td>index</td>\n" +
@@ -43,7 +42,6 @@ const Row = function (name,variable=false,details) {
             "    <td>name</td>\n" +
             "    <td>offset</td>\n" +
             "    <td>type</td>\n" +
-            "    <td>by_reference</td>\n" +
             "    <td>inherited</td>\n" +
             "    <td>true_end</td>\n" +
             "    <td>size</td>\n" +
@@ -61,7 +59,6 @@ const Row = function (name,variable=false,details) {
             "<td>"+this.name+"</td>" +
             "<td> "+this.offset+"</td>" +
             "<td> "+this.type+"</td> " +
-            "<td> "+this.by_reference+"</td>" +
             "<td> "+this.inherited+"</td>"+
             "<td> "+this.true_end+"</td> " +
             "<td> "+this.size+"</td>"+
@@ -449,6 +446,15 @@ const Compiler = {
             return;
         }
         //Graph Symbol Table.
+        $("#SYMBOL_TABLE_BODY").empty();
+        $("#SYMBOL_TABLE_BODY").addClass('SymbolTable_Entry');
+        $("#SYMBOL_TABLE_HEADER").empty();
+        $("#SYMBOL_TABLE_HEADER").html(this.SymbolTable[0].get_header());
+        let i = 0;
+        while (i<this.SymbolTable.length){
+            $("#SYMBOL_TABLE_BODY").append(this.SymbolTable[i].get_visualization(i));
+            i++;
+        }
     },
     visit_node:function (node) {
      /*
@@ -491,7 +497,7 @@ const Compiler = {
              if(node.children.length==3)var_row.instructions = node.children[2];
              this.SymbolTable[this.Row] = var_row;
              this.advance();
-         }
+         } return;
          case "staticMethod":
          {
              //First child: details node
@@ -571,6 +577,65 @@ const Compiler = {
                  });
              }
              return;
+         case 'ifStmt':
+         case 'if':
+         case 'else':
+         case 'switch':
+         case 'caseL':
+         case 'case':
+         case 'default':
+         case 'while':
+             this.stack.push(node.name);
+             this.node.children.forEach(child=>{
+                this.visit_node(child);
+             });
+             this.stack.pop();
+             return;
+         case 'for':
+             //fors are special because they declare one variable before entering the block.
+             //I'll just make an small change in the block compilation, for that I'll provide some context:
+             this.stack.push("for");
+             this.evaluation_stack.push(node.children[0]); //We push the variable declaration part of the for.
+             this.visit_node(node.children[node.children.length-1]);//We compile the block.
+             this.stack.pop();
+             return;
+         case 'block':
+             if(this.peek(this.stack)=='function_locals_compilation'){ //We don't need to do anything just value the children directly.
+                 //This is because everything regarding scopes has been solved previously by the function/procedure definition.
+                 node.children.forEach(child=>{
+                     try{
+                         this.visit_node(child);
+                     }catch (ex){} //Do nothing, just proceed to the next.
+                 });
+             }else {
+                 let block_index = this.sub_block_count.pop();
+                 block_index++; //Increase sub block count.
+                 this.sub_block_count.push(block_index); //We return it so the next brother block can advance.
+                 this.sub_block_count.push(0); //We push a new sub_block count for the child blocks
+                 this.reset_scope_offset(); //We add a new scope offset
+                 let block_name = SUB_BLOCK+this.peek(this.stack)+"---"+block_index;
+                 let sub_row = new Row(block_name);
+                 let sub_block_true_index = this.Row;
+                 this.scope_tracker.push(sub_block_true_index); //We add it so we can fill its size later on.
+                 this.scope.push(sub_block_true_index); //We increase the scope for the child variables to be relative to this block.
+                 this.SymbolTable[sub_block_true_index] = sub_row;
+                 this.advance();
+                 //Alright, make sure if you're compiling a for block:
+                 if(this.peek(this.stack)=='for')this.visit_node(this.evaluation_stack.pop()); //All the information needed for declaration is held in the variableDeclaration node. And the scope solving has already been solved, so we only need to visit the node!
+                 node.children.forEach(sub_block=>{
+                     try {
+                         this.visit_node(sub_block); //We compile the children
+                     }catch (ex){}
+                 });
+                 this.scope.pop(); //We return to the parent's scope
+                 this.fill_parent_references(); //We fill the parent references after all locals have been compiled.
+                 this.end_block(sub_block_true_index-1,block_name); //We add the ending row for the block.
+                 sub_row.true_end = this.Row; //We set the true_end of the block.
+                 this.sub_block_count.pop(); //We discard the child sub_block count after all children have been compiled.
+                 this.scope_offset.pop(); //We return at the parent scope offset.
+             }
+             return;
+         default:console.log('Unimplemented or unimportant node: '+node.name);
      }
     },
     get_var_index:function (scope_index,var_name) {
@@ -589,7 +654,6 @@ const Compiler = {
          * if s[i].name == n; Otherwise, advance (i++) and check the next row until
          * n is found, we reach the end of s or a block without fin is found.
          * */
-        let res = -1;
         let searching_sub_block = scope_index<0;
         scope_index = Math.abs(scope_index);
         let is_the_parent_itself = true;
@@ -694,7 +758,6 @@ const Compiler = {
                                 visibility:sub_row.visibility
                             };
                             let new_row = new Row(sub_row.name,true,details);
-                            new_row.param = sub_row.by_reference;
                             this.SymbolTable[this.Row] = new_row;
                             this.advance();
                         }else{
