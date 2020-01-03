@@ -77,6 +77,9 @@ const _field = function (category,name,visibility,type,owner,index = -1) { //Sta
     this.visibility = visibility;
     this.type = type;
     this.index = index;
+    this.abstract = false;
+    this.final = false;
+    this.instructions = null;
     this.offset = -1; //It must be filled externally after loading the field.
 };
 const _class = function (name,parent = null,location = "Unknown") {
@@ -259,13 +262,13 @@ function apply_native_functions() {
     });
 }
 function load_native_functions() {
-    native_functions.push( new _field('method','equals','public',BOOLEAN,'Object',-1));
-    native_functions.push( new _field('method','getClass','public',STRING,'Object',-1));
-    native_functions.push( new _field('method','toString','public',STRING,'Object',-1));
-    native_functions.push( new _field('method','toCharArray','public',CHAR_ARRAY,'String',-1));
-    native_functions.push( new _field('method','length','public',INTEGER,'String',-1));
-    native_functions.push( new _field('method','toUpperCase','public','String','String',-1));
-    native_functions.push( new _field('method','toLowerCase','public','String','String',-1));
+    native_functions.push( new _field('method','Object.equals-Object','public',BOOLEAN,'Object',-1));
+    native_functions.push( new _field('method','Object.getClass','public',STRING,'Object',-1));
+    native_functions.push( new _field('method','Object.toString','public',STRING,'Object',-1));
+    native_functions.push( new _field('method','String.toCharArray','public',CHAR_ARRAY,'String',-1));
+    native_functions.push( new _field('method','String.length','public',INTEGER,'String',-1));
+    native_functions.push( new _field('method','String.toUpperCase','public','String','String',-1));
+    native_functions.push( new _field('method','String.toLowerCase','public','String','String',-1));
 }
 function compile_native_functions() {
     /*
@@ -350,6 +353,7 @@ const Object_Class = {
     get_visualization : get_class_visualization
 };
 const String_Class = new _class('String','Object','Built-in');
+String_Class.fields['char_array'] = new _field('field','char_array','protected',CHAR_ARRAY,'String',1);
 function get_class_visualization() {
     let $row = $("<tr>");
     let $name = $("<td>");

@@ -111,7 +111,8 @@ function show_tab(e) {
         CodeMirror_Main = CodeMirror.fromTextArea(code, {
             lineNumbers : true,
             firstLineNumber: 0,
-            styleSelectedText: true
+            mode: "text/x-csrc",
+            matchBrackets:true
         });
     }
     if(og.attr("id")=="EJECUTAR"&&signature=="#DEBUG"){
