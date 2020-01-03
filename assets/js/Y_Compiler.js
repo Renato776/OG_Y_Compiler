@@ -18,7 +18,7 @@ const Row = function (name,variable=false,details) {
     this.type = null;
     this.func = false;
     this.instructions = null;
-    this.initalized = false;
+    this.initialized = false;
     this.size = -1;
     this.true_end = -1;
     this.inherited = false;
@@ -26,10 +26,10 @@ const Row = function (name,variable=false,details) {
     this.visibility = 'public';
     if(variable){
         this.visibility = details.visibility;
-        this.final = details.final;
+        this.final = toBoolean(details.final);
         this.type = details.type;
         this.offset = details.offset;
-        this.inherited = details.inherited;
+        this.inherited = toBoolean(details.inherited);
         Compiler.advance_scope();
     }else this.block = true;
     this.get_header = function () {
@@ -128,13 +128,15 @@ const Compiler = {
     indenting:"",
     color_stack:[],
     aux_color_stack:[],
-    public_regex : new RegExp('^public[ \r\t]'),
-    private_regex : new RegExp('^private[ \r\t]'),
-    protected_regex : new RegExp('^protected[ \r\t]'),
-    static_regex : new RegExp('[ \r\t]static[ \r\t]'),
-    abstract_regex : new RegExp('[ \r\t]abstract[ \r\t]'),
-    final_regex : new RegExp('[ \r\t]final[ \r\t]'),
-    type_regex: new RegExp('@[a-zA-Z_]+[0-9]*'),
+    public_regex : new RegExp(/^public[ \r\t]/),
+    private_regex : new RegExp(/^private[ \r\t]/),
+    protected_regex : new RegExp(/^protected[ \r\t]/),
+    static_regex : new RegExp(/[ \r\t]static[ \r\t]/),
+    abstract_regex : new RegExp(/[ \r\t]abstract[ \r\t]/),
+    final_regex : new RegExp(/[ \r\t]final[ \r\t]/),
+    type_regex: new RegExp(/@[a-zA-Z_]+[0-9]*/),
+    extends_regex: new RegExp(/[ \r\t]extends[ \r\t]/),
+    class_regex : new RegExp(/[a-zA-Z_]+[0-9]*/gm),
     sub_block_count :[],
     SymbolTable:[],
     scope:[],
@@ -245,6 +247,16 @@ const Compiler = {
     extract_type:function(type_text){
         return type_text.match(this.type_regex)[0].substring(1);
     },
+    extract_parent:function(class_token){
+        const matches = class_token.match(this.class_regex);
+        return matches[matches.length-1];
+    },
+    extract_class:function(class_token){
+        const matches = class_token.match(this.class_regex);
+        if(this.extends_regex.test(class_token)){
+            return matches[matches.length-3];
+        }else return matches[matches.length-1];
+    },
     resolve_modifiers:function(type_token,dim){
        let type_text = type_token.text;
        let visibility = 'public';
@@ -261,18 +273,19 @@ const Compiler = {
        let res = new details(visibility,_static,abstract,final,true_type.signature,type_token);
        return {token:res,final:final,abstract:abstract,_static:_static,visibility:visibility,type:true_type.signature};
     },
-    disable_modifiers:function(type_text){
+    disable_modifiers:function(type_node){
         /*
         * This method checks there aren't any modifiers within the type regex
         * and throws exception if any is found.
         * Afterwards it returns the type_text properly trimmed and without the @ at the beginning.
         * */
+        let type_text = type_node.text;
         if(this.public_regex.test(type_text)
         ||this.private_regex.test(type_text)
         ||this.protected_regex.test(type_text)
         ||this.final_regex.test(type_text)
         ||this.abstract_regex.test(type_text)
-        ||this.static_regex.test(type_text))throw new _compiling_exception('Member modifiers not allowed here.');
+        ||this.static_regex.test(type_text))throw new _compiling_exception('Member modifiers not allowed here.',type_node);
         return this.extract_type(type_text);
     },
     get_processed_type_node :function(type_signature, dim = 0, model){
@@ -285,9 +298,9 @@ const Compiler = {
     },
     abstractMethodDecl:function (type_token,name,dim,paramL) { //Prod:: TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI
         let processed_details = this.resolve_modifiers(type_token,dim);
-        if(!processed_details.abstract)throw new _compiling_exception("method: "+name.text+" is missing method body, or declare abstract.");
-        if(processed_details.visibility=='private') throw new _compiling_exception("An abstract method cannot be private.");
-        if(processed_details._static)throw new _compiling_exception("Cannot declare a method as abstract and static at the same time.");
+        if(!processed_details.abstract)throw new _compiling_exception("method: "+name.text+" is missing method body, or declare abstract.",type_token);
+        if(processed_details.visibility=='private') throw new _compiling_exception("An abstract method cannot be private.",type_token);
+        if(processed_details._static)throw new _compiling_exception("Cannot declare a method as abstract and static at the same time.",type_token);
         let res = new _Node("abstractMethod");
         res.add(processed_details.token);
         res.add(new _Node(name));
@@ -296,8 +309,8 @@ const Compiler = {
     },
     methodDecl:function (type_token,name,dim,paramL,stmtL) { //prod::  TYPE ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
         let processed_details = this.resolve_modifiers(type_token,dim);
-        if(processed_details.abstract)throw new _compiling_exception("An abstract method cannot be implemented in the same class it is declared on.");
-        if(processed_details.final)throw new _compiling_exception('Final modifier cannot be applied to methods');
+        if(processed_details.abstract)throw new _compiling_exception("An abstract method cannot be implemented in the same class it is declared on.",type_token);
+        if(processed_details.final)throw new _compiling_exception('Final modifier cannot be applied to methods',type_token);
         let res;
         if(processed_details._static){ //static declaration
             res = new _Node("staticMethod");
@@ -316,9 +329,9 @@ const Compiler = {
     },
     constructorDecl:function (type_token,paramL,stmtL) { //prod:: TYPE LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
         let processed_details = this.resolve_modifiers(type_token,0);
-        if(processed_details._static)throw new _compiling_exception('Cannot declare a constructor as static.');
-        if(processed_details.abstract)throw new _compiling_exception('Cannot declare an abstract constructor.');
-        if(processed_details.final)throw new _compiling_exception('Cannot declare a final constructor.');
+        if(processed_details._static)throw new _compiling_exception('Cannot declare a constructor as static.',type_token);
+        if(processed_details.abstract)throw new _compiling_exception('Cannot declare an abstract constructor.',type_token);
+        if(processed_details.final)throw new _compiling_exception('Cannot declare a final constructor.',type_token);
         let v_token = new empty_node(type_token);
         v_token.name = 'visibility';
         v_token.text = processed_details.visibility;
@@ -334,7 +347,7 @@ const Compiler = {
     },
     fieldDecl:function (type_token,name,dim,exp) { //prod: TYPE ID dimList SEMI
         let processed_details = this.resolve_modifiers(type_token,dim);
-        if(processed_details.abstract)throw new _compiling_exception('Cannot declare an abstract field.');
+        if(processed_details.abstract)throw new _compiling_exception('Cannot declare an abstract field.',type_token);
         let res;
         if(processed_details._static)res = new _Node('staticField');
         else res = new _Node('field');
@@ -344,16 +357,14 @@ const Compiler = {
         return res;
     },
     paramDef:function (type_token,name,dim) { //prod:: TYPE ID COMMA ...
-        let type_text = type_token.text;
-        let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),dim,type_token);
+        let type_node = this.get_processed_type_node(this.disable_modifiers(type_token),dim,type_token);
         let res = new _Node('param');
         res.add(type_node);
         res.add(new _Node(name));
         return res;
     },
     variableDef:function (type_token,name,dim, exp = null) { //prod:: TYPE ID SEMI
-        let type_text = type_token.text;
-        let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),dim,type_token);
+        let type_node = this.get_processed_type_node(this.disable_modifiers(type_token),dim,type_token);
         let res = new _Node('variableDef');
         res.add(type_node);
         res.add(new _Node(name));
@@ -381,9 +392,8 @@ const Compiler = {
         return res;
     },
     staticAccess:function (type_token,target) { //Prod: Type DOT var
-        let type_text = type_token.text;
-        let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),0,type_token);
-        if(!(type_node.text in Compiler.classes))throw new _compiling_exception(type_node.text+" is not a class.");
+        let type_node = this.get_processed_type_node(this.disable_modifiers(type_token),0,type_token);
+        if(!(type_node.text in Compiler.classes))throw new _compiling_exception(type_node.text+" is not a class.",type_token);
         let res = new _Node('staticAccess');
         res.add(type_node);
         res.add(target);
@@ -410,8 +420,7 @@ const Compiler = {
     },
     downcast:function (type_token) { //prod:: ( type )
         let res = new _Node('downcast');
-        let type_text = type_token.text;
-        let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),0,type_token);
+        let type_node = this.get_processed_type_node(this.disable_modifiers(type_token),0,type_token);
         res.add(type_node);
         return res;
     },
@@ -419,16 +428,14 @@ const Compiler = {
         return new _Node(primitive);
     },
     NEW : function (type_token,paramL) { //prod:: NEW TYPE LEFT_PAREN paramList RIGHT_PAREN
-        let type_text = type_token.text;
-        let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),0,type_token);
+        let type_node = this.get_processed_type_node(this.disable_modifiers(type_token),0,type_token);
         let res = new _Node('new');
         res.add(type_node);
         res.add(paramL);
         return res;
     },
     arrayInitialization:function (type_token,firstIndex) {//prod:: NEW TYPE LEFT_BRACKET Exp RIGHT_BRACKET
-        let type_text = type_token.text;
-        let type_node = this.get_processed_type_node(this.disable_modifiers(type_text),0,type_token);
+        let type_node = this.get_processed_type_node(this.disable_modifiers(type_token),0,type_token);
         let res = new _Node('arrayInitialization');
         res.add(type_node);
         let indexL = new _Node('indexL');
@@ -536,7 +543,7 @@ const Compiler = {
              this.SymbolTable[this.Row] = var_row;
              this.advance();
          } return;
-         case "field":
+         case 'field':
          {
              let name = node.children[1].text; //We retrieve the name
              let _class = this.get_class(node);
@@ -564,7 +571,7 @@ const Compiler = {
              let details = this.get_details(node.children[0]);
              let _class = this.get_class(node);
              let func_type = details.type; //We get the type name
-             let fun_name = node.children[1].text;
+             let fun_name = node.children[1].text; //we get the name of the function.
              //Start calculating the function's signature here:
              let func_signature ;
              if(node.name == 'method'||node.name=='abstractMethod')func_signature = _class+"."+fun_name;
@@ -574,9 +581,11 @@ const Compiler = {
              this.SymbolTable[func_index].visibility = details.visibility;
              if(node.name=='method'||node.name=='abstractMethod'){
                  let owner = this.classes[_class];
-                 owner.fields[func_signature] = new _field('method',func_signature,details.visibility,func_type,_class,func_index);
-                 if(node.name=='abstract'){
-                     owner.fields[func_signature].abstract = true;
+                 let methodName = fun_name+this.evaluation_stack.pop(); //We get the type signature.
+                 if(methodName in owner.fields)throw new semantic_exception('There is another member with the same name: '+methodName,node);
+                 owner.fields[methodName] = new _field('method',methodName,details.visibility,func_type,_class,func_index);
+                 if(node.name=='abstractMethod'){
+                     owner.fields[methodName].abstract = true;
                  }
                  this.finish_function_compilation(func_index,node,_class);
              }else this.finish_function_compilation(func_index,node);
@@ -686,7 +695,7 @@ const Compiler = {
              let _class = node.children[1].text;
              let visibility = node.children[0].text;
              //Start calculating the function's signature here:
-             let func_signature = 'constructor.'+_class;
+             let func_signature = CONSTRUCTOR_PREFIX+'.'+_class;
              let func_index = this.compile_function(func_signature,node); //We indicate it is a function.
              this.SymbolTable[func_index].type = _class; //Constructors return an instance of class they're making reference to.
              this.SymbolTable[func_index].visibility = visibility;
@@ -701,6 +710,7 @@ const Compiler = {
         this.visit_node(node.children[2]);
         this.stack.pop();
         let unfinished_signature = this.evaluation_stack.pop();
+        if(node.name=='method'||node.name=='abstractMethod')this.evaluation_stack.push(unfinished_signature); //We'll still use it afterwards.
         func_signature = func_signature+unfinished_signature; //Complete function signature.
         if(!this.is_valid_name(func_signature,node))return; //If the function is repeated we stop the function compilation.
         //The function has been approved. We proceed:
