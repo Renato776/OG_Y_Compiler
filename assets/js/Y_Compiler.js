@@ -474,6 +474,14 @@ const Compiler = {
              this.scope_tracker.push(block_start); //remember to reverse the scope_tracker after finishing the symbol table compilation.
              this.reset_scope_offset(); //We add the first scope.
              this.advance(); //We advance to the next position.
+
+             //Compile all static fields first:
+             this.stack.push('static_field_compilation');
+             node.children.forEach(n=>{
+                 if(n.name=='staticField')this.visit_node(n);
+             });
+             this.stack.pop();
+             //Normal compilation:
              this.stack.push(node.name);
              node.children.forEach(n=>{
                 this.visit_node(n);
@@ -486,7 +494,7 @@ const Compiler = {
          }
              return;
          case "staticField": //static fields belong to the symbol table as if they were global variables. Their signature is className.name
-         {
+         if(this.peek(this.stack)=='static_field_compilation'){ //Only compile at the beginning. Otherwise just return.
              let name = node.children[1].text; //We retrieve the name
              let _class = this.get_class(node);
              name = _class+"."+name; //We set the field's signature.
@@ -524,6 +532,7 @@ const Compiler = {
              this.SymbolTable[func_index] = new Row(func_signature);
              this.SymbolTable[func_index].func = true; //We indicate it is a function.
              this.SymbolTable[func_index].type = func_type;
+             this.SymbolTable[func_index].visibility = details.visibility;
              this.scope.push(func_index);
              this.scope_tracker.push(func_index);
              //Now, we make the index advance, so that we can put vars and parameters where they belong:
@@ -635,6 +644,72 @@ const Compiler = {
                  this.scope_offset.pop(); //We return at the parent scope offset.
              }
              return;
+         case "variableDef":
+         {
+             let param_type_name = param.children[0].text;
+             let name = param.children[1].text;
+             this.is_valid_name(name,node);
+             let var_row = new Row(name,true,new basic_details(param_type_name,this.peek_scope_offset()));
+             var_row.param = false;
+             this.SymbolTable[this.Row] = var_row;
+             this.advance();
+         }
+             return;
+         case "constructor": //These are special static methods.
+             // They're called using the new keyword. The signature for a constructor is constructor.className-typeSignature
+         {
+             //First child: visibility token
+             //Second child: target token
+             //Third child: paramDefL
+             //Fourth child: InstructionBlock
+             //Alright, we first get the type of the function:
+             let _class = node.children[1].text;
+             let visibility = node.children[0].text;
+             //Start calculating the function's signature here:
+             let func_signature = 'constructor.'+_class;
+             this.stack.push("signature_compilation"); //We add context so that the signature is merely compiled but nothing is added to the Symbol table.
+             this.visit_node(node.children[2]);
+             this.stack.pop();
+             let unfinished_signature = this.evaluation_stack.pop();
+             func_signature = func_signature+unfinished_signature; //Complete constructor signature.
+             if(!this.is_valid_name(func_signature,node))return; //If the constructor is repeated we stop the function compilation.
+             //The constructor has been approved. We proceed:
+             this.sub_block_count.push(0); //We reset the sub_block_count to 0.
+             //Next we store the index for this function:
+             let func_index = this.Row;
+             this.SymbolTable[func_index] = new Row(func_signature);
+             this.SymbolTable[func_index].func = true; //We indicate it is a function.
+             this.SymbolTable[func_index].type = _class; //Constructors return an instance of class they're making reference to.
+             this.SymbolTable[func_index].visibility = visibility;
+             this.scope.push(func_index);
+             this.scope_tracker.push(func_index);
+             //Now, we make the index advance, so that we can put vars and parameters where they belong:
+             this.advance();
+             //Alright, next we reset the offset:
+             this.reset_scope_offset();
+             //Alright, now we add the parameters:
+             this.stack.push('parameter_compilation');
+             this.visit_node(node.children[2]); //We visit the param Def again, but this time for actual compilation purposes.
+             this.stack.pop();
+             //Alright, the parameters have been added successfully. Now, we compile the inner sub_blocks:
+             this.stack.push("function_locals_compilation");
+             this.visit_node(node.children[3]);
+             this.stack.pop();
+             //At this point all locals have been successfully compiled.
+             this.scope.pop(); //We leave this function and return scope to parent.
+             //Now, we must copy the parent's variables. Yes, all of them.
+             //At this point, scope.peek() has the index of the immediate parent function,
+             //be it the program itself or another function.
+             //We must copy them all, including parameters.
+             this.fill_parent_references();
+             //Alright parent references have been successfully loaded, however, before we set the true_end, we must add the ending block:
+             this.end_block(func_index-1,func_signature);
+             //Alright, we can now set the true_end and finish.
+             this.SymbolTable[func_index].true_end = this.Row;
+             this.sub_block_count.pop();
+             this.scope_offset.pop();
+         }
+            return;
          default:console.log('Unimplemented or unimportant node: '+node.name);
      }
     },
