@@ -1,5 +1,5 @@
 /*
-*Y_Grammar action to perform before the switching of the token is performed.
+*Don't mind this block. Just Y_Grammar action to perform before the switching of the token is performed.
 * let aux_token = yy_.yytext;
 aux_token = aux_token.trim();
 if(aux_token!="")token_solver.debug(aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
@@ -17,6 +17,12 @@ if(aux_token!="")token_solver.debug(aux_token,yy_.yylloc.first_line-1,yy_.yylloc
  * &&&ID
  * content
  * &&&&END
+ * Compile all static fields FIRST (right after the first program entry has been put in the symbol table,
+ * iterate trough all children of program. And compile all static fields. To do this, simply call
+ * visit_node in the static field of choice. However, before doing so, provide context that you're
+ * compiling static fields. suggested context keyword: static_compilation.
+ * This way, when you're within a static method compile normally ONLY if context is right. Otherwise return
+ * immediately as the field would've already been compiled.
  * As you can see the class & extends keywords have been removed the new token specifies all
  * needed information for a successful declaration of a class and
  * the end token successfully closes it. This step also loads the class Array with the respective names and parents (if any)
