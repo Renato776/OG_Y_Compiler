@@ -26,6 +26,28 @@
   font-weight: bold;
   font-size: large;
 }
+.member_entry{
+background-color: aliceblue;
+}
+.Member_Header{
+  font-weight: bold;
+  font-size: large;
+  background-color: #000051;
+  color: white;
+}
+.Class_Header{
+    font-weight: bold;
+    font-size: large;
+    color: black;
+    background-color: #ff00ff;
+}
+.class_name{
+  font-weight: bold;
+}
+.class_info{
+  background-color: purple;
+    color: white;
+}
 #SYMBOL_TABLE tbody tr:nth-child(odd) {background: #CCC}
 #SYMBOL_TABLE tbody tr:nth-child(even) {background: #FFF}
 
@@ -50,10 +72,6 @@
 }
 .Selected_Class{
   background: #24ff00;
-}
-.Class_Header{
-  font-weight: bold;
-  font-size: large;
 }
 #create_file_dialog {
   text-align: center;

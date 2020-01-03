@@ -68,6 +68,16 @@ const BOOLEAN = 'boolean';
 const VOID = 'void';
 const NULL = 'null';
 let class_counter = 0;
+const CONSTRUCTOR_PREFIX = '*';
+function toBoolean(value) {
+    if(typeof value === 'boolean'){
+        return value;
+    }else if(typeof value === 'string'){
+        return value=='true';
+    }else if(!isNaN(Number(value))){
+        return Number(value)==1;
+    }else return false;
+}
 //region Object constructors used for Compilation.
 const _field = function (category,name,visibility,type,owner,index = -1) { //Static fields aren't put here.
     this.category = category;
@@ -81,6 +91,7 @@ const _field = function (category,name,visibility,type,owner,index = -1) { //Sta
     this.final = false;
     this.instructions = null;
     this.offset = -1; //It must be filled externally after loading the field.
+    this.get_visualization = get_member_visualization(this);
 };
 const _class = function (name,parent = null,location = "Unknown") {
     class_counter++;
@@ -247,8 +258,10 @@ const _pre_compiling_lexical_exception = function () {
     _log("One or more errors occurred during compilation. See error tab for details.");
 
 };
-const _compiling_exception = function (message) {
-    let t = _token_tracker.pop();
+const _compiling_exception = function (message,node = null) {
+    let t;
+    if(node == null) t = _token_tracker.pop();
+    else t = node.get_token();
     let $row = new error_entry('Semantic',t.row,t.col,message,t._class,t.file);
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
@@ -262,13 +275,13 @@ function apply_native_functions() {
     });
 }
 function load_native_functions() {
-    native_functions.push( new _field('method','Object.equals-Object','public',BOOLEAN,'Object',-1));
-    native_functions.push( new _field('method','Object.getClass','public',STRING,'Object',-1));
-    native_functions.push( new _field('method','Object.toString','public',STRING,'Object',-1));
-    native_functions.push( new _field('method','String.toCharArray','public',CHAR_ARRAY,'String',-1));
-    native_functions.push( new _field('method','String.length','public',INTEGER,'String',-1));
-    native_functions.push( new _field('method','String.toUpperCase','public','String','String',-1));
-    native_functions.push( new _field('method','String.toLowerCase','public','String','String',-1));
+    native_functions.push( new _field('method','equals-Object','public',BOOLEAN,'Object',-1));
+    native_functions.push( new _field('method','getClass','public',STRING,'Object',-1));
+    native_functions.push( new _field('method','toString','public',STRING,'Object',-1));
+    native_functions.push( new _field('method','toCharArray','public',CHAR_ARRAY,'String',-1));
+    native_functions.push( new _field('method','length','public',INTEGER,'String',-1));
+    native_functions.push( new _field('method','toUpperCase','public','String','String',-1));
+    native_functions.push( new _field('method','toLowerCase','public','String','String',-1));
 }
 function compile_native_functions() {
     /*
@@ -303,16 +316,50 @@ function class_header() {
     let $final = $("<td>");
     $abstract.html('Abstract');
     $final.html('Final');
+    let $visibility = $("<td>");
+    $visibility.html('visibility');
     $row.append($name);
     $row.append($parent);
-    $row.append($location);
+    $row.append($visibility);
     $row.append($abstract);
     $row.append($final);
     $row.append($cc);
     $row.append($id);
+    $row.append($location);
     $row.addClass('Class_Header');
     return $row;
 }
+function member_header() {
+    //* category; visibility; static; name; type; inherited; abstract; final;
+    let $row = $("<tr>");
+    let $category = $("<td>");
+    $category.html('Category');
+    let $visibility = $("<td>");
+    $visibility.html('visibility');
+    let $static = $("<td>");
+    $static.html('static');
+    let $name = $("<td>");
+    $name.html('Name');
+    let $type = $("<td>");
+    $type.html('Type');
+    let $inherited = $("<td>");
+    let $abstract = $("<td>");
+    $abstract.html('Abstract');
+    $inherited.html('Inherited');
+    let $final = $("<td>");
+    $final.html('final');
+    $row.append($category);
+    $row.append($visibility);
+    $row.append($static);
+    $row.append($name);
+    $row.append($type);
+    $row.append($inherited);
+    $row.append($abstract);
+    $row.append($final);
+    $row.addClass('Member_Header');
+    return $row;
+}
+
 function select_class(e) {
     let t = $(e.target)[0];
     if(t.localName!='td')return; //If it isn't a td the next instructions won't work!
@@ -355,9 +402,29 @@ const Object_Class = {
 const String_Class = new _class('String','Object','Built-in');
 String_Class.fields['char_array'] = new _field('field','char_array','protected',CHAR_ARRAY,'String',1);
 function get_class_visualization() {
+    /*This method returns several rows describing a class.
+    * It returns a class header as follows:
+    * name; parent; visibility; abstract; final; cc; ID; file; With css class: Class_true_header;
+    * Then all the info regarding the class will follow in another tr: css class: Class_header_info;
+    * //A tr with colspan=all will follow and will say: members:
+    * //A tr will follow containing a header for all members:
+    * category; visibility; static; name; type; inherited; abstract; final;
+    * Right bellow a series of member rows will follow with a different css class.
+    * Fields will appear first.
+    * Then all static fields.
+    * Then all methods
+    * And last all static methods.
+    * Only static methods will have the select function.
+    * //$row.click(select_class); //Method to select a class will now be replaced by select method.
+    *
+     */
+    let rows = [];
+    rows.push(class_header()); //First of all, the class true header;
+    //Now, the actual info for the class:
     let $row = $("<tr>");
     let $name = $("<td>");
     $name.html(this.name);
+    $name.addClass('class_name');
     let $location = $("<td>");
     $location.html(this.location);
     let $parent = $("<td>");
@@ -368,20 +435,89 @@ function get_class_visualization() {
     $id.html(this.id);
     let $abstract = $("<td>");
     let $final = $("<td>");
-    $abstract.html(this.abstract);
-    $final.html(this.final);
-    $row.attr("id", this.name);
-    $row.click(select_class);
+    let $visibility = $("<td>");
+    $visibility.html('public'); //All classes are public either way lol.
+    $abstract.html(this.abstract.toString());
+    $final.html(this.final.toString());
+    $row.attr("id", this.name.toString());
     $row.append($name);
     $row.append($parent);
-    $row.append($location);
+    $row.append($visibility);
     $row.append($abstract);
     $row.append($final);
     $row.append($cc);
     $row.append($id);
+    $row.append($location);
+    $row.addClass('class_info');
+    rows.push($row); //Push the class's info
+    rows.push(member_header()); //push the members header
+    //Alright, now build the member's rows:
+    Object.values(this.fields).forEach(f=>{
+       rows.push(get_member_visualization(new member(
+           f.category=='field',f.visibility,false,f.name,f.type,f.inherited,f.abstract,f.final
+       )));
+    });
+    //Alright, those are all non-static members of the class. Now, I gotta get all static members:
+    const static_members = [];
+    const static_func_signature = this.name+".static.";
+    const static_field_signature = this.name+".";
+    Compiler.SymbolTable.forEach(entry=>{
+        if(entry.name.startsWith(static_func_signature)&&entry.func)static_members.push(entry);
+        if(entry.name.startsWith(static_field_signature)&&!entry.func&&!entry.inherited)static_members.push(entry);
+    });
+    //Alright, now graph all static members:
+    static_members.forEach(entry=>{
+       rows.push(get_member_visualization(new member(
+          !entry.func,entry.visibility,true,entry.name,entry.type,false,false,entry.final
+       )));
+    });
+    return rows;
+}
+const member = function (field,visibility,_static,name,type,inherited,abstract,final) {
+    if(field)this.category ='field';
+    else this.category = 'method';
+    this.visibility = visibility;
+    this._static = _static.toString();
+    if(_static) {
+        //If it is an static method. We'll change the signature representation just for this scenario:
+        const words = name.split('.');
+        this.name = words[words.length-1];
+    }
+    else this.name = name;
+    this.type = type;
+    this.inherited = inherited.toString();
+    this.abstract = abstract.toString();
+    this.final = final.toString();
+};
+function get_member_visualization(member) {
+    let $row = $("<tr>");
+    let $category = $("<td>");
+    let $visibility = $("<td>");
+    let $static = $("<td>");
+    let $name = $("<td>");
+    let $type = $("<td>");
+    let $inherited = $("<td>");
+    let $abstract = $("<td>");
+    let $final = $("<td>");
+    $category.html(member.category);
+    $visibility.html(member.visibility);
+    $static.html(member._static);
+    $name.html(member.name);
+    $type.html(member.type);
+    $inherited.html(member.inherited);
+    $abstract.html(member.abstract);
+    $final.html(member.final);
+    $row.append($category);
+    $row.append($visibility);
+    $row.append($static);
+    $row.append($name);
+    $row.append($type);
+    $row.append($inherited);
+    $row.append($abstract);
+    $row.append($final);
+    $row.addClass('member_entry');
     return $row;
 }
-
 const location_solver = {
     size_tracker:[],
     imported_text:[],
@@ -498,34 +634,21 @@ const Import_Solver = {
     }
 };
 function pre_register_class(class_token, sub_class) {
-    class_token = class_token.replace('protected','')
-        .replace('public','')
-        .replace('private','')
-        .trim() //Removed visibility keyword (if any)
-        .replace('class','')
-        .trim();  //Removed class keyword & trimmed.
     let abstract = false;
     let final = false;
-    if(class_token.includes('abstract')){
-        class_token = class_token.replace('abstract','').trim();
-        abstract = true;
-    }
-    if(class_token.includes('final')){
-        class_token = class_token.replace('final','').trim();
-        final = true;
-    }
+    if(Compiler.abstract_regex.test(class_token))abstract = true;
+    if(Compiler.final_regex.test(class_token))final = true;
     let name;
     let result;
     let result_signature;
     if(sub_class){
-        let names = class_token.split('extends');
-        name = names[0].trim();
-        let parent = names[1].trim();
+        let parent = Compiler.extract_parent(class_token);
+        name = Compiler.extract_class(class_token);
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
         result = new _class(name,parent,_token_tracker[_token_tracker.length-1].file);
         result_signature= "&&&"+name;
     }else{
-        name = class_token.trim();
+        name = Compiler.extract_class(class_token);
         if(name in classes) throw new _pre_compiling_exception("Repeated class: "+name);
         result = new _class(name,null,_token_tracker[_token_tracker.length-1].file);
         result_signature =  "&&&"+name;
@@ -533,7 +656,7 @@ function pre_register_class(class_token, sub_class) {
     if(abstract&&final)throw new _pre_compiling_exception("Cannot declare a class abstract and final at the same time." +
         "Class: "+name);
     result.abstract = abstract;
-    result.final = abstract;
+    result.final = final;
     classes[name] = result;
     return result_signature;
 }
@@ -580,8 +703,10 @@ const token_solver = {
     end_class:function(){
       this.class_tracker.pop();
     },
-    calculate_relative_position:function(position){
-        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -1;
+    calculate_relative_position:function(position, custom = false){
+        //Custom indicates if calculating the position with an extra custom offset.
+        if(custom)position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -2;
+        else position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -1;
         if(this.size_tracker.length==1)position = position + 1; //True only if I'm importing in main file.
         return position;
     },
@@ -592,7 +717,7 @@ const token_solver = {
     },
     build_token:function (name,text,line,col) {
         this.column = col;
-        this.line = this.calculate_relative_position(line);
+        this.line = this.calculate_relative_position(line,true);
         let true_class;
         let i = _token_tracker.length-1;
         while(i>=0){
@@ -617,9 +742,12 @@ const token_solver = {
     }
 };
 function graph_all_classes() {
-    $("#Classes_Header").append(class_header());
+    $("#Classes_Header").empty();
     Object.values(classes).forEach(c=>{
-        $("#Classes_Body").append(c.get_visualization());
+        const rows = c.get_visualization();
+        rows.forEach(row=>{
+            $("#Classes_Body").append(row);
+        });
     });
 }
 function prepare_all_classes() {
@@ -637,15 +765,17 @@ function prepare_all_classes() {
     * been alerted and removed at this point.
     * */
     //1) Fill the ancestor list for every class.
-    let cs = Object.values(classes);
+    let cs = sorting.mergeSort(Object.values(classes),compare_classes_by_id);
     for(let i = 1; i< cs.length;i++){ //We start at 1 to skip Object class.
         let c = cs[i];
-        let parent = classes[c.parent];
-        while(parent.sub_class){
-            c.ancestors.push(parent);
-            parent = classes[parent.parent];
-        }
-        c.ancestors.push(classes['Object']); //Object is always an ancestor and always goes at the end.
+        if(c.ancestors.length==0){
+            let parent = classes[c.parent];
+            while(parent.sub_class){
+                c.ancestors.push(parent);
+                parent = classes[parent.parent];
+            }
+            c.ancestors.push(classes['Object']); //Object is always an ancestor and always goes at the end.
+        } //Else we do nothing, this could happen if we're re-compiling a constant class. Like the String built-in class.
     }
     //2) Order the classes by descendant depth (Object goes first at 0, superior classes goes second at 1 first children second at 2 and so on.
     let ordered = sorting.mergeSort(Object.values(classes),compare_classes_by_level);
@@ -657,6 +787,7 @@ function prepare_all_classes() {
                 nextPrime = getNextPrime(nextPrime);
                 c.cc = nextPrime;
             }else{ //Two or more ancestors:
+                if(classes[c.parent].final)throw new _pre_compiling_exception('Class: '+c.name+" Cannot extend class: "+c.parent+" " +"Because :"+c.parent+" is final.");
                 c.cc = classes[c.parent].cc*2;
             }
         }else isFirst = false;
@@ -675,11 +806,11 @@ function prepare_all_types(source) {
     * */
     let classRegex;
     Object.keys(Compiler.types).forEach(t=>{
-        classRegex =  new RegExp('[^a-zA-Z_]'+t+'[^a-zA-Z_]','gm');
+        classRegex =  new RegExp('[^a-zA-Z_@]'+t+'[^a-zA-Z_0-9]','gm');
         source = source.replace(classRegex,replace_class_token);
     });
     Object.keys(Compiler.classes).forEach(c=>{
-        classRegex =  new RegExp('[^a-zA-Z_]'+c+'[^a-zA-Z_]','gm');
+        classRegex =  new RegExp('[^a-zA-Z_@]'+c+'[^a-zA-Z_0-9]','gm');
         source = source.replace(classRegex,replace_class_token);
       });
     return source;

@@ -151,6 +151,9 @@ function isFunction(functionToCheck) {
 function compare_classes_by_level(a,b) {
     return a.ancestors.length > b.ancestors.length;
 }
+function compare_classes_by_id(a,b){
+    return a.id > b.id;
+}
 function isPrime(n) {
     if(n%2==0)return false;
     for (let i = 3; i*i<=n; i+=2){
