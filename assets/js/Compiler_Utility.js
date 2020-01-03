@@ -178,14 +178,13 @@ const _Node = function (name) {
     this.printTree = function(){
         if (this.token)
         {
-            console.log('printing leaf: '+this.name+"::"+this.text);
             let $container = '<span class="node_container" style="background-color:';
             let $display = '<span class = "node_display">';
             let color = Compiler.color_stack.pop();
             if(color==undefined)color = getRandomColor();
             Compiler.color_stack.push(color);
             $container+=color+';">';
-            $display+=(this.name+":"+this.text)+"</span>";
+            $display+=(this.name+" :: "+this.text+" ;; row: "+this.row+" col: "+this.col+" class: "+this._class+" file: "+this.file)+"</span>";
             $container+=$display+"</span>";
             Compiler.ast_visualization += (Compiler.indenting + $container)+"<br>";
         }
@@ -584,7 +583,16 @@ const token_solver = {
     build_token:function (name,text,line,col) {
         this.column = col;
         this.line = this.calculate_relative_position(line);
-        return new _token(name,this.column,this.line,text,this.peek_class_tracker());
+        let true_class;
+        let i = _token_tracker.length-1;
+        while(i>=0){
+            if(text==_token_tracker[i].text){
+                true_class = _token_tracker[i]._class;
+                break;
+            }
+            i--;
+        }
+        return new _token(name,this.column,this.line,text,true_class);
     },
     initialize:function () {
         this.line = 0;
