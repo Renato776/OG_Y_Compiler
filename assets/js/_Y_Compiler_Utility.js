@@ -105,7 +105,7 @@ function add_source_tab(source, fileName) {
     let mirror = CodeMirror.fromTextArea($("#"+"Area"+tabs.length)[0], {
         lineNumbers : true,
         firstLineNumber: 0,
-        mode: "text/x-java",
+        //mode: "google-java",
         matchBrackets:true
     });
     mirror.setValue(source);
