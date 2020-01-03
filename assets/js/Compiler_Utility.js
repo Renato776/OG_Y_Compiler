@@ -664,8 +664,12 @@ const token_solver = {
     size_tracker:[],
     imported_text:[],
     class_tracker:[],
+    imported_classes:[],
     column: 0,
     line: 0,
+    peek_imported_classes:function(){
+        return this.imported_classes[this.imported_classes.length-1];
+    },
     peek_size_tracker: function () {
         return this.size_tracker[this.size_tracker.length-1];
     },
@@ -682,12 +686,14 @@ const token_solver = {
         token = token.replace(new RegExp('@','gm'),'');// We remove any @ that might appear as a result of preparing all types.
         this.imported_text.push([]); //We add a brand new List to the import scope.
         this.size_tracker.push({name:token,location:line});
+        this.imported_classes.push(-1); //We indicate we're staring a new file.
     },
     end_import: function(line){
         let import_size = line - this.peek_size_tracker().location;
         this.imported_text.pop(); //We dismiss this import's size.
         this.peek_imported_text().push(import_size); //We add the size of the evaluated import to the parent tracker.
         this.size_tracker.pop(); //We dismiss the old import.
+        this.imported_classes.pop(); //We'll no longer use the info.
     },
     get_previous_imports_size:function(){
         let res = 0;
@@ -699,14 +705,17 @@ const token_solver = {
     begin_class:function(token){
         token = token.replace(new RegExp('&amp;','gm'),'').replace('@','').trim(); //We remove the Ampersands and the @
         this.class_tracker.push(token); //We push the name of the class
+        let c = this.imported_classes.pop();
+        if(c==undefined)c = -1; //Could be undefined if I haven't made any imports yet.
+        c = c + 1;
+        this.imported_classes.push(c);
     },
     end_class:function(){
       this.class_tracker.pop();
     },
-    calculate_relative_position:function(position, custom = false){
+    calculate_relative_position:function(position){
         //Custom indicates if calculating the position with an extra custom offset.
-        if(custom)position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -2;
-        else position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -1;
+        position = position - this.peek_size_tracker().location - this.get_previous_imports_size() - this.peek_imported_text().length*2 -1 - this.peek_imported_classes()*2;
         if(this.size_tracker.length==1)position = position + 1; //True only if I'm importing in main file.
         return position;
     },
@@ -717,17 +726,24 @@ const token_solver = {
     },
     build_token:function (name,text,line,col) {
         this.column = col;
-        this.line = this.calculate_relative_position(line,true);
+        //this.line = this.calculate_relative_position(line,true); alright re-calculating the line wasn't working so
+        //we'll try copying the line from the last token that matches. This approach might lead to
+        //wrong info regarding the line. But well, it's not that bad even if the line no. isn't totally correct.
         let true_class;
         let i = _token_tracker.length-1;
+        let true_file;
         while(i>=0){
             if(text==_token_tracker[i].text){
                 true_class = _token_tracker[i]._class;
+                line = _token_tracker[i].row;
+                true_file = classes[true_class].location;
                 break;
             }
             i--;
         }
-        return new _token(name,this.column,this.line,text,true_class);
+        let r = new _token(name,this.column,line,text,true_class);
+        r.file = true_file;
+        return r;
     },
     initialize:function () {
         this.line = 0;
@@ -735,6 +751,7 @@ const token_solver = {
         this.class_tracker = [];
         this.imported_text = [];
         this.size_tracker = [];
+        this.imported_classes = [];
         _token_tracker = [];
         this.imported_text.push([]); //We add a brand new List to the import scope.
         let cf = get_current_file();
