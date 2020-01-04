@@ -71,7 +71,7 @@ background-color: aliceblue;
   /*border:solid;*/
 }
 .Selected_Class{
-  background: #24ff00;
+  background: #24ff00 !important;
 }
 #create_file_dialog {
   text-align: center;

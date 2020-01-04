@@ -212,6 +212,8 @@ function initialize(){
     $("#Guardar_Button").click(save_file);
     $("#Compilar_Main").click(compile_source);
     $("#Optimization_button").click(Optimize);
+    $("#AST_Title").click(toggle_details);
+    $("#Compile_Title").click(reset_compilation_cycle);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
 }

@@ -286,8 +286,10 @@ update : ID ASIGNACION Exp {$$ = new _Node("update"); $$.add(Compiler.update(
 					token_solver.build_token('id',$1,@1.first_line,@1.first_column),1)); }
 			;
 			
-autoStmt : varChain AUTO_INCREMENTO {$$ = new _Node("post-increment"); $$.add($1); }
-			| varChain AUTO_DECREMENTO {$$ = new _Node("post-decrement"); $$.add($1);}
+autoStmt : varChain AUTO_INCREMENTO SEMI {$$ = new _Node("post-increment"); $$.add($1); }
+			| varChain AUTO_DECREMENTO SEMI {$$ = new _Node("post-decrement"); $$.add($1);}
+			| AUTO_INCREMENTO varChain SEMI {$$ = new _Node("pre-increment"); $$.add($2);}
+			| AUTO_DECREMENTO varChain SEMI {$$ = new _Node("pre-decrement"); $$.add($2);}
 			;
 
 varChain : varChain DOT var {$$ = $1; $$.add($3); }

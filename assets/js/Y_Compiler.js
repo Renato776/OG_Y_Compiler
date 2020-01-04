@@ -138,6 +138,7 @@ const Compiler = {
     extends_regex: new RegExp(/[ \r\t]extends[ \r\t]/),
     class_regex : new RegExp(/[a-zA-Z_]+[0-9]*/gm),
     sub_block_count :[],
+    sub_block_tracker:[],
     SymbolTable:[],
     scope:[],
     scope_tracker:[],
@@ -221,6 +222,7 @@ const Compiler = {
         this.indenting = "";
         this.root = null;
         this.classes = classes;
+        this.sub_block_tracker = [];
         this.types = {};
         this.types["void"] = new type('void');
         this.types["char"] = new type('char');
@@ -654,7 +656,7 @@ const Compiler = {
                  let block_name = SUB_BLOCK+this.peek(this.stack)+"---"+block_index;
                  let sub_row = new Row(block_name);
                  let sub_block_true_index = this.Row;
-                 this.scope_tracker.push(sub_block_true_index); //We add it so we can fill its size later on.
+                 this.sub_block_tracker.push(sub_block_true_index); //We add it so we can compile it later.
                  this.scope.push(sub_block_true_index); //We increase the scope for the child variables to be relative to this block.
                  this.SymbolTable[sub_block_true_index] = sub_row;
                  this.advance();
@@ -717,6 +719,7 @@ const Compiler = {
         this.sub_block_count.push(0); //We reset the sub_block_count to 0.
         //Next we store the index for this function:
         let func_index = this.Row;
+        this.scope_tracker.push(func_index);
         this.SymbolTable[func_index] = new Row(func_signature);
         this.SymbolTable[func_index].func = true;
         return func_index;
@@ -868,7 +871,6 @@ const Compiler = {
         * The class name to add
         * */
         this.scope.push(func_index);
-        this.scope_tracker.push(func_index);
         //Now, we make the index advance, so that we can put vars and parameters where they belong:
         this.advance();
         //Alright, next we reset the offset:
