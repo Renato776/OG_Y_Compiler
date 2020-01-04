@@ -148,7 +148,7 @@ function clear_object(obj) {
 function isFunction(functionToCheck) {
     return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
 }
-function compare_classes_by_level(a,b) {
+function compare_classes_by_level(a,b) { //This method compares classes by the number of ancestors.
     return a.ancestors.length > b.ancestors.length;
 }
 function compare_classes_by_id(a,b){

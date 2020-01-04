@@ -9,6 +9,7 @@ const semantic_exception = function (message,token) {
 const basic_details = function (type,offset) {
   return {visibility:'public',inherited:false,final:false,type:type,offset:offset};
 };
+let function_counter = 0;
 const Row = function (name,variable=false,details) {
     this.name = name;
     this.block = false;
@@ -24,6 +25,7 @@ const Row = function (name,variable=false,details) {
     this.inherited = false;
     this.final = false;
     this.visibility = 'public';
+    this.true_func_signature = "";
     if(variable){
         this.visibility = details.visibility;
         this.final = toBoolean(details.final);
@@ -31,7 +33,11 @@ const Row = function (name,variable=false,details) {
         this.offset = details.offset;
         this.inherited = toBoolean(details.inherited);
         Compiler.advance_scope();
-    }else this.block = true;
+    }else {
+        this.true_func_signature = "___"+function_counter;
+        function_counter++;
+        this.block = true;
+    }
     this.get_header = function () {
         return " <tr>\n" +
             "    <td>index</td>\n" +
