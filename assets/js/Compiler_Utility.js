@@ -67,6 +67,7 @@ const STRING = 'String';
 const BOOLEAN = 'boolean';
 const VOID = 'void';
 const NULL = 'null';
+let SHOW_LEAF_DETAILS = false;
 let class_counter = 0;
 const CONSTRUCTOR_PREFIX = '*';
 function toBoolean(value) {
@@ -204,7 +205,8 @@ const _Node = function (name) {
             if(color==undefined)color = getRandomColor();
             Compiler.color_stack.push(color);
             $container+=color+';">';
-            $display+=(this.name+" :: "+this.text+" ;; row: "+this.row+" col: "+this.col+" class: "+this._class+" file: "+this.file)+"</span>";
+            if(SHOW_LEAF_DETAILS)$display+=(this.name+" :: "+this.text+" ;; row: "+this.row+" col: "+this.col+" class: "+this._class+" file: "+this.file)+"</span>";
+            else $display+=this.text+"</span>";
             $container+=$display+"</span>";
             Compiler.ast_visualization += (Compiler.indenting + $container)+"<br>";
         }
@@ -218,6 +220,9 @@ const _Node = function (name) {
         }
     }
 };
+function toggle_details() {
+    SHOW_LEAF_DETAILS = !SHOW_LEAF_DETAILS;
+}
 const error_entry = function (type,line,col,details,_class,file) {
     let $row = $("<tr>");
     let $type = $("<td>");
@@ -260,7 +265,10 @@ const _pre_compiling_lexical_exception = function () {
 };
 const _compiling_exception = function (message,node = null) {
     let t;
-    if(node == null) t = _token_tracker.pop();
+    if(node == null) {
+        t = _token_tracker.pop();
+        if(t==undefined)t = new _token(null,null,null,null,null,null,true);
+    }
     else t = node.get_token();
     let $row = new error_entry('Semantic',t.row,t.col,message,t._class,t.file);
     $("#ErrorTableBody").append($row);
@@ -294,7 +302,7 @@ function evaluate_native_functions() {
     * */
 }
 function _import_exception(message) {
-    console.log(message);
+    _log(message);
 }
 function _log(message) {
     _current_line = new line(message);
@@ -360,19 +368,19 @@ function member_header() {
     return $row;
 }
 
-function select_class(e) {
+function select_entry_point(e) {
     let t = $(e.target)[0];
     if(t.localName!='td')return; //If it isn't a td the next instructions won't work!
     t = $(t.parentElement);
-    let target = t.attr('id');
-    if(selected_class == target){
-        selected_class = null;
-        $("#"+t.attr('id')).removeClass('Selected_Class');
+    let target = Number(t.attr('id').substring(2));
+    if(target==Code_Generator.entry_point){ //I'm re-selecting the same method. Deselect and return.
+        $("#"+"i_"+Code_Generator.entry_point).removeClass('Selected_Class');
+        Code_Generator.entry_point = -1;
         return;
     }
-    if(selected_class!=null)$("#"+selected_class).removeClass('Selected_Class');
-    selected_class = target;
-    $("#"+t.attr('id')).addClass('Selected_Class');
+    if(Code_Generator.entry_point!=-1)$("#"+"i_"+Code_Generator.entry_point).removeClass('Selected_Class');
+    Code_Generator.entry_point=target;
+    $("#i_"+target).addClass('Selected_Class');
 }
 function _pre_compiling_syntactical_error(){
     let t = _token_tracker.pop();
@@ -400,7 +408,8 @@ const Object_Class = {
     get_visualization : get_class_visualization
 };
 const String_Class = new _class('String','Object','Built-in');
-String_Class.fields['char_array'] = new _field('field','char_array','protected',CHAR_ARRAY,'String',1);
+String_Class.fields['char_array'] = new _field('field','char_array','protected',CHAR_ARRAY,'String',-1);
+String_Class.fields['char_array'].offset = 1;
 function get_class_visualization() {
     /*This method returns several rows describing a class.
     * It returns a class header as follows:
@@ -467,9 +476,15 @@ function get_class_visualization() {
     });
     //Alright, now graph all static members:
     static_members.forEach(entry=>{
-       rows.push(get_member_visualization(new member(
-          !entry.func,entry.visibility,true,entry.name,entry.type,false,false,entry.final
-       )));
+       let r = get_member_visualization(new member(
+           !entry.func,entry.visibility,true,entry.name,entry.type,false,false,entry.final
+       ));
+       if(entry.func&&!entry.name.includes('-')){ //Is an static parameter-less function.
+           let index = Compiler.get_var_index(0,entry.name);
+           r.attr('id',"i_"+index.toString());
+           r.click(select_entry_point);
+       }
+        rows.push(r);
     });
     return rows;
 }
@@ -581,7 +596,6 @@ const Import_Solver = {
     import_tracker:[],
     initialize: function(){
         _token_tracker = [];
-        SymbolTable = [];
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
@@ -871,10 +885,44 @@ function compile_source() {
        if(!("semantic" in e)){
            _pre_compiling_syntactical_error();
        }
+       return;
     }
     Compiler.build_nodeStructure(); //aka graph AST
-    Compiler.build_symbolTable();
+    Compiler.build_symbolTable(); //Compile & graph Symbol Table.
     //Perform inheritance.
     graph_all_classes();
     compile_native_functions();
+    $("#Compilar_Main").unbind();
+    $("#Compilar_Main").click(generate_code);
+    $("#Compilar_Main").html('Finish compilation');
+}
+function generate_code() {
+    Code_Generator.initialize();
+    if(Code_Generator.entry_point==-1){
+        /*
+        const valid_entry_point_details = 'For an static method to be valid as starting point' +
+            ' it only needs to take no parameters.';
+         */
+        let main_class = Code_Generator.classes['Main'];
+        if(main_class==undefined){
+            _log('NO Main class found. Either: Create a Main class or select a valid static method as ' +
+                'starting point in the folders & classes tab.');
+            return;
+        }
+        Code_Generator.entry_point = Compiler.get_var_index(0,'Main.static.main');
+        if(Code_Generator.entry_point==-1){
+            _log('NO main method found. Either: Create a Main class or select a valid static method as ' +
+                'starting point in the folders & classes tab.');
+            return;
+        }
+    }
+    try{
+        Code_Generator.generate_code();
+        reset_compilation_cycle();
+    }catch (e) {} //Do nothing and wait for the next try.
+}
+function reset_compilation_cycle() {
+    $("#Compilar_Main").unbind();
+    $("#Compilar_Main").click(compile_source);
+    $("#Compilar_Main").html('Compile');
 }
