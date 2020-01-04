@@ -125,6 +125,15 @@ const type = function (signature,dimension = 0) {
   }
   if(!this._class&&!this.isArray)this.primitive = true;
   else this.primitive = false;
+  this.is_string = function () {
+      return this.signature == 'String';
+  }
+  this.is_number = function () {
+      return this.signature=='char'||this.signature=='integer'||this.signature==DOUBLE;
+  }
+  this.is_integer = function(){
+      return this.signature=='char'||this.signature=='integer';
+  }
 };
 const Compiler = {
     root: null,
@@ -490,6 +499,7 @@ const Compiler = {
         }catch (e) {
             return;
         }
+        this.fill_sizes(); //We fill the sizes of all blocks in the program.
         //Graph Symbol Table.
         $("#SYMBOL_TABLE_BODY").empty();
         $("#SYMBOL_TABLE_BODY").addClass('SymbolTable_Entry');
@@ -903,5 +913,52 @@ const Compiler = {
         this.SymbolTable[func_index].true_end = this.Row;
         this.sub_block_count.pop();
         this.scope_offset.pop();
+    },
+    fill_sizes: function(){
+        this.scope_tracker.forEach(s=>{
+           this.fill_size(s);
+        });
+        this.sub_block_tracker.forEach(i=>{
+           this.fill_size(i);
+        });
+    },
+    fill_size:function(index){
+        if(index == 0 ){
+            let row = this.SymbolTable[index];
+            if(row.block&&row.is_not_end()){
+                let i = index+1;
+                let c = 0; //c is the size.
+                while(i < row.true_end){
+                    let sub_row = this.SymbolTable[i];
+                    if(sub_row == null)return;
+                    if(sub_row.block){
+                        if(sub_row.is_not_end())i = sub_row.true_end-1;
+                        c--;
+                    }
+                    c++;
+                    i++;
+                }
+                row.size = c;
+            }
+            return;
+        }
+        let row = this.SymbolTable[index];
+        if(row.block&&row.is_not_end()){
+            let i = index+1;
+            let c = 0; //c is the size.
+            while(i < row.true_end){
+                let sub_row = this.SymbolTable[i];
+                if(sub_row == null)return;
+                if(sub_row.block){
+                    if(sub_row.is_not_end())i = sub_row.true_end; //We skip this block.
+                    else i++; //Is the ending block, we just skip the field.
+                    continue;
+                }else{
+                    c++;
+                }
+                i++;
+            }
+            row.size = c;
+        }
     }
 };
