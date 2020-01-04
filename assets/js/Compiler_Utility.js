@@ -929,10 +929,10 @@ function compile_source() {
     }
     Compiler.build_nodeStructure(); //aka graph AST
     Compiler.build_symbolTable(); //Compile & graph Symbol Table.
-    perform_inheritance();
-    graph_all_classes();
+    perform_inheritance(); //perform inheritance on all classes.
+    graph_all_classes(); //Graph all classes.
     $("#Compilar_Main").unbind();
-    $("#Compilar_Main").click(generate_code);
+    $("#Compilar_Main").click(generate_code); //Advance process to the next part.
     $("#Compilar_Main").html('Finish compilation');
 }
 function generate_code() {
@@ -962,6 +962,7 @@ function generate_code() {
         Code_Generator.compile_utility_functions();//Next we output 3D for all utility functions used in 3D.
         Code_Generator.generate_code(); //And finally we output the rest of 3D.
         reset_compilation_cycle();
+        Printing.publish();
     }catch (e) {} //Do nothing and wait for the next try.
 }
 function reset_compilation_cycle() {

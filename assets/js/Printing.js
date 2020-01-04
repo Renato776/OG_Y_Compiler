@@ -18,6 +18,14 @@ const Printing = {
     print_function:function(){
         let func = this.functions.pop();
         this.print_output(func.get_visualization());
+    },
+    publish:function () {
+        /*
+        * This method takes the output from the Code Generator and publishes them to the Execution tab.
+        * */
+        $("#Ejecutar_Button").trigger('click');
+        CodeMirror_Execute.setValue(Code_Generator.output);
+        Code_Generator.output = ''; //We dispose of the old content as it is no longer of use.
     }
 };
 
