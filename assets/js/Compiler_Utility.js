@@ -291,16 +291,6 @@ function load_native_functions() {
     native_functions.push( new _field('method','toUpperCase','public','String','String',-1));
     native_functions.push( new _field('method','toLowerCase','public','String','String',-1));
 }
-function compile_native_functions() {
-    /*
-    * This method takes all native functions and implements them in the SymbolTable.
-    * */
-}
-function evaluate_native_functions() {
-    /*
-    * This method takes all native functions and outputs 3D code for each based on the Symbol Table.
-    * */
-}
 function _import_exception(message) {
     _log(message);
 }
@@ -595,7 +585,9 @@ const Import_Solver = {
     already_imported: [],
     import_tracker:[],
     initialize: function(){
+        abstractMethods = [];
         _token_tracker = [];
+        function_counter = 0;
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
@@ -854,6 +846,54 @@ function getRandomColor() {
     }
     return color;
 }
+let abstractMethods = [];
+function search_abstract_method(index) {
+    for (let i = 0; i<abstractMethods.length; i++){
+        if(abstractMethods[i].index==index)return abstractMethods[i];
+    }
+}
+function copy_field(field) { //returns a copy of the field.
+    return new _field(field.category,field.name,field.visibility,field.type,field.owner,field.index);
+}
+function perform_inheritance() {
+    /*
+    * This method performs inheritance on all classes.
+    * It also fills the abstract method list of the CodeGenerator for their further compilation.
+    * */
+    const cl = sorting.mergeSort(Object.values(Compiler.classes),compare_classes_by_level);
+    let i = 1;
+    while(i<cl.length){ //We start at 1 to skip the Object class.
+        let _class = cl[i]; //target class to perform inheritance on.
+        let parent = Compiler.classes[_class.parent]; //We get the immediate parent
+        Object.values(parent.fields).forEach(field=>{
+            let am;
+            let overridden = false;
+            if(field.abstract){
+                am = search_abstract_method(field.index);
+                if(am==undefined){ //It has not been registered yet, let's register it:
+                   am = new AbstractMethod(field.index,[]);
+                   abstractMethods.push(am);
+                }
+            }
+            if(field.name in _class.fields){ //True if we overrode a method/field
+                if(field.abstract){//The overrode we did was of an abstract method.
+                    am.implementations.push(new Implementation(_class.id,_class.fields[field.name].index));
+                    overridden = true;
+                }
+            }else if(field.visibility!='private'){ //Alright, is a normal field from parent. We must inherit if not private:
+                let inherited_field = copy_field(field);
+                inherited_field.inherited = true;
+                inherited_field.offset = Compiler.count_fields(_class.name)+1;
+                inherited_field.instructions = field.instructions;
+                inherited_field.final = field.final;
+                _class.fields[field.name] = inherited_field;
+            }
+            if(field.abstract&&!overridden)throw new _compiling_exception('Class: '+_class.name+" " +
+                "Does not override abstract method: "+field.name+" Please, override method before proceeding.");
+        });
+        i++;
+    }
+}
 function compile_source() {
     if(current_source_mirror==null)return; //There's nothing to compile in the first place.
     Import_Solver.initialize();
@@ -889,9 +929,8 @@ function compile_source() {
     }
     Compiler.build_nodeStructure(); //aka graph AST
     Compiler.build_symbolTable(); //Compile & graph Symbol Table.
-    //Perform inheritance.
+    perform_inheritance();
     graph_all_classes();
-    compile_native_functions();
     $("#Compilar_Main").unbind();
     $("#Compilar_Main").click(generate_code);
     $("#Compilar_Main").html('Finish compilation');
@@ -917,7 +956,11 @@ function generate_code() {
         }
     }
     try{
-        Code_Generator.generate_code();
+        Code_Generator.compile_native_functions(); //We output 3D for all natives first.
+        Code_Generator.compile_abstract_methods(); //Next we output 3D for all abstract methods.
+        Code_Generator.compile_native_constructors(); //Next we output 3D for all default constructors.
+        Code_Generator.compile_utility_functions();//Next we output 3D for all utility functions used in 3D.
+        Code_Generator.generate_code(); //And finally we output the rest of 3D.
         reset_compilation_cycle();
     }catch (e) {} //Do nothing and wait for the next try.
 }
