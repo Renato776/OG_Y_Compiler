@@ -178,6 +178,17 @@ const Code_Generator = {
         this.assign(this.t,'H');
         this.operate('H',this.t2,'+','H');
         this.push_cache(this.t);
+        //Initialize the new segment to 0:
+        this.assign(this.t3,0);
+        let wS = this.generate_label();
+        let wE = this.generate_label();
+        this.set_label(wS);
+        this.pureIf(this.t3,this.t2,'>=',wE);
+        this.operate(this.t,this.t3,'+',this.t);
+        this.set_heap(this.t,0);
+        this.operate(this.t3,'1','+',this.t3);
+        this.goto(wS);
+        this.set_label(wE);
         Printing.print_function();
     },
     compile_native_functions: function () {
@@ -243,7 +254,7 @@ const Code_Generator = {
         this.goto(lClassEnd); //We finish.
         this.set_label(lNull);
         this.get_heap(this.t1,this.t1); //t1 = ID of the class.
-        this.operate(this.t1,'10',this.t1);//t1 = address of the class representation in the heap
+        this.operate(this.t1,'11',this.t1);//t1 = address of the class representation in the heap
         this.get_heap(this.t1,this.t1);//t1 = String representation of the class.
         this.push_cache(this.t1); //We push the string representation
         this.set_label(lClassEnd);
@@ -456,8 +467,8 @@ const Code_Generator = {
          * */
             if(node.token) { //varChain ID resolve.
                 if (this.varChainIndex == 0) { //First ID in the chain.
-                    this.varChainIndex++;
                     this.resolve_global_id(node,resolve_as_signature);
+                    this.varChainIndex++;
                 } else this.resolve_member_id(node,resolve_as_signature); //Makes reference to a field
             }
             switch (node.name){
@@ -476,37 +487,76 @@ const Code_Generator = {
                     throw semantic_exception('Array Access not implemented yet.',node);
                     return;
                 case 'functionCall':
-                    this.resolve_functionCall(node,resolve_as_signature);
+                    if(this.varChainIndex==0){
+                        this.resolve_global_functionCall(node,resolve_as_signature);
+                        this.varChainIndex++;
+                    }else {
+                        let owner = this.evaluation_stack.pop(); //The value returned by the previous member.
+                        if(!owner.is_class())throw new semantic_exception(owner.signature+' is NOT a class.',node);
+                        let function_name = node.children[0].text;
+                        let paramL = node.children[node.children.length-1];
+                        this.compile_signature(paramL);
+                        let signature = this.evaluation_stack.pop();
+                        signature = function_name+signature;
+                        if(this.is_native_method(owner.signature,signature,resolve_as_signature))return;
+                        let field = this.get_field(signature,owner.signature,node);
+                        if(field==undefined)throw new semantic_exception('Undefined function: '+signature,node);
+                        this.resolve_method_call(field,node,resolve_as_signature);
+                    }
                     return;
             }
     },
-    value_expression:function (node) {
+    value_expression:function (node,value_as_signature = false) {
         if(node.token){ //Could be an ID, num, boolean or any primitive.
             switch (node.name){
                 case 'id':
                     //Should never happen. IDs are handled in varChains or functionCalls.
                     return;
                 case "null":
+                    if(value_as_signature){
+                     this.evaluation_stack.push(NULL);
+                     return;
+                    }
                     this.push_cache(0); //We load the null value.
                     this.evaluation_stack.push(this.types[NULL]);
                     return;
                 case INTEGER:
+                    if(value_as_signature){
+                        this.evaluation_stack.push(INTEGER);
+                        return;
+                    }
                     this.push_cache(parseInt(node.text));
                     this.evaluation_stack.push(this.types[INTEGER]);
                     return;
-                case "double":
+                case DOUBLE:
+                    if(value_as_signature){
+                        this.evaluation_stack.push(DOUBLE);
+                        return;
+                    }
                     this.push_cache(parseFloat(node.text));
                     this.evaluation_stack.push(this.types[DOUBLE]);
                     return;
                 case CHAR:
+                    if(value_as_signature){
+                        this.evaluation_stack.push(CHAR);
+                        return;
+                    }
                     this.push_cache(node.text.charCodeAt(0));
                     this.evaluation_stack.push(this.types[CHAR]);
                     return;
                 case "string":
+                    if(value_as_signature){
+                        this.evaluation_stack.push('String');
+                        return;
+                    }
                     this.compile_string(node.text);
                     this.evaluation_stack.push(this.types[STRING]);
                     return;
                 case BOOLEAN:
+                    if(value_as_signature){
+                        this.evaluation_stack.push(BOOLEAN);
+                        return;
+                    }
                     let ii = (node.text==("true"))?1:0;
                     this.push_cache(ii);
                     this.evaluation_stack.push(this.types[BOOLEAN]);
@@ -515,117 +565,7 @@ const Code_Generator = {
                     return; //Should never happen.
             }
         }
-        /**
-        else{
-            switch (node.name){ //Special Expression nodes
-                case "varChain": this.resolve_varChain(node); return;
-                case "functionCall": this.resolve_functionCall(node); return;
-                case "inlineArrayDef": this.resolve_inlineArrayDef(node); return;
-                default: //Do nothing and proceed.
-            }
-            //It isn't a token or an special node therefore is an operation.
-            node.children.forEach(child=>{
-                this.value_expression(child);
-            });
-            let left_arg; //t1
-            let right_arg; //t2
-            if(node.name==("Unot")||node.name==("Uminus")){
-                left_arg = right_arg = this.evaluation_stack.pop();
-                this.pop_cache(this.t1);
-            }else{
-                right_arg = this.evaluation_stack.pop();
-                left_arg = this.evaluation_stack.pop();
-                this.pop_cache(this.t2);
-                this.pop_cache(this.t1);
-            }
-            switch (node.name){
-                case '+': //Sum is special because of all possible overloads.
-                    if(left_arg.is_string()||right_arg.is_string()){//There's at least one string. Concatenation must be performed.
-
-                    }else if(left_arg.is_number()&&right_arg.is_number()){ //Both are numbers, it is an arithmetic sum
-                        double arithmetic_answer = operate(left_value,right_value,node.name);
-                        cache.push(arithmetic_answer);
-                        if(left_arg.is_integer()&&right_arg.is_integer())evaluation_stack.push(unique_types.get(INTEGER));
-                        else evaluation_stack.push(unique_types.get(REAL));
-                        return;
-                    }else throw new SemanticException("Cannot resolve operator: +  with types: "+left_arg.signature+" and "+right_arg.signature,node);
-                case "rest":
-                case "divide":
-                case "multiply":
-                case "pow":
-                case "mod":
-                    //Alright the rest of arithmetic operations have no overloads so it's pretty much the same for most of them:
-                    //1) Verify  that both arguments are numbers:
-                    if(!(left_arg.is_number()&&right_arg.is_number()))
-                        throw new SemanticException("Invalid types for operation: "+node.name+" " +
-                            "Expected: integer|decimal and integer|decimal. Got: "+left_arg.signature+" and "+right_arg.signature,node);
-
-                    double arithmetic_answer = operate(left_value,right_value,node.name);
-                    cache.push(arithmetic_answer);
-                    if(left_arg.is_integer()&&right_arg.is_integer())evaluation_stack.push(unique_types.get(INTEGER));
-                    else evaluation_stack.push(unique_types.get(REAL));
-                    return;
-                case "comparacion":
-                case "distinto":
-                    if(left_arg.is_array()||right_arg.is_array())throw new SemanticException("Cannot perform: "+node.name+" " +
-                        "On types: "+left_arg.signature+" and "+right_arg.signature,node);
-                    cache.push(left_value);
-                    cache.push(right_value);
-                    if(node.name.equals("distinto"))distinto();
-                    else igualdad();
-                    evaluation_stack.push(unique_types.get(BOOLEAN));
-                    return;
-                case "mayorQ":
-                case "menorQ":
-                case "mayorIgual":
-                case "menorIgual":
-                    //This ones are only valid for primitives:
-                    boolean left_is_not_valid = left_arg.is_array()||left_arg.is_record();
-                    boolean right_is_not_valid = right_arg.is_array()||right_arg.is_record();
-                    if(left_is_not_valid||right_is_not_valid)throw new SemanticException("Cannot perform:"+node.name+" with types: "+left_arg.signature+" and "+right_arg.signature,node);
-                    //Alright both are valid parameters, let's proceed:
-                    cache.push(left_value);
-                    cache.push(right_value);
-                    switch (node.name){
-                        case "mayorQ":mayorQ(); evaluation_stack.push(unique_types.get(BOOLEAN));
-                            return;
-                        case "menorQ":menorQ(); evaluation_stack.push(unique_types.get(BOOLEAN));
-                            return;
-                        case "mayorIgual":mayorIgual(); evaluation_stack.push(unique_types.get(BOOLEAN));
-                            return;
-                        case "menorIgual":menorIgual(); evaluation_stack.push(unique_types.get(BOOLEAN));
-                            return;
-                        default:return;
-                    }
-                case "and":
-                case "or":
-                    if(left_arg.is_boolean()&&right_arg.is_boolean()){
-                        cache.push(left_value);
-                        cache.push(right_value);
-                        if(node.name.equals("and"))and();else or();
-                        evaluation_stack.push(unique_types.get(BOOLEAN));
-                        return;
-                    }else throw new SemanticException("Cannot perform operation: "+node.name+" On types: "+left_arg.signature+" and "+right_arg.signature,node);
-                case "not":
-                    if(!left_arg.is_boolean())throw new SemanticException("Cannot negate type: "+left_arg.signature,node);
-                    cache.push(left_value);
-                    not();
-                    evaluation_stack.push(unique_types.get(BOOLEAN));
-                    return;
-                case "Uminus":
-                    if(!left_arg.is_number())throw  new SemanticException("Cannot operate: UMinus on type: "+ left_arg.signature,node);
-                    left_value = -1*left_value;
-                    cache.push(left_value);
-                    if(left_arg.is_integer())evaluation_stack.push(unique_types.get(INTEGER));
-                    else evaluation_stack.push(left_arg);
-                    return;
-                default:
-                    System.out.println("Unimplemented Expression node: "+node.name);
-                    cache.push(0);
-                    evaluation_stack.push(NULL);
-            }
-        }
-         **/
+        //The operations have yet to be implemented.
     },
     compile_string:function (string) {
         this.push_cache(string.length+1);
@@ -722,17 +662,27 @@ const Code_Generator = {
         return Compiler.get_var_index(this.peek(this.scope),varName);
     },
     resolve_global_id(node,resolve_as_signature=false) {
+        /*
+        * Alright, the first ID within a varChain. This ID can have multiple meanings and we'll solve them all here.
+        * The possible options are:
+        * ID is the name of a local in the current block.
+        * ID is the name of a normal field within the class it has been written into.
+        * ID is the name of an static field within the class it has been written into.
+        * If none of the above is found an exception must be thrown.
+        * */
+        //0) Get the owner class:
+        let owner = Compiler.get_class(node);
+        //1) Check the first scenario: (a local within the current block):
         let local_index = this.get_index(node.text);
-        if (local_index==-1){//Okay local_index wasn't found. However, it could still be an static field
-            let _class = Compiler.get_class(node);
-            local_index = this.get_index(_class+"."+node.text); //We try again as an static variable.
-            if(local_index==-1){ //Okay, it isn't a local and is not an static variable either. There's a last chance:
-                let _field = this.classes[_class].fields[node.text];
+        if (local_index==-1){//Alright it is not a local. Let's check if it is an static field:
+            local_index = this.get_static_field(node.text,owner,node,false);
+            if(local_index==-1){ //Okay, there's a last chance of the ID being a normal field:
+                let _field = this.get_field(node.text,owner,node);
                 if(_field==undefined)throw new semantic_exception('variable: '+node.text+' NOT defined',node);
                 //Alright is a field access.
                 local_index = this.get_index('this');
                 if(local_index==-1)throw new semantic_exception('Cannot access: '+node.text+" Within a static context.",node);
-                this.evaluation_stack.push(this.types[_class]);
+                this.evaluation_stack.push(this.types[owner]);
                 if(!resolve_as_signature){
                     if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_value(local_index); //We push it to the evaluation stack
                     else this.get_stored_value(local_index); //We push the this reference to the cache.
@@ -743,7 +693,7 @@ const Code_Generator = {
         }
         let _type = this.types[this.SymbolTable[local_index].type]; //We get the type
         if(resolve_as_signature){
-            this.evaluation_stack.push(_type.signature);//We push the name only and return.
+            this.evaluation_stack.push(_type.signature);//We push the name and return immediately.
             return;
         } else this.evaluation_stack.push(_type);
         if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_value(local_index); //a) Is a normal by Value variable.
@@ -765,20 +715,16 @@ const Code_Generator = {
     },
     resolve_member_id(node,resolve_as_signature = false) {
         /*
-        * Alright, the form of retrieving values from a record is simple:
-        * pop the evaluation stack and make sure the stored temp does make reference
-        * to a record. If it does, get the signature of the record at which the
-        * temp points to, and search the field there. If found, you simply return the value
-        * stored in temp + offset and register the result.
-        * This way, if a third id is found or any onwards id you simply keep the chain up.
+        *This method searches the id as a member of the previous id in the chain.
+        * Static methods are not allowed to be solved here.
         * */
-
-        let record_type = this.evaluation_stack.pop();
-        if(!record_type.is_class())throw new semantic_exception("Cannot resolve field access in type: "+record_type.signature,node);
-        let field = this.classes[record_type.signature].fields[node.text];
-        if(field==undefined)throw new semantic_exception("Undefined field: "+node.text+" In class:"+record_type.signature,node);
+        let name = node.text;
+        let owner = this.evaluation_stack.pop(); //We get the type from the past member of the chain
+        if(!owner.is_class())throw new semantic_exception("Cannot resolve field access in type: "+owner.signature,node);
+        let field = this.get_field(name,owner.signature,node);
+        if(field==undefined)throw new semantic_exception("Undefined field: "+node.text+" In class:"+owner.signature,node);
         if(resolve_as_signature){
-            this.evaluation_stack.push(field.type);//We push the name only and return.
+            this.evaluation_stack.push(field.type);//We push the type and return without doing anything else.
             return;
         }
         let id = field.id; //right now the this reference is pushed in the cache.
@@ -788,8 +734,8 @@ const Code_Generator = {
         this.evaluation_stack.push(this.types[field.type]);//We push the type for the next iteration.
         return;
     },
-    resolve_global_functionCall(node,_class,resolve_as_signature = false) { //This method expects you to send the class where the method belongs to.
-            if(this.is_native_function(node))return;
+    resolve_global_functionCall(node,resolve_as_signature = false) { //This method expects you to send the class where the method belongs to.
+            if(this.is_native_function(node,resolve_as_signature))return;
             //1) Compile the signature for the function:
             let function_name = node.children[0].text;
             let paramL = node.children[node.children.length-1];
@@ -797,55 +743,37 @@ const Code_Generator = {
             let signature = this.evaluation_stack.pop();
             signature = function_name+signature;
             /*
-            * Alright, at this point we know the signature of the function except
-            * for the class where it belongs to. We also don't know if it is an static function
-            * or a normal member function. We know it isn't a native though.
-            * Alright, if we were somewhere in the chain that is not the beginning we know
-            * we're referring to the previous's class. However, since we're at the beginning
-            * it can only mean one thing: We're talking about a method from the class this token
-            * is written into. Either, static or normal. We'll search for normal methods first
-            * and if not found, we'll search for an static version. If not found either throw exception.
+            * Alright, we're the first in the chain and we know the signature of the function We're calling.
+            * There's only 2 scenarios here:
+            * the signature is for an static method within the class this token was written into
+            * And the signature is for a normal method within the class it has been written into.
             * */
-            let field = _class.fields[signature];
-            if(field!=undefined){
-                if(field.category=='method'){
-                    //Alright is a method call.
-                    this.resolve_method_call(field,node);
-                }else throw new semantic_exception('member: '+field.name+" from class: "+_class.name+" is not a function.",node);
+            let owner = Compiler.get_class(node);
+            //Alright, let's get this started. First scenario: (static method)
+            let target_func = this.get_static_field(signature,owner,node,true);
+            if(target_func==-1){ //Nope, is not an static method. It could still be a normal method:
+                let method = this.get_field(signature,owner,node);
+                if(method==undefined)throw new semantic_exception('method: '+signature+" Has NOT been defined.",node);
+                if(method.category=='field')throw new semantic_exception(method.name+" is NOT a function.",node); //Just in case
+                this.resolve_method_call(method,node,resolve_as_signature);
+                return;
             }
-            //Alright, it can still be an static method:
-            let target_func = this.get_func_index(_class.name+".static."+signature);
-            if(target_func == -1)throw new semantic_exception("Undefined function: "+signature+".",node);
-            //Alright, value the parameters.
-            //*Important: We only value the parameters here. Parameter loading is handled by the perform_jump function.
-            int i = paramL.children.size()-1;
-            while(i>=0){ //We value them backwards. So we can have them in order after valuating all parameters.
-                value_expression(paramL.children.get(i));
-                evaluation_stack.pop(); //We don't need the type any more.
-                i--;
+            if(this.is_within_expression())
+                if(this.SymbolTable[target_func].type=='void')
+                    throw new semantic_exception('Cannot call a void function from within an expression. Function: '+signature,node);
+            if(resolve_as_signature){
+                this.evaluation_stack.push(this.SymbolTable[target_func].type); //We push the return type
+                return;
             }
-            stack.push("function_call"); //We provide context for the jump.
-            try {
-                perform_jump(scope.peek(),target_func,SymbolTable[scope.peek()].size,SymbolTable[target_func].instructions);
-            }catch (ReturnException ret){
-                //System.out.println("Returned.");
-            }
-            //Verify the return type of the function coincides with expected:
-            RType return_type = (RType) evaluation_stack.pop();
-            RType expected_type;
-            if(SymbolTable[target_func].type==null) expected_type = VOID;
-            else expected_type = unique_types.get(SymbolTable[target_func].type);
-            double return_value = cache.pop();
-            if(!types_are_compatible(expected_type,return_type,return_value))throw new SemanticException("" +
-                "The function "+function_name+" expects to return: "+expected_type.signature+"" +
-                " However, it received: "+return_type.signature+" instead.",node);
-            return_value = cache.pop();
-            evaluation_stack.push(expected_type);
-            cache.push(return_value);
-            stack.pop();
-
+            //First of all, value the params:
+            this.value_parameters(paramL);
+            this.stack.push("function_call");
+            this.perform_jump(this.peek(this.scope),target_func,this.SymbolTable[this.peek(this.scope)].size);
+            this.stack.pop();
+            this.evaluation_stack.push(this.types[this.SymbolTable[target_func].type]); //We push the return type
+            //That's all! We'll let the next nodes handle the returned type by the function.
     },
-    is_native_function(node) {
+    is_native_function(node,value_as_signature=false) {
         /*
         * This function performs the evaluation of a native function and
         * pushes the result to the cache as well as the return type.
@@ -855,12 +783,22 @@ const Code_Generator = {
         let paramL = node.children[node.children.length-1];
         switch (func_name){
             case "println":
+                if(value_as_signature){
+                    this.evaluation_stack.push('void');
+                    return true;
+                }
                 this.format_text(paramL);
                 this.close_primitive_function();
                 return true;
             case "str":
+                if(value_as_signature){
+                    this.evaluation_stack.push('String');
+                    return true;
+                }
                 if(paramL.children.length==1){//Only one parameter allowed.
+                    this.stack.push('expression');
                     this.value_expression(paramL.children[0]); //First direct child is a ParamL and first child there is the actual param.
+                    this.stack.pop();
                     let type = this.evaluation_stack.pop();
                     this.cast_to_string(type,node);
                     this.evaluation_stack.push(this.types['String']);
@@ -875,8 +813,11 @@ const Code_Generator = {
         this.evaluation_stack.push(this.types['void']);
     },
     format_text(paramList) {
+        //This method takes any parameter, casts it to string (if possible) and prints it.
         if(paramList.children.length!=1)throw new semantic_exception('Only one parameter expected for println function. Found: '+paramList.children.length);
+        this.stack.push('expression');
         this.value_expression(paramList.children[0]); //We value the param as expression.
+        this.stack.pop();
         let type = this.evaluation_stack.pop();
         this.cast_to_string(type,paramList);
         this.pop_cache(this.t1); //t1 = String instance address.
@@ -928,104 +869,13 @@ const Code_Generator = {
          * */
         let res = "";
         paramL.children.forEach(param=>{
-            this.compile_expr_as_signature_part(param);
-            res += "-"+this.evaluation_stack.pop(); 
+            this.stack.push('expression');
+            this.value_expression(param,true);
+            this.stack.pop();
+            res += "-"+this.evaluation_stack.pop();
         });
         this.evaluation_stack.push(res);
         return;
-    },
-    compile_expr_as_signature_part(param) {
-        switch (param.name){
-            case 'null':
-            case INTEGER:
-            case "double":
-            case CHAR:
-            case "string":
-            case BOOLEAN:
-                this.value_expression(param);
-                this.pop_cache(this.t); //We only care about the type not the value.
-                let primitive_type = this.evaluation_stack.pop();
-                this.evaluation_stack.push(primitive_type.signature);
-                return;
-            case 'varChain':
-                this.resolve_varChain_as_signature(param);
-                return;
-            default: //Must be an Operation
-                param.children.forEach(child=>{
-                   this.compile_expr_as_signature_part(child);
-                });
-                let left;
-                let right;
-                let left_arg,right_arg;
-                if(param.name==("Unot")||param.name==("Uminus")){
-                    left = right = this.evaluation_stack.pop();
-                }else{
-                    right = this.evaluation_stack.pop();
-                    left = this.evaluation_stack.pop();
-                }
-                left_arg = this.types[(left)];
-                right_arg = this.types[(right)];
-                switch (param.name) {
-                    case "+": //Sum is special because of all possible overloads.
-                        if (left_arg.is_string() || right_arg.is_string()) {//There's at least one string. Concatenation not supported.
-                            this.evaluation_stack.push('String');
-                            return;
-                        } else if (left_arg.is_number() && right_arg.is_number()) { //Both are numbers, it is an arithmetic sum
-                            if (left_arg.is_integer() && right_arg.is_integer()) this.evaluation_stack.push(INTEGER);
-                            else this.evaluation_stack.push(DOUBLE);
-                            return;
-                        } else
-                            throw new semantic_exception("Cannot resolve operator: +  with types: " + left_arg.signature + " and " + right_arg.signature, param);
-                    case "-":
-                    case "/":
-                    case "*":
-                    case "%":
-                        //Alright the rest of arithmetic operations have no overloads so it's pretty much the same for most of them:
-                        //1) Verify  that both arguments are numbers:
-                        if (!(left_arg.is_number() && right_arg.is_number()))
-                            throw new semantic_exception("Invalid types for operation: " + param.name + " " +
-                                "Expected: integer|decimal and integer|decimal. Got: " + left_arg.signature + " and " + right_arg.signature, param);
-                        if (left_arg.is_integer() && right_arg.is_integer()) this.evaluation_stack.push(INTEGER);
-                        else this.evaluation_stack.push(DOUBLE);
-                        return;
-                    case "==":
-                    case "!=":
-                        if (!(left_arg.primitive && right_arg.primitive))
-                            throw new semantic_exception("Cannot perform: " + param.name + " " +
-                                "On types: " + left_arg.signature + " and " + right_arg.signature, param);
-                        this.evaluation_stack.push(BOOLEAN);
-                        return;
-                    case ">":
-                    case "<":
-                    case ">=":
-                    case "<=":
-                        //This ones are only valid for primitives:
-                        let left_is_not_valid = left_arg.is_array() || left_arg.is_class();
-                        let right_is_not_valid = right_arg.is_array() || right_arg.is_class();
-                        if (left_is_not_valid || right_is_not_valid)
-                            throw new semantic_exception("Cannot perform:" + param.name + " with types: " + left_arg.signature + " and " + right_arg.signature, param);
-                        this.evaluation_stack.push(BOOLEAN);
-                        return;
-                    case "&&":
-                    case "||":
-                        if (left_arg.is_boolean() && right_arg.is_boolean()) {
-                            this.evaluation_stack.push(BOOLEAN);
-                            return;
-                        } else
-                            throw new SemanticException("Cannot perform operation: " + param.name + " On types: " + left_arg.signature + " and " + right_arg.signature, param);
-                    case "NOT":
-                        if (!left_arg.is_boolean())
-                            throw new SemanticException("Cannot negate type: " + left_arg.signature, param);
-                        this.evaluation_stack.push(BOOLEAN);
-                        return;
-                    case "UMINUS":
-                        if (!left_arg.is_number())
-                            throw new semantic_exception("Cannot operate: UMinus on type: " + left_arg.signature, param);
-                        if (left_arg.is_integer()) this.evaluation_stack.push(INTEGER);
-                        else this.evaluation_stack.push(left);
-                        return;
-                }
-        }
     },
     get_func_index(signature) {
         /*
@@ -1045,9 +895,57 @@ const Code_Generator = {
         }
         return -1;  //Not found :(
     },
-    resolve_method_call(field, node) {
-
-    }, //NOT implemented yet....
+    resolve_method_call(field, node,resolve_as_signature=false) {
+        if(this.is_within_expression()){
+            if(field.type=='void')throw new semantic_exception('Cannot call a void function from within an expression. Function: '+field.name,node);
+        }
+        if(resolve_as_signature){
+            this.evaluation_stack.push(field.type);
+            return;
+        }
+        let paramL = node.children[node.children.length-1];
+        if(this.varChainIndex==0){
+         //We have to load the this reference first:
+            let this_index = this.get_index('this');
+            if(this_index==-1)throw new semantic_exception('Cannot access: '+field.name+" Within a static context.",node);
+            if(this.SymbolTable[this_index].inherited)this.get_stored_inherited_value(this_index); //We push it to the evaluation stack
+            else this.get_stored_value(this_index); //We push the this reference to the cache.
+        }
+        let signature = field.owner+"."+field.name;
+        let target_func = this.get_func_index(signature);
+        this.value_parameters(paramL);
+        //Alright, all params have been valuated backwards, however the this reference is at the bottom of all params.
+        //We'll use the heap as a secondary stack for the purpose of taking out the this reference from the bottom and pushing it to the top.
+        this.assign(this.t1,0);//We need to know how many params we've valuated.
+        let WhileStart = this.generate_label();
+        let WhileEnd = this.generate_label();
+        this.set_label(WhileStart);
+        this.pureIf(this.t1,paramL.children.length,'>=',WhileEnd);
+        this.pop_cache(this.t2); //param value;
+        this.operate('H','1','+','H');
+        this.set_heap('H',this.t2);
+        this.operate(this.t1,'1','+',this.t1);
+        this.goto(WhileStart);
+        this.set_label(WhileEnd);
+        //Alright all params have been removed and are now in the heap.
+        this.pop_cache(this.t3); //t3 = this reference.
+        //Alright, now let's put all params back in the cache:
+        let wS = this.generate_label();
+        let wE = this.generate_label();
+        this.set_label(wS);
+        this.assign(this.t1,0);
+        this.pureIf(this.t1,paramL.children.length,'>=',wE);
+        this.get_heap(this.t2,'H'); //We get the first value
+        this.operate('H','1','-','H');//We decrease H
+        this.push_cache(this.t2); //We push it back to the cache.
+        this.goto(wS);
+        this.set_label(wE);
+        this.push_cache(this.t3); //We finally push the this reference at the top.
+        this.stack.push("function_call");
+        this.perform_jump(this.peek(this.scope),target_func,this.SymbolTable[this.peek(this.scope)].size);
+        this.stack.pop(); //That's all!
+        this.evaluation_stack.push(this.types[this.SymbolTable[target_func].type]);
+    },
     get_field:function(name,owner,token){
         let _class = this.classes[owner];
         if(_class==undefined)throw new semantic_exception(owner+' is NOT a class',token);
@@ -1089,5 +987,69 @@ const Code_Generator = {
             }
         }
         return res;
+    },
+    value_parameters(paramL) {
+        let i = paramL.children.length-1;
+        while(i>=0){ //We value them backwards. So we can have them in order after valuating all parameters.
+            this.stack.push('expression');
+            this.value_expression(paramL.children[i]);
+            this.stack.pop();
+            this.evaluation_stack.pop(); //We don't need the type any more.
+            i--;
+        }
+    },
+    is_within_expression:function () {
+      let found = false;
+      this.stack.forEach(s=>{
+         if(s=='expression')found = true;
+      });
+      return found;
+    },
+    is_native_method(owner, signature,resolve_as_signature) {
+        //Alright, here I can overwrite and implement by hand any native method!
+        //This is different from is_native_function, because that one is used for native static functions.
+        //This is used for native normal methods (like equals, length, toLowerCase, etc)
+        //Object native methods:
+        if(signature.startsWith('equals')){ //The highest precedence amongst all native functions. Doesn't matter who's the caller or what are the params.
+            if(resolve_as_signature){
+                this.evaluation_stack.push(BOOLEAN);
+                return true;
+            }
+            this.evaluation_stack.push(this.types[BOOLEAN]);
+            return true;
+        }else if(signature=='getClass'){//Second highest precedence, doesn't matter who's the caller.
+            if(resolve_as_signature){
+                this.evaluation_stack.push('String');
+                return true;
+            }
+            this.evaluation_stack.push(this.types['String']);
+            return true;
+        }
+        if(owner=='String'){
+            //String compatible
+            switch (signature) {
+                case 'length':if(resolve_as_signature){
+                    this.evaluation_stack.push(INTEGER);
+                    return true;
+                }
+                    this.evaluation_stack.push(this.types[INTEGER]);
+                    return true;
+                case 'toLowerCase':
+                    if(resolve_as_signature){
+                    this.evaluation_stack.push('String');
+                    return true;
+                }
+                    this.evaluation_stack.push(this.types['String']);
+                    return true;
+                case 'toUpperCase':
+                    if(resolve_as_signature){
+                        this.evaluation_stack.push('String');
+                        return true;
+                    }
+                    this.evaluation_stack.push(this.types['String']);
+                    return true;
+            }
+        }
+        return false;
     }
 };
