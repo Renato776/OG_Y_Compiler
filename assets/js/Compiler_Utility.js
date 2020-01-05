@@ -79,6 +79,7 @@ function toBoolean(value) {
         return Number(value)==1;
     }else return false;
 }
+let field_counter_ = 0;
 //region Object constructors used for Compilation.
 const _field = function (category,name,visibility,type,owner,index = -1) { //Static fields aren't put here.
     this.category = category;
@@ -93,6 +94,10 @@ const _field = function (category,name,visibility,type,owner,index = -1) { //Sta
     this.instructions = null;
     this.offset = -1; //It must be filled externally after loading the field.
     this.get_visualization = get_member_visualization(this);
+    if(this.category=='field'){
+        this.id = field_counter_;
+        field_counter_++;
+    }
 };
 const _class = function (name,parent = null,location = "Unknown") {
     class_counter++;
@@ -586,6 +591,7 @@ const Import_Solver = {
     import_tracker:[],
     initialize: function(){
         abstractMethods = [];
+        field_counter_ = 1; //We're starting a new cycle.
         _token_tracker = [];
         function_counter = 0;
         location_solver.initialize();
@@ -853,7 +859,9 @@ function search_abstract_method(index) {
     }
 }
 function copy_field(field) { //returns a copy of the field.
-    return new _field(field.category,field.name,field.visibility,field.type,field.owner,field.index);
+    let r =  new _field(field.category,field.name,field.visibility,field.type,field.owner,field.index);
+    r.id = field.id; //We copy the id since it is an inherited field.
+    return r;
 }
 function perform_inheritance() {
     /*
