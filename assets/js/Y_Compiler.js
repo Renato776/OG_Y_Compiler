@@ -123,17 +123,27 @@ const type = function (signature,dimension = 0) {
       this.isArray = true;
       this.array = new array(dimension,this);
   }
+  this.is_class = function(){
+      return this._class;
+  };
+
   if(!this._class&&!this.isArray)this.primitive = true;
   else this.primitive = false;
+  this.is_array = function() {
+    return this.isArray;
+  };
+  this.is_boolean = function(){
+      return this.signature==BOOLEAN;
+  };
   this.is_string = function () {
       return this.signature == 'String';
-  }
+  };
   this.is_number = function () {
-      return this.signature=='char'||this.signature=='integer'||this.signature==DOUBLE;
-  }
+      return this.signature==CHAR|this.signature==INTEGER||this.signature==DOUBLE;
+  };
   this.is_integer = function(){
-      return this.signature=='char'||this.signature=='integer';
-  }
+      return this.signature==CHAR|this.signature==INTEGER;
+  };
 };
 const Compiler = {
     root: null,
@@ -146,9 +156,9 @@ const Compiler = {
     public_regex : new RegExp(/^public[ \r\t]/),
     private_regex : new RegExp(/^private[ \r\t]/),
     protected_regex : new RegExp(/^protected[ \r\t]/),
-    static_regex : new RegExp(/[ \r\t]static[ \r\t]/),
-    abstract_regex : new RegExp(/[ \r\t]abstract[ \r\t]/),
-    final_regex : new RegExp(/[ \r\t]final[ \r\t]/),
+    static_regex : new RegExp(/([ \r\t]static[ \r\t])|(^static[ \r\t])/),
+    abstract_regex : new RegExp(/([ \r\t]abstract[ \r\t])|(^abstract[ \r\t])/),
+    final_regex : new RegExp(/([ \r\t]final[ \r\t])|(^final[ \r\t])/),
     type_regex: new RegExp(/@[a-zA-Z_]+[0-9]*/),
     extends_regex: new RegExp(/[ \r\t]extends[ \r\t]/),
     class_regex : new RegExp(/[a-zA-Z_]+[0-9]*/gm),
