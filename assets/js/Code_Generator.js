@@ -456,7 +456,7 @@ const Code_Generator = {
         }
         return -1;
     },
-    resolve_varChain(node,resolve_as_signature = false){
+    resolve_varChain(node,resolve_as_signature = false,static_access = false){
         /*
          * Resolves a varChain and loads the result to the cache.
          * It also pushes the correspondent type to the evaluation Stack.
@@ -469,7 +469,7 @@ const Code_Generator = {
                 if (this.varChainIndex == 0) { //First ID in the chain.
                     this.resolve_global_id(node,resolve_as_signature);
                     this.varChainIndex++;
-                } else this.resolve_member_id(node,resolve_as_signature); //Makes reference to a field
+                } else this.resolve_member_id(node,resolve_as_signature,static_access); //Makes reference to a field
             }
             switch (node.name){
                 case "varChain":
@@ -498,11 +498,31 @@ const Code_Generator = {
                         this.compile_signature(paramL);
                         let signature = this.evaluation_stack.pop();
                         signature = function_name+signature;
+                        if(static_access){
+                            signature = owner.signature+".static."+signature;
+                            let target_func = this.get_func_index(signature);
+                            if(target_func==-1)throw new semantic_exception('static method: '+signature+" NOT found.",node);
+                            if(resolve_as_signature){
+                                this.evaluation_stack.push(this.SymbolTable[target_func].type);
+                                return;
+                            }
+                            this.perform_static_function_call(target_func,paramL);
+                            return;
+                        }
                         if(this.is_native_method(owner.signature,signature,resolve_as_signature))return;
                         let field = this.get_field(signature,owner.signature,node);
                         if(field==undefined)throw new semantic_exception('Undefined function: '+signature,node);
                         this.resolve_method_call(field,node,resolve_as_signature);
                     }
+                    return;
+                case 'staticAccess':
+                {
+                    let owner = node.children[0].text;
+                    owner = this.types[owner];
+                    if(!owner.is_class())throw new semantic_exception(owner.signature+" is NOT a class.",node);
+                    this.varChainIndex++;
+                    this.resolve_varChain(node.children[1],resolve_as_signature,true);
+                }
                     return;
             }
     },
@@ -713,7 +733,7 @@ const Code_Generator = {
         this.get_stack(this.t,this.t); //t holds the actual value
         this.push_cache(this.t);
     },
-    resolve_member_id(node,resolve_as_signature = false) {
+    resolve_member_id(node,resolve_as_signature = false,static_access = false) {
         /*
         *This method searches the id as a member of the previous id in the chain.
         * Static methods are not allowed to be solved here.
@@ -721,6 +741,19 @@ const Code_Generator = {
         let name = node.text;
         let owner = this.evaluation_stack.pop(); //We get the type from the past member of the chain
         if(!owner.is_class())throw new semantic_exception("Cannot resolve field access in type: "+owner.signature,node);
+        if(static_access){
+            //Alright, let's search for it in the SymbolTable:
+            let signature = owner.signature+"."+name;
+            let target = this.get_index(signature);
+            if(target==-1)throw new semantic_exception('static field: '+name+' NOT found.',node);
+            if(this.SymbolTable[target].block)throw new semantic_exception('static member: '+name+' is NOT a field.');
+            if(resolve_as_signature){
+                this.evaluation_stack.push(this.SymbolTable[target].type);
+                return;
+            } else this.evaluation_stack.push(this.types[this.SymbolTable[target].type]);
+            if(this.SymbolTable[target].inherited)this.get_stored_inherited_value(target); //a) Is a normal by Value variable.
+            else this.get_stored_value(target); //b) Is an Inherited variable of a by Value variable.
+        }
         let field = this.get_field(name,owner.signature,node);
         if(field==undefined)throw new semantic_exception("Undefined field: "+node.text+" In class:"+owner.signature,node);
         if(resolve_as_signature){
@@ -758,20 +791,11 @@ const Code_Generator = {
                 this.resolve_method_call(method,node,resolve_as_signature);
                 return;
             }
-            if(this.is_within_expression())
-                if(this.SymbolTable[target_func].type=='void')
-                    throw new semantic_exception('Cannot call a void function from within an expression. Function: '+signature,node);
             if(resolve_as_signature){
                 this.evaluation_stack.push(this.SymbolTable[target_func].type); //We push the return type
                 return;
             }
-            //First of all, value the params:
-            this.value_parameters(paramL);
-            this.stack.push("function_call");
-            this.perform_jump(this.peek(this.scope),target_func,this.SymbolTable[this.peek(this.scope)].size);
-            this.stack.pop();
-            this.evaluation_stack.push(this.types[this.SymbolTable[target_func].type]); //We push the return type
-            //That's all! We'll let the next nodes handle the returned type by the function.
+            this.perform_static_function_call(target_func,paramL);
     },
     is_native_function(node,value_as_signature=false) {
         /*
@@ -788,7 +812,7 @@ const Code_Generator = {
                     return true;
                 }
                 this.format_text(paramL);
-                this.close_primitive_function();
+                if(this.is_within_expression())throw new semantic_exception('Cannot call println from within an expression.',node);
                 return true;
             case "str":
                 if(value_as_signature){
@@ -807,10 +831,6 @@ const Code_Generator = {
             default:
                 return false;
         }
-    },
-    close_primitive_function() {
-        this.push_cache(0);
-        this.evaluation_stack.push(this.types['void']);
     },
     format_text(paramList) {
         //This method takes any parameter, casts it to string (if possible) and prints it.
@@ -1051,5 +1071,15 @@ const Code_Generator = {
             }
         }
         return false;
+    },
+    perform_static_function_call(target_func, paramL) {
+        if(this.is_within_expression())
+            if(this.SymbolTable[target_func].type=='void')
+                throw new semantic_exception('Cannot call a void function from within an expression. Function: '+signature,paramL);
+        this.value_parameters(paramL);
+        this.stack.push("function_call");
+        this.perform_jump(this.peek(this.scope),target_func,this.SymbolTable[this.peek(this.scope)].size);
+        this.stack.pop();
+        this.evaluation_stack.push(this.types[this.SymbolTable[target_func].type]);
     }
 };
