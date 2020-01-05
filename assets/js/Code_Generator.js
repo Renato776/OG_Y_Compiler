@@ -229,8 +229,13 @@ const Code_Generator = {
                         let lCaseEnd = this.generate_label();
                         this.pureIf(this.t1,f.id,'!=',lCaseEnd);
                         this.operate(this.t2,f.offset,'+',this.t1); //t1 = address of the field
-                        if(r==0)this.get_heap(this.t1,this.t1); //If we're getting the value we use the ref and get the value
-                        this.push_cache(this.t1); //We push either the value or the ref
+                        if(r==0){
+                            this.get_heap(this.t1,this.t1); //If we're getting the value we use the ref and get the value
+                            this.push_cache(this.t1); //We push the value
+                        }else{
+                            this.push_cache(1); //We push 1 to indicate to use it in the heap.
+                            this.push_cache(this.t1); //We push the ref
+                        }
                         this.goto(lEnd);
                         this.set_label(lCaseEnd);
                     }
@@ -258,6 +263,23 @@ const Code_Generator = {
         this.get_heap(this.t1,this.t1);//t1 = String representation of the class.
         this.push_cache(this.t1); //We push the string representation
         this.set_label(lClassEnd);
+        Printing.print_function();
+        //endregion
+        //region downcast compilation
+        /*
+        *Right now the cache is like:
+        *target_class_id
+        *Object reference
+        * */
+        Printing.add_function('___downcast___');
+        this.pop_cache(this.t1); //t1 = target id
+        this.pop_cache(this.t2); //t2 = this reference
+        this.get_heap(this.t3,this.t2); //We get the id from the object
+        let lFine = this.generate_label();
+        this.pureIf(this.t1,this.t3,'==',lFine);
+        this.exit(2);
+        this.set_label(lFine);
+        this.push_cache(this.t2);
         Printing.print_function();
         //endregion
         this.malloc();
@@ -456,7 +478,7 @@ const Code_Generator = {
         }
         return -1;
     },
-    resolve_varChain(node,resolve_as_signature = false,static_access = false){
+    resolve_varChain(node,resolve_as_signature = false,static_access = false,resolve_as_ref=false){
         /*
          * Resolves a varChain and loads the result to the cache.
          * It also pushes the correspondent type to the evaluation Stack.
@@ -467,26 +489,27 @@ const Code_Generator = {
          * */
             if(node.token) { //varChain ID resolve.
                 if (this.varChainIndex == 0) { //First ID in the chain.
-                    this.resolve_global_id(node,resolve_as_signature);
+                    this.resolve_global_id(node,resolve_as_signature,resolve_as_ref);
                     this.varChainIndex++;
-                } else this.resolve_member_id(node,resolve_as_signature,static_access); //Makes reference to a field
+                } else this.resolve_member_id(node,resolve_as_signature,static_access,resolve_as_ref); //Makes reference to a field
             }
             switch (node.name){
                 case "varChain":
                     this.varChainIndex = 0;
                     node.children.forEach(child=>{
-                       this.resolve_varChain(child);
+                       this.resolve_varChain(child,resolve_as_signature,static_access,resolve_as_ref);
                     });
                     return;
                 case 'normalAccess': //Just value the id in the children token.
                     node.children.forEach(child=>{
-                        this.resolve_varChain(child);
+                        this.resolve_varChain(child,resolve_as_signature,static_access,resolve_as_ref);
                     });
                     return;
                 case "arrayAccess":
                     throw semantic_exception('Array Access not implemented yet.',node);
                     return;
                 case 'functionCall':
+                    if(resolve_as_ref)throw new semantic_exception('Cannot extract reference from a function call.',node);
                     if(this.varChainIndex==0){
                         this.resolve_global_functionCall(node,resolve_as_signature);
                         this.varChainIndex++;
@@ -521,18 +544,18 @@ const Code_Generator = {
                     owner = this.types[owner];
                     if(!owner.is_class())throw new semantic_exception(owner.signature+" is NOT a class.",node);
                     this.varChainIndex++;
-                    this.resolve_varChain(node.children[1],resolve_as_signature,true);
+                    this.resolve_varChain(node.children[1],resolve_as_signature,true,resolve_as_ref);
                 }
                     return;
             }
     },
-    value_expression:function (node,value_as_signature = false) {
+    value_expression:function (node,value_as_signature = false,value_as_ref = false) {
+        if(node.name!='varChain'&&value_as_ref)throw new semantic_exception('Cannot extract a reference from a pure value',node);
         if(node.token){ //Could be an ID, num, boolean or any primitive.
             switch (node.name){
                 case 'id':
-                    //Should never happen. IDs are handled in varChains or functionCalls.
-                    return;
-                case "null":
+                    throw new semantic_exception('Fatal error!! Somehow an ID node managed to get directly into a value expression with no context.',node);
+                case NULL:
                     if(value_as_signature){
                      this.evaluation_stack.push(NULL);
                      return;
@@ -582,10 +605,308 @@ const Code_Generator = {
                     this.evaluation_stack.push(this.types[BOOLEAN]);
                     return;
                 default:
-                    return; //Should never happen.
+                    throw new semantic_exception('Unrecognized token: '+node.name+" :: "+node.text,node);
             }
         }
-        //The operations have yet to be implemented.
+        switch (node.name) {
+            case 'new':
+            {
+                let target = this.children[0].text;
+                let paramL = this.children[1];
+                target = this.classes[target];
+                if(target==undefined)throw new semantic_exception(target+' is NOT a class.',node);
+                if(value_as_signature){
+                    this.evaluation_stack.push(target.name);
+                    return;
+                }
+                this.compile_signature(paramL);
+                let signature = this.evaluation_stack.pop();
+                signature = '*.'+target.name+signature;
+                let target_func = this.get_func_index(signature);
+                if(target_func==-1){
+                    if(signature.includes('-'))throw new semantic_exception('NO suitable constructor found for: '+signature,node);
+                    //Since it takes no parameters, we can use default constructor:
+                    this.call(this.native_constructor_prefix+target.name);
+                    this.evaluation_stack.push(this.types[target.name]); //We push the type and return.
+                }else{
+                    this.perform_static_function_call(target_func,paramL);
+                }
+            }
+                return;
+            case 'downcast':
+            {
+                let target = node.children[0].text; //We get the target type we're attempting to downcast
+                this.value_expression(node.children[1],value_as_signature); //We value the expression associated to the downcast.
+                let og = this.evaluation_stack.pop(); //We get the og type.
+                switch (target) {
+                    case DOUBLE:
+                        if(value_as_signature){
+                            this.evaluation_stack.push(DOUBLE);
+                            return;
+                        }
+                        if(!og.is_primitive())throw new semantic_exception('Cannot downcast '+og.signature+' to '+target,node);
+                        this.cast_to_double(og);
+                        this.evaluation_stack.push(this.types[DOUBLE]);
+                        return;
+                    case INTEGER:
+                        if(value_as_signature){
+                            this.evaluation_stack.push(INTEGER);
+                            return;
+                        }
+                        if(!og.is_primitive())throw new semantic_exception('Cannot downcast '+og.signature+' to '+target,node);
+                        this.cast_to_integer(og);
+                        this.evaluation_stack.push(this.types[INTEGER]);
+                        return;
+                    case CHAR:
+                        if(value_as_signature){
+                            this.evaluation_stack.push(CHAR);
+                            return;
+                        }
+                        if(!og.is_primitive())throw new semantic_exception('Cannot downcast '+og.signature+' to '+target,node);
+                        this.cast_to_char(og);
+                        this.evaluation_stack.push(this.types[CHAR]);
+                        return;
+                    case BOOLEAN:
+                        if(value_as_signature){
+                            this.evaluation_stack.push(BOOLEAN);
+                            return;
+                        }
+                        if(!og.is_primitive())throw new semantic_exception('Cannot downcast '+og.signature+' to '+target,node);
+                        this.cast_to_boolean(og);
+                        this.evaluation_stack.push(this.types[BOOLEAN]);
+                        return;
+                    case 'String':
+                        if(value_as_signature){
+                            this.evaluation_stack.push('String');
+                            return;
+                        }
+                        if(og.is_primitive()){
+                            this.cast_to_string(og,node);
+                        }else{
+                            og = this.classes[og.signature];
+                            target = this.classes['String'];
+                            if(target.cc % og.cc == 0){
+                                this.push_cache(target.id); //We push the target id
+                                this.call('___downcast___');
+                            }else throw new semantic_exception('Cannot downcast '+og.name+' to '+target.name,node);
+                        }
+                        this.evaluation_stack.push(this.types['String']);
+                        return;
+                    default:
+                    {
+                        og = this.classes[og.signature];
+                        target = this.classes[target]; //We get the actual class
+                        if(target.cc % og.cc == 0){
+                            if(value_as_signature){
+                                this.evaluation_stack.push(target.name);
+                                return;
+                            }
+                            this.push_cache(target.id); //We push the target id
+                            this.call('___downcast___');
+                            this.evaluation_stack.push(this.types[target.name]);
+                        }else throw new semantic_exception('Cannot downcast '+og.name+' to '+target.name,node);
+                    }
+                        return;
+                }
+            }
+                return;
+            case 'ternario': {
+                //first child: boolean expresion.
+                //second child: if true return expression.
+                //third child: if false return expression.
+                //0) value the if expression:
+                if(value_as_signature){
+                    node.children.forEach(child=>{
+                       this.value_expression(child,true); //We value all as signatures
+                    });
+                    let ifFalse_type = this.evaluation_stack.pop();
+                    let ifTrue_type = this.evaluation_stack.pop();
+                    let condition_type = this.evaluation_stack.pop();
+                    if(condition_type!=BOOLEAN)throw new semantic_exception('The condition for the ternary operator must be boolean.',node);
+                    if(ifFalse_type!=ifTrue_type)throw new semantic_exception('both return types in the ternary operator must be the same.',node);
+                    this.evaluation_stack.push(ifFalse_type);
+                    return;
+                }
+                node.children.forEach(child=>{
+                    this.value_expression(child); //We value all as expressions.
+                });
+                let ifFalse_type = this.evaluation_stack.pop();
+                let ifTrue_type = this.evaluation_stack.pop();
+                let condition_type = this.evaluation_stack.pop();
+                if(!condition_type.is_boolean())throw new semantic_exception('The condition for the ternary operator must be boolean.',node);
+                if(ifFalse_type.signature!=ifTrue_type.signature)throw new semantic_exception('both return types in the ternary operator must be the same.',node);
+                this.pop_cache(this.t1); //ifFalse
+                this.pop_cache(this.t2); //ifTrue
+                this.pop_cache(this.t3); //cond
+                let lV = this.generate_label();
+                let lEnd = this.generate_label();
+                this.pureIf(this.t3,'1','==',lV);
+                this.push_cache(this.t1);
+                this.goto(lEnd);
+                this.set_label(lV);
+                this.push_cache(this.t2);
+                this.set_label(lEnd);
+                this.evaluation_stack.push(ifFalse_type);
+            }return;
+            case 'post-increment':
+            case 'pre-increment':
+            case 'pre-decrement':
+            case 'post-decrement':
+            {
+                if(value_as_signature){
+                    this.evaluation_stack.push(INTEGER);
+                    return;
+                }
+                //0) first of all, value expression as reference.
+                this.value_expression(node,false,true);
+                //1) now, value it again as value:
+                this.value_expression(node);
+                let i_type = this.evaluation_stack.pop(); //the expression type
+                this.evaluation_stack.pop(); //We dispose of the second one as they're obviously the same.
+                if(!i_type.is_number())throw new semantic_exception('Auto increment operator can only be used with numeric variables.',node);
+                this.pop_cache(this.t1); //We retrieve the value (which is numeric)
+                if(node.name=='post-increment'||node.name=='pre-increment')
+                    this.operate(this.t1,'1','+',this.t1); //We increase it by one.
+                else  this.operate(this.t1,'1','-',this.t1); //We decrease it by one.
+                //Now, set the new value:
+                this.pop_cache('target_ref');
+                this.pop_cache('where_to_use');
+                let lV = this.generate_label();
+                let lEnd = this.generate_label();
+                this.pureIf('where_to_use','1','==',lV);
+                this.set_stack('target_ref',this.t1);
+                this.goto(lEnd);
+                this.set_label(lV);
+                this.set_heap('target_ref',this.t1);
+                this.set_label(lEnd);  //For use in the heap.
+                //And return the updated value:
+                this.push_cache(this.t1);
+                this.evaluation_stack.push(i_type);
+            }return;
+            case 'varChain':
+                this.resolve_varChain(node,value_as_signature,false,value_as_ref);
+                return;
+            case 'inlineArrayDef':
+                throw new semantic_exception('inlineArrayDef not implemented yet',node);
+            case 'arrayInitialization':
+                throw new semantic_exception('arrayInitialization not implemented yet',node);
+            default:
+            {
+                node.children.forEach(child=>{
+                    this.value_expression(child); //We value the arguments of the operation.
+                });
+                let left_arg;
+                let right_arg;
+                let left_value = 'left_value';
+                let right_value = 'right_value';
+                if(node.name=='NOT'||node.name=='UMINUS'){
+                    left_arg = right_arg = this.evaluation_stack.pop();
+                    this.pop_cache(left_value);
+                    this.assign(right_value,left_value);
+                }else{
+                    right_arg = this.evaluation_stack.pop();
+                    left_arg = this.evaluation_stack.pop();
+                    this.pop_cache(right_value);
+                    this.pop_cache(left_value);
+                }
+                switch (node.name){
+                    case "+": //Sum is special because of all possible overloads.
+                        if(left_arg.is_string()||right_arg.is_string()){//There's at least one string. We must concatenate
+                            if(value_as_signature){
+                                this.evaluation_stack.push('String');
+                                return;
+                            }
+                            this.push_cache(left_value);
+                            this.cast_to_string(left_arg,node);
+                            this.push_cache(right_value);
+                            this.cast_to_string(right_arg,node);
+                            this.call('sum_strings');
+                            this.evaluation_stack.push(this.types['String']);
+                        }else if(left_arg.is_number()&&right_arg.is_number()){ //Both are numbers, it is an arithmetic sum
+                            if(value_as_signature){
+                                if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(INTEGER);
+                                else this.evaluation_stack.push(DOUBLE);
+                                return;
+                            }
+                            this.operate(left_value,right_value,'+',left_value);
+                            this.push_cache(left_value);
+                            if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(this.types[INTEGER]);
+                            else this.evaluation_stack.push(this.types[DOUBLE]);
+                            return;
+                        }else throw new semantic_exception("Cannot resolve operator: +  with types: "+left_arg.signature+" and "+right_arg.signature,node);
+                    case "-":
+                    case "/":
+                    case "*":
+                    case "%":
+                        //Alright the rest of arithmetic operations have no overloads so it's pretty much the same for most of them:
+                        //1) Verify  that both arguments are numbers:
+                        if(!(left_arg.is_number()&&right_arg.is_number()))
+                            throw new semantic_exception("Invalid types for operation: "+node.name+" " +
+                                "Expected: integer|decimal and integer|decimal. Got: "+left_arg.signature+" and "+right_arg.signature,node);
+                        if(value_as_signature){
+                            if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(INTEGER);
+                            else this.evaluation_stack.push(DOUBLE);
+                            return;
+                        }
+                        this.operate(left_value,right_value,node.name,left_value);
+                        this.push_cache(left_value);
+                        if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(this.types[INTEGER]);
+                        else this.evaluation_stack.push(this.types[DOUBLE]);
+                        return;
+                    case "==":
+                    case "!=":
+                    case ">":
+                    case "<":
+                    case ">=":
+                    case "<=":
+                        if(!(left_arg.is_primitive()&&right_arg.is_primitive()))throw new semantic_exception("Cannot perform: "+node.name+" " +
+                            "On types: "+left_arg.signature+" and "+right_arg.signature,node);
+                        if(value_as_signature){
+                            this.evaluation_stack.push(BOOLEAN);
+                            return;
+                        }
+                        this.operate(left_value,right_value,node.name,this.t);
+                        this.push_cache(this.t);
+                        this.evaluation_stack.push(this.types[BOOLEAN]);
+                        return;
+                    case "&&":
+                    case "||":
+                        if(left_arg.is_boolean()&&right_arg.is_boolean()){
+                            if(value_as_signature){
+                                this.evaluation_stack.push(BOOLEAN);
+                                return;
+                            }
+                            this.operate(left_value,right_value,node.name,this.t);
+                            this.push_cache(this.t);
+                            this.evaluation_stack.push(this.types[BOOLEAN]);
+                            return;
+                        }else throw new semantic_exception("Cannot perform operation: "+node.name+" On types: "+left_arg.signature+" and "+right_arg.signature,node);
+                    case "NOT":
+                        if(!left_arg.is_boolean())throw new semantic_exception("Cannot negate type: "+left_arg.signature,node);
+                        if(value_as_signature){
+                            this.evaluation_stack.push(BOOLEAN);
+                            return;
+                        }
+                        this.operate(left_value,null,'!',this.t,true);
+                        this.push_cache(this.t);
+                        this.evaluation_stack.push(this.types[BOOLEAN]);
+                        return;
+                    case "UMINUS":
+                        if(!left_arg.is_number())throw  new semantic_exception("Cannot operate: UMinus on type: "+ left_arg.signature,node);
+                        if(value_as_signature){
+                            this.evaluation_stack.push(left_arg.signature);
+                            return;
+                        }
+                        this.operate(left_value,null,'-',this.t,true);
+                        this.push_cache(this.t);
+                        if(left_arg.is_integer())this.evaluation_stack.push(this.types[INTEGER]);
+                        else this.evaluation_stack.push(left_arg);
+                        return;
+                    default:
+                        throw new semantic_exception('Unrecognized expression node: '+node.name,node);
+                }
+            }return; //Must be an operation
+        }
     },
     compile_string:function (string) {
         this.push_cache(string.length+1);
@@ -681,7 +1002,7 @@ const Code_Generator = {
     get_index(varName) {
         return Compiler.get_var_index(this.peek(this.scope),varName);
     },
-    resolve_global_id(node,resolve_as_signature=false) {
+    resolve_global_id(node,resolve_as_signature=false,resolve_as_ref = false) {
         /*
         * Alright, the first ID within a varChain. This ID can have multiple meanings and we'll solve them all here.
         * The possible options are:
@@ -704,10 +1025,15 @@ const Code_Generator = {
                 if(local_index==-1)throw new semantic_exception('Cannot access: '+node.text+" Within a static context.",node);
                 this.evaluation_stack.push(this.types[owner]);
                 if(!resolve_as_signature){
-                    if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_value(local_index); //We push it to the evaluation stack
-                    else this.get_stored_value(local_index); //We push the this reference to the cache.
+                    if(resolve_as_ref){
+                        if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_ref(local_index);
+                        else this.get_stored_ref(local_index);
+                    } else{
+                        if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_value(local_index); //We push it to the evaluation stack
+                        else this.get_stored_value(local_index); //We push the this reference to the cache.
+                    }
                 }
-                this.resolve_member_id(node,resolve_as_signature);
+                this.resolve_member_id(node,resolve_as_signature,false,resolve_as_ref);
                 return;
             }
         }
@@ -715,9 +1041,15 @@ const Code_Generator = {
         if(resolve_as_signature){
             this.evaluation_stack.push(_type.signature);//We push the name and return immediately.
             return;
-        } else this.evaluation_stack.push(_type);
-        if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_value(local_index); //a) Is a normal by Value variable.
-        else this.get_stored_value(local_index); //b) Is an Inherited variable of a by Value variable.
+        }
+        this.evaluation_stack.push(_type);
+        if(resolve_as_ref){
+            if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_ref(local_index); //a) Is a normal by Value variable.
+            else this.get_stored_ref(local_index); //b) Is an Inherited variable of a by Value variable.
+        }else{
+            if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_value(local_index); //a) Is a normal by Value variable.
+            else this.get_stored_value(local_index); //b) Is an Inherited variable of a by Value variable.
+        }
         return;
     },
     get_stored_inherited_value(target) {
@@ -733,7 +1065,20 @@ const Code_Generator = {
         this.get_stack(this.t,this.t); //t holds the actual value
         this.push_cache(this.t);
     },
-    resolve_member_id(node,resolve_as_signature = false,static_access = false) {
+    get_stored_inherited_ref(target) {
+        let offset = this.SymbolTable[target].offset;
+        this.operate('P',offset,'+',this.t);
+        this.get_stack(this.t,this.t); //t holds a reference to the Stack
+        this.push_cache(0); //we push 0 to indicate to use the ref in the stack
+        this.push_cache(this.t); //We push the ref.
+    },
+    get_stored_ref(target) {
+        let offset = this.SymbolTable[target].offset;
+        this.operate('P',offset,'+',this.t);
+        this.push_cache(0); //We indicate to use the ref in the stack
+        this.push_cache(this.t);
+    },
+    resolve_member_id(node,resolve_as_signature = false,static_access = false,resolve_as_ref=false) {
         /*
         *This method searches the id as a member of the previous id in the chain.
         * Static methods are not allowed to be solved here.
@@ -750,9 +1095,15 @@ const Code_Generator = {
             if(resolve_as_signature){
                 this.evaluation_stack.push(this.SymbolTable[target].type);
                 return;
-            } else this.evaluation_stack.push(this.types[this.SymbolTable[target].type]);
-            if(this.SymbolTable[target].inherited)this.get_stored_inherited_value(target); //a) Is a normal by Value variable.
-            else this.get_stored_value(target); //b) Is an Inherited variable of a by Value variable.
+            }
+            this.evaluation_stack.push(this.types[this.SymbolTable[target].type]);
+            if(resolve_as_ref){
+                if(this.SymbolTable[target].inherited)this.get_stored_inherited_ref(target);
+                else this.get_stored_ref(target);
+            }else{
+                if(this.SymbolTable[target].inherited)this.get_stored_inherited_value(target); //a) Is a normal by Value variable.
+                else this.get_stored_value(target); //b) Is an Inherited variable of a by Value variable.
+            }
         }
         let field = this.get_field(name,owner.signature,node);
         if(field==undefined)throw new semantic_exception("Undefined field: "+node.text+" In class:"+owner.signature,node);
@@ -760,10 +1111,13 @@ const Code_Generator = {
             this.evaluation_stack.push(field.type);//We push the type and return without doing anything else.
             return;
         }
-        let id = field.id; //right now the this reference is pushed in the cache.
+        let id = field.id;
+        if(resolve_as_ref)this.get_value_from_ref(); //There's a ref to the obj pushed in the cache not the actual obj.
+        //Now the actual this reference is pushed in the cache.
         this.assign(this.t1,id);
         this.push_cache(this.t1); //We push it to the cache on top of the this reference.
-        this.call('get_field');
+        if(resolve_as_ref)this.call('get_field_reference');
+        else this.call('get_field');
         this.evaluation_stack.push(this.types[field.type]);//We push the type for the next iteration.
         return;
     },
@@ -846,7 +1200,21 @@ const Code_Generator = {
         this.push_cache(this.t2);
         this.call('print_string');
     },
+    cast_to_double:function(og){
+        this.pop_cache(this.t1); //t1 = value to downcast.
+        switch (og.signature) {
+            case INTEGER:
+            case DOUBLE:
+            case BOOLEAN:
+            case CHAR:
+                this.push_cache(this.t1);
+                return;
+            default:
+                this.push_cache(0); //Any other primitive, its representation as double is 0;
+        }
+    },
     cast_to_string(og,anchor) {
+        if(this.compatible('String',og.signature))return; //Nothing to do, is already an string
         this.pop_cache(this.t1); //t1 = value to downcast.
         if(og.signature==CHAR){
             this.push_cache(2);
@@ -1081,5 +1449,79 @@ const Code_Generator = {
         this.perform_jump(this.peek(this.scope),target_func,this.SymbolTable[this.peek(this.scope)].size);
         this.stack.pop();
         this.evaluation_stack.push(this.types[this.SymbolTable[target_func].type]);
+    },
+    cast_to_integer(og) {
+        this.pop_cache(this.t1); //t1 = value to downcast.
+        switch (og.signature) {
+            case INTEGER:
+            case BOOLEAN:
+            case CHAR:
+                this.push_cache(this.t1);
+                return;
+            case DOUBLE:
+                this.operate(this.t1,'1','%',this.t2); //t2 = decimal part
+                this.operate(this.t1,this.t2,'-',this.t1); //We remove the decimal part
+                this.push_cache(this.t1); //We push it back.
+                return;
+            default:
+                this.push_cache(0); //Any other primitive, its representation as double is 0;
+        }
+    },
+    cast_to_char(og) {
+        this.pop_cache(this.t1);
+        switch (og.signature) {
+            case DOUBLE:
+                this.operate(this.t1,'1','%',this.t2); //t2 = decimal part
+                this.operate(this.t1,this.t2,'-',this.t1); //We remove the decimal part
+            case INTEGER:
+            case BOOLEAN:
+            case CHAR:
+                let lWrong = this.generate_label();
+                let lEnd = this.generate_label();
+                this.pureIf(this.t1,'255','>',lWrong);
+                this.pureIf(this.t1,'0','<',lWrong);
+                this.push_cache(this.t1);
+                this.goto(lEnd);
+                this.set_label(lWrong);
+                this.exit(2);
+                this.set_label(lEnd);
+                return;
+            default:
+                this.push_cache(0);
+        }
+    },
+    cast_to_boolean(og) {
+        this.pop_cache(this.t1);
+        let lV = this.generate_label();
+        let lEnd = this.generate_label();
+        this.pureIf(this.t1,'1','==',lV);
+        this.assign(this.t1,0);
+        this.goto(lEnd);
+        this.set_label(lV);
+        this.assign(this.t1,1);
+        this.set_label(lEnd);
+        this.push_cache(this.t1);
+    },
+    get_value_from_ref() {
+        //right now there's two values in the cache:
+        //ref to either stack/heap
+        //where to use
+        let lV = this.generate_label();
+        let lEnd = this.generate_label();
+        this.pop_cache(this.t1); //ref
+        this.pop_cache(this.t2); //where to use
+        this.pureIf(this.t2,'1','==',lV);
+        this.get_stack(this.t1,this.t1); //We use the ref in the stack and get the value.
+        this.goto(lEnd);
+        this.set_label(lV);
+        this.get_heap(this.t1,this.t1); //We use the ref in the heap and get the value.
+        this.set_label(lEnd);
+        this.push_cache(this.t1); //We push the value back in the cache.
+    },
+    compatible(recipient, value) {
+        let _recipient_class = this.classes[recipient];
+        let _value_class = this.classes[value];
+        if(_recipient_class==undefined||_value_class==undefined)throw new _compiling_exception('FATAL ERROR! Attempted to compare 2 non-classes.');
+        return ((_value_class.cc % _recipient_class.cc == 0 && _value_class.cc != _recipient_class.cc) || _recipient_class.id==_value_class.id);
     }
 };

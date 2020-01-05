@@ -126,9 +126,11 @@ const type = function (signature,dimension = 0) {
   this.is_class = function(){
       return this._class;
   };
-
   if(!this._class&&!this.isArray)this.primitive = true;
   else this.primitive = false;
+  this.is_primitive = function () {
+      return this.primitive;
+  };
   this.is_array = function() {
     return this.isArray;
   };
