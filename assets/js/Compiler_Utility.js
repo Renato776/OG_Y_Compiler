@@ -422,6 +422,8 @@ function get_class_visualization() {
     * //$row.click(select_class); //Method to select a class will now be replaced by select method.
     *
      */
+    member_tracker = []; //We empty the member_tracker for each class.
+    current_class = this.name; //We indicate we're graphing this class.
     let rows = [];
     rows.push(class_header()); //First of all, the class true header;
     //Now, the actual info for the class:
@@ -499,7 +501,12 @@ const member = function (field,visibility,_static,name,type,inherited,abstract,f
     this.abstract = abstract.toString();
     this.final = final.toString();
 };
+let member_tracker = [];
+let current_class = null;
 function get_member_visualization(member) {
+    if(member_tracker.includes(member.name))throw new _compiling_exception('' +
+        'Repeated member: '+member.name+' in class: '+current_class);
+    member_tracker.push(member.name); //We register the name in the current class.
     let $row = $("<tr>");
     let $category = $("<td>");
     let $visibility = $("<td>");
@@ -938,7 +945,11 @@ function compile_source() {
     Compiler.build_nodeStructure(); //aka graph AST
     Compiler.build_symbolTable(); //Compile & graph Symbol Table.
     perform_inheritance(); //perform inheritance on all classes.
-    graph_all_classes(); //Graph all classes.
+    try{
+        graph_all_classes(); //Graph all classes.
+    }catch (e) {
+        return;
+    }
     $("#Compilar_Main").unbind();
     $("#Compilar_Main").click(generate_code); //Advance process to the next part.
     $("#Compilar_Main").html('Finish compilation');
@@ -964,7 +975,6 @@ function generate_code() {
         }
     }
     try{
-        Code_Generator.compile_native_functions(); //We output 3D for all natives first.
         Code_Generator.compile_abstract_methods(); //Next we output 3D for all abstract methods.
         Code_Generator.compile_native_constructors(); //Next we output 3D for all default constructors.
         Code_Generator.compile_utility_functions();//Next we output 3D for all utility functions used in 3D.

@@ -34,7 +34,7 @@ const Row = function (name,variable=false,details) {
         this.inherited = toBoolean(details.inherited);
         Compiler.advance_scope();
     }else {
-        this.true_func_signature = "___"+function_counter;
+        this.true_func_signature = "___f___"+function_counter;
         function_counter++;
         this.block = true;
     }
