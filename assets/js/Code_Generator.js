@@ -7,6 +7,8 @@ const AbstractMethod = function (index,implementations) {
     this.index = index; //the index to the SymbolTable representation of the abstract method itself.
     this.implementations = implementations; //A list of all implementations for the method.
 };
+const pure_entry_point = '____MAIN____';
+let MAX_CACHE = 400;
 const Code_Generator = {
     root: null,
     entry_point: -1,
@@ -191,20 +193,148 @@ const Code_Generator = {
         this.set_label(wE);
         Printing.print_function();
     },
-    compile_native_functions: function () {
-
-    },
     compile_abstract_methods: function () {
-
+        this.abstractMethods.forEach(am=>{
+            const target_row = this.SymbolTable[am.index];
+            Printing.add_function(target_row.name); //Alright, time to compile the abstract method.
+            //0)First things first, push to the cache all params (which are all in the Stack atm) (don't forget to do it backwards)
+            const param_amount = target_row.name.split('-').length-1 + 1; //+1 for the this reference
+            let i = am.index + param_amount; //Index of the last param in the function.
+            while(i>am.index){
+                this.get_stored_value(i); //We get the stored value and push it to the cache. We also know they aren't references because params aren't inherited.
+                i--;
+            }
+            //Alright, all params have been loaded to the cache at this point.
+            //Next step is performing the actual depending on who's the caller.
+            const caller = 'caller';
+            this.pop_cache(caller);
+            this.push_cache(caller); //We push it back as we'll still need it.
+            this.get_heap(caller,caller); //We get the id from the reference and put it in the caller.
+            const lEnd = this.generate_label();
+            //Alright, now foreach implementation we check the caller matches the onwer and if so we perform the call.
+            am.implementations.forEach(implementation=>{
+               let nextL = this.generate_label();
+               this.pureIf(caller,implementation.owner,'!=',nextL);
+               //Alright, the caller matches the owner, & all params are in the cache. Just need to perform the jump:
+                this.stack.push("function_call");
+                this.perform_jump(am.index,implementation.index,this.SymbolTable[am.index].size);
+                this.stack.pop();
+                this.goto(lEnd);
+               this.set_label(nextL);
+            });
+            this.set_label(lEnd);
+            Printing.print_function();
+        });
+        //That's all!
     },
     compile_native_constructors: function () {
+        /*
+        * Alright, time to provide 3D code for ALL native constructors.
+        * This is rather simple:
+        * Allocate space in memory for fieldCount + 1.
+        * We set the class ID at heap[address];
+        * Then, for every field, if the field holds an initialization value
+        * we output code for the expression evaluation.
+        * If it is a final field, we mark it as initialized.
+        * in address + offset we set the new value (either default value or custom value)
+        * We push the new address.
+        * */
+        const _classes = Object.values(this.classes);
+        const _class_size = 'class_size';
+        const instance_address = 'instance_address';
+        this.scope.push(0);
+        this.stack.push('expression');
+        _classes.forEach(c=>{
+            Printing.add_function(this.native_constructor_prefix+c.name);
+            this.assign(_class_size,Compiler.count_fields(c.name)+1); //1 extra space for the ID.
+            this.push_cache(_class_size);
+            this.call('malloc');
+            this.pop_cache(instance_address);
+            this.set_heap(instance_address,c.id);//We set the ID of the new class.
+            Object.values(c.fields).forEach(f=>{
+                //Alright, first things first. push default value, either 0 or customized.
+                if(f.instructions!=null){
+                    try{
+                        this.value_expression(f.instructions);   //We evaluate the default value.
+                        let value_type = this.evaluation_stack.pop();
+                        let recipient_type = this.types[f.type];
+                        this.compatible_types(recipient_type,value_type,instructions);
+                        if(f.final)f.initialized = true; //if it was a final field we need to indicate we've initalized it already.
+                    }
+                    //region Exception handling when default value is corrupted.
+                    catch (e) {
+                        try{
+                            throw  new semantic_exception('An error occurred while evaluating default value for field: '+f.name+'' +
+                                ' in class: '+f.owner,f.instructions);
+                        }catch (e) {
+                            this.push_cache(0); //We'll use default value instead.
+                        }
 
+                    }
+                    //endregion
+                }else this.push_cache(0); //If no instructions were provided we push 0.
+                this.pop_cache(this.t1);//t1 = value to set.
+                this.operate(instance_address,f.offset,'+',this.t); //t holds the address of the field.
+                this.set_heap(this.t,this.t1); //We set the value.
+            });
+            this.push_cache(instance_address); //We push the answer to the cache.
+           Printing.print_function(); //That's all!
+        });
+        this.scope.pop();
+        this.stack.pop();
     },
     compile_utility_functions: function () {
         /*
         * This method outputs 3D for all utility 3D functions aka:
         * compileArray, printString, malloc, transfer, etc.
         * */
+        //MUST be called as first instruction in ANY program:
+        //region load default numeric chars compilation.
+        /*
+        * This method loads directly the chars to the heap in indexes 0-9. Must be the first instruction
+        * in any program.
+        * */
+        const chars = '0123456789';
+        Printing.add_function('load_default_chars');
+        for(let i = 0; i<chars.length;i++){
+            this.assign(this.t1,i);
+            this.set_heap(this.t1,chars.charCodeAt(i));
+        }
+        Printing.print_function();
+        //endregion / MUST
+        //MUST be called as second instruction in ANY program:
+        //region load classes String representations.
+        /*
+        * Be aware: even tho I use String commonly to refer to charArrays this
+        * method puses charArrays to the classes_name_segment it doesn't push actual
+        * String instances.
+        * This method allocates space in memory for n classes (minimum 3: Object, String, custom)
+        * And pushes the charArray representation of each in their respective place.
+        * Begins at index 10.
+        * Which means, heap[10] = Object
+        * heap[11] = String
+        * heap[12] = Class1
+        * ... etc.
+        * */
+        Printing.add_function('load_all_class_names');
+        const _classes = sorting.mergeSort(Object.values(this.classes),compare_classes_by_id);
+        const class_names_segment = 'class_names_segment';
+        this.assign(class_names_segment,_classes.length);
+        this.push_cache(class_names_segment);
+        this.call('malloc');
+        this.pop_cache(class_names_segment);
+        const i = 'i';
+        this.assign(i,0);
+        _classes.forEach(c=>{
+            this.compile_string(c.name); //We compile the name of the class.
+            this.pop_cache(this.t1); //t1 holds the address of the charArray
+            this.operate(i,class_names_segment,'+',this.t2); //t2 holds the address of the current cell.
+            this.set_heap(this.t2,this.t1);
+            this.operate(i,'1','+',i);
+        });
+        Printing.print_function();
+        //endregion
+
         //region get_field & get_field_reference utility functions compilation
         let r = 0;
         while(r<2){
@@ -259,8 +389,8 @@ const Code_Generator = {
         this.goto(lClassEnd); //We finish.
         this.set_label(lNull);
         this.get_heap(this.t1,this.t1); //t1 = ID of the class.
-        this.operate(this.t1,'11',this.t1);//t1 = address of the class representation in the heap
-        this.get_heap(this.t1,this.t1);//t1 = String representation of the class.
+        this.operate(this.t1,'10',this.t1);//t1 = address of the class representation in the heap
+        this.get_heap(this.t1,this.t1);//t1 = String representation of the class. (charArray)
         this.push_cache(this.t1); //We push the string representation
         this.set_label(lClassEnd);
         Printing.print_function();
@@ -277,6 +407,8 @@ const Code_Generator = {
         this.get_heap(this.t3,this.t2); //We get the id from the object
         let lFine = this.generate_label();
         this.pureIf(this.t1,this.t3,'==',lFine);
+        this.push_cache(this.t1);
+        this.push_cache(this.t3);
         this.exit(2);
         this.set_label(lFine);
         this.push_cache(this.t2);
@@ -285,6 +417,31 @@ const Code_Generator = {
         this.malloc();
         this.string_to_int();
         this.int_to_string();
+        //region sum strings compilation
+        this.___sum_strings___(); //___sum_strings___ is different from sum_strings,
+        // the difference is this one takes 2 char arrays as parameters
+        //and pushes a new one as answer. However the sum_string method must take String objects as parameters and return
+        //String object as response.
+        Printing.add_function('sum_strings');
+        //top cache: right_string
+        //below: left_string
+        this.get_char_array();
+        this.pop_cache(this.t1);
+        this.pop_cache(this.t2);
+        this.push_cache(this.t1);
+        this.push_cache(this.t2);
+        //top cache: left string
+        //below right char array
+        this.get_char_array();
+        this.pop_cache(this.t1); //left char array
+        this.pop_cache(this.t2); //right char array
+        this.push_cache(this.t1);
+        this.push_cache(this.t2);
+        //Now the right char array is at the top & below the left char array.
+        this.call('___sum_strings___');
+        this.call('build_string');
+        Printing.print_function();
+        //endregion
         //region printString compilation
         Printing.add_function('print_string');
         this.pop_cache(this.t1);//t1 = String address.
@@ -326,24 +483,60 @@ const Code_Generator = {
         this.set_label(lEnd);
         Printing.print_function();
         //endregion
+
+    },
+    compile_entry_point:function(entry_point){
+      /*
+      * This is arguably the most important method among the whole program.
+      * This method initializes all class names constants, sets all chars in the heap,
+      * initializes P = 400 (maxCache)
+      * Initializes all static variables
+      * and finally performs the jump.
+      * */
+      this.scope.push(0); //Everything performed here has program scope.
+      this.stack.push('expression');
+      Printing.add_function(pure_entry_point);
+      this.call('load_default_chars'); //We load all chars first.
+      this.call('load_all_class_names'); //We load all Class String representations.
+      this.assign('P',MAX_CACHE); //We set P to the beginning of the Stack.
+      let i = 1;
+        let row = this.SymbolTable[i]; //The row at index 1 must be the first static variable (if any)
+      while(row.variable&&!row.param&&!row.inherited){ //the param & inherited checks are just to be super sure.
+          if(row.instructions!=null){
+              //Default value was provided.
+              this.value_expression(row.instructions); //We value default instruction.
+              let value_type = this.evaluation_stack.pop();
+              let recipient_type = this.types[row.type];
+              this.compatible_types(recipient_type,value_type);
+              this.mark_as_initialized(row.name); //We mark as initialized.
+          }else this.push_cache(0);
+          //Alright default value has been loaded to the top of the cache.
+          this.pop_cache(this.t); //t = default value.
+          this.operate('P',row.offset,'+',this.t1); //t1 holds the address of the variable.
+          this.set_stack(this.t1,this.t);
+          i++;
+          row = this.SymbolTable[i];
+      }
+      //Alright, all static variables have been initialized successfully!
+        //last step is performing the jump to the entry point:
+        this.stack.push("function_call");
+        this.perform_jump(0,entry_point,this.SymbolTable[0].size);
+        this.stack.pop();
+        //That's all!!
+      Printing.print_function();
+      this.stack.pop();
+      this.scope.pop();
     },
     generate_code() {
         const target = this.SymbolTable[this.entry_point];
         if (target == undefined) throw new _compiling_exception('The entry point has changed. Please, re-select a valid starting point.');
         if (!target.func || target.name.includes('-')) throw new _compiling_exception('The entry point has changed. Please, re-select a valid starting point.');
-        const chars = '0123456789';
-        Printing.add_function('load_default_chars');
-        for(let i = 0; i<chars.length;i++){
-            this.assign(this.t1,i);
-            this.set_heap(this.t1,chars.charCodeAt(i));
-        }
-        Printing.print_function();
-        _log('Compiling.....');
+        this.compile_entry_point(target); //We compile the pure entry point.
+        this.evaluate_node(this.root); //We output 3D code for the rest of the user defined functions.
     },
     perform_jump: function (current_scope, target_jump, jump_size) { //We prepare the jump by loading references and Increasing P.
         this.prepare_jump(current_scope,target_jump,jump_size); //We prepare the jump by loading references and Increasing P.
-        this.scope.push(target_jump); //We add the new scope.
-        //region Parameter Loading (if any)
+       //region Parameter Loading (if any)
         let i = 1;
         let row = this.SymbolTable[target_jump + i]; //First parameter.
         while (row.param && (!row.inherited)) { //While it is a param and is not inherited (just in case for extra validation.)
@@ -355,7 +548,6 @@ const Code_Generator = {
         }
         //endregion
         this.call(this.SymbolTable[target_jump].true_func_signature); //We perform the jump and begin execution.
-        this.scope.pop();//We remove the jump scope.
         this.operate('P',jump_size,'-','P'); //We decrease the stack back to previous scope.
     },
     prepare_jump:function (caller, target, jump_size) {
@@ -554,7 +746,7 @@ const Code_Generator = {
         if(node.token){ //Could be an ID, num, boolean or any primitive.
             switch (node.name){
                 case 'id':
-                    throw new semantic_exception('Fatal error!! Somehow an ID node managed to get directly into a value expression with no context.',node);
+                    throw new semantic_exception('Fatal error!! Somehow an ID node managed to get directly into a value expression node with no context.',node);
                 case NULL:
                     if(value_as_signature){
                      this.evaluation_stack.push(NULL);
@@ -757,31 +949,7 @@ const Code_Generator = {
                     this.evaluation_stack.push(INTEGER);
                     return;
                 }
-                //0) first of all, value expression as reference.
-                this.value_expression(node,false,true);
-                //1) now, value it again as value:
-                this.value_expression(node);
-                let i_type = this.evaluation_stack.pop(); //the expression type
-                this.evaluation_stack.pop(); //We dispose of the second one as they're obviously the same.
-                if(!i_type.is_number())throw new semantic_exception('Auto increment operator can only be used with numeric variables.',node);
-                this.pop_cache(this.t1); //We retrieve the value (which is numeric)
-                if(node.name=='post-increment'||node.name=='pre-increment')
-                    this.operate(this.t1,'1','+',this.t1); //We increase it by one.
-                else  this.operate(this.t1,'1','-',this.t1); //We decrease it by one.
-                //Now, set the new value:
-                this.pop_cache('target_ref');
-                this.pop_cache('where_to_use');
-                let lV = this.generate_label();
-                let lEnd = this.generate_label();
-                this.pureIf('where_to_use','1','==',lV);
-                this.set_stack('target_ref',this.t1);
-                this.goto(lEnd);
-                this.set_label(lV);
-                this.set_heap('target_ref',this.t1);
-                this.set_label(lEnd);  //For use in the heap.
-                //And return the updated value:
-                this.push_cache(this.t1);
-                this.evaluation_stack.push(i_type);
+                this.auto_update(node,true);
             }return;
             case 'varChain':
                 this.resolve_varChain(node,value_as_signature,false,value_as_ref);
@@ -921,7 +1089,7 @@ const Code_Generator = {
             this.set_heap(this.t2,a.charCodeAt(0));
             i++;
         }
-    },
+    }, //Compiles a charArray NOT an actual String instance.
     string_to_int:function () {
         Printing.add_function('string_to_int');
         this.assign('answer',0);
@@ -943,7 +1111,17 @@ const Code_Generator = {
         this.pureIf('i','0','<=',lEnd);
         this.operate('str','i','+',this.t1);
         this.get_heap(this.t1,this.t1);
-        this.operate(this.t1,'0'.charCodeAt(0),'-',this.t1);
+        const lWrong = this.generate_label();
+        const lFine = this.generate_label();
+        const lower_limit = '0'.charCodeAt(0);
+        const upper_limit = '9'.charCodeAt(0);
+        this.pureIf(this.t1,lower_limit,'<',lWrong);
+        this.pureIf(this.t1,upper_limit,'>',lWrong);
+        this.goto(lFine);
+        this.set_label(lWrong);
+        this.exit(3); //Cannot cast String to integer.
+        this.set_label(lFine);
+        this.operate(this.t1,lower_limit,'-',this.t1);
         this.operate(this.t1,'factor','*',this.t1);
         this.operate('answer',this.t1,'+','answer');
         this.operate('factor','10','*','factor');
@@ -1044,8 +1222,9 @@ const Code_Generator = {
         }
         this.evaluation_stack.push(_type);
         if(resolve_as_ref){
-            if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_ref(local_index); //a) Is a normal by Value variable.
-            else this.get_stored_ref(local_index); //b) Is an Inherited variable of a by Value variable.
+            this.resolve_final_initialization(local_index);
+            if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_ref(local_index);
+            else this.get_stored_ref(local_index);
         }else{
             if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_value(local_index); //a) Is a normal by Value variable.
             else this.get_stored_value(local_index); //b) Is an Inherited variable of a by Value variable.
@@ -1098,6 +1277,7 @@ const Code_Generator = {
             }
             this.evaluation_stack.push(this.types[this.SymbolTable[target].type]);
             if(resolve_as_ref){
+                this.resolve_final_initialization(target);
                 if(this.SymbolTable[target].inherited)this.get_stored_inherited_ref(target);
                 else this.get_stored_ref(target);
             }else{
@@ -1112,7 +1292,14 @@ const Code_Generator = {
             return;
         }
         let id = field.id;
-        if(resolve_as_ref)this.get_value_from_ref(); //There's a ref to the obj pushed in the cache not the actual obj.
+        if(resolve_as_ref){
+            if(field.final){
+                if(field.initialized){ //It is final and has already been initialized. you cannot attempt to change it. throw except.
+                    throw new semantic_exception(field.name+' is final and has already been initialized.',node);
+                }else field.initialized = true; //If it hasn't been initialized yet, it means it is finally being initialized. Change the state and proceed as normal.
+            }
+            this.get_value_from_ref(); //There's a ref to the obj pushed in the cache not the actual obj.
+        }
         //Now the actual this reference is pushed in the cache.
         this.assign(this.t1,id);
         this.push_cache(this.t1); //We push it to the cache on top of the this reference.
@@ -1194,11 +1381,8 @@ const Code_Generator = {
         this.stack.pop();
         let type = this.evaluation_stack.pop();
         this.cast_to_string(type,paramList);
-        this.pop_cache(this.t1); //t1 = String instance address.
-        this.operate(this.t1,'1','+',this.t2); //char array address
-        this.get_heap(this.t2,this.t2);//t2 = char array
-        this.push_cache(this.t2);
-        this.call('print_string');
+        this.get_char_array(); //We remove the String ref from the top and push a charArray ref instead.
+        this.call('print_string'); //We print the String
     },
     cast_to_double:function(og){
         this.pop_cache(this.t1); //t1 = value to downcast.
@@ -1214,7 +1398,7 @@ const Code_Generator = {
         }
     },
     cast_to_string(og,anchor) {
-        if(this.compatible('String',og.signature))return; //Nothing to do, is already an string
+        if(this.compatible_classes('String',og.signature))return; //Nothing to do, is already an string
         this.pop_cache(this.t1); //t1 = value to downcast.
         if(og.signature==CHAR){
             this.push_cache(2);
@@ -1518,10 +1702,188 @@ const Code_Generator = {
         this.set_label(lEnd);
         this.push_cache(this.t1); //We push the value back in the cache.
     },
-    compatible(recipient, value) {
+    auto_update(node, returnValue) {
+        //0) first of all, value expression as reference.
+        this.value_expression(node,false,true);
+        //1) now, value it again as value:
+        this.value_expression(node);
+        let i_type = this.evaluation_stack.pop(); //the expression type
+        this.evaluation_stack.pop(); //We dispose of the second one as they're obviously the same.
+        if(!i_type.is_number())throw new semantic_exception('Auto increment operator can only be used with numeric variables.',node);
+        this.pop_cache(this.t1); //We retrieve the value (which is numeric)
+        if(node.name=='post-increment'||node.name=='pre-increment')
+            this.operate(this.t1,'1','+',this.t1); //We increase it by one.
+        else  this.operate(this.t1,'1','-',this.t1); //We decrease it by one.
+        //Now, set the new value:
+        this.pop_cache('target_ref');
+        this.pop_cache('where_to_use');
+        let lV = this.generate_label();
+        let lEnd = this.generate_label();
+        this.pureIf('where_to_use','1','==',lV);
+        this.set_stack('target_ref',this.t1);
+        this.goto(lEnd);
+        this.set_label(lV);
+        this.set_heap('target_ref',this.t1); //for use in the heap
+        this.set_label(lEnd);
+        //And return the updated value:
+        if(returnValue) {
+            this.push_cache(this.t1);
+            this.evaluation_stack.push(i_type);
+        }
+        //Else don't return anything, that's all!
+    },
+    ___sum_strings___:function(){
+        Printing.add_function('___sum_strings___');
+        /*
+        * This method takes two array addresses from the cache, allocates a new one and
+        * puts the contents of both there. The resultant array is pushed back to the cache.
+        * */
+        let right = 'right';
+        let left = 'left';
+        this.pop_cache(right);
+        this.pop_cache(left);
+        let left_size = 'left_size';
+        let right_size = 'right_size';
+        this.get_heap(left_size,left);
+        this.get_heap(right_size,right);
+        let result = 'result';
+        let new_size = 'new_size';
+        this.operate(right_size,'1','+',result);
+        this.operate(result,left_size,'+',result);
+        this.push_cache(result);
+        this.call('malloc');
+        this.pop_cache(result);
+        this.operate(left_size,right_size,'+',new_size);
+        this.set_heap(result,new_size);
+        let i = 'i';
+        let ii = 'ii';
+        this.assign(i,1);
+        this.assign(ii,1);
+
+        let WhileStart1 = this.generate_label();
+        let WhileEnd1 = this.generate_label();
+        let next_char = 'next_char';
+        this.set_label(WhileStart1);
+        this.pureIf(i,left_size,'>',WhileEnd1);
+        this.operate(left,i,'+',next_char);
+        this.get_heap(next_char,next_char);
+        this.operate(result,ii,'+',this.t1);
+        this.set_heap(this.t1,next_char);
+        this.operate(ii,'1','+',ii);
+        this.operate(i,'1','+',i);
+        this.goto(WhileStart1);
+        this.set_label(WhileEnd1);
+
+        let WhileStart2 = this.generate_label();
+        let WhileEnd2 = this.generate_label();
+        this.assign(i,1);
+        this.set_label(WhileStart2);
+        this.pureIf(i,right_size,'>',WhileEnd2);
+        this.operate(right,i,'+',next_char);
+        this.get_heap(next_char,next_char);
+        this.operate(result,ii,'+',this.t1);
+        this.set_heap(this.t1,next_char);
+        this.operate(ii,'1','+',ii);
+        this.operate(i,'1','+',i);
+        this.goto(WhileStart2);
+        this.set_label(WhileEnd2);
+        this.push_cache(result);
+        Printing.print_function();
+    },
+    get_char_array:function(){
+        /*
+        *This function takes an String reference from the top of the cache and
+        * returns a reference to the char array within.
+        *  */
+        let char_array = this.classes['String'].fields['char_array'];
+        this.push_cache(char_array.id); //We push the id of the field on top of the String reference.
+        this.call('get_field'); //Well... that's all!
+    },
+    evaluate_node(node) {
+        /*
+        * This method is the bread & butter of the code generator.
+        * It switches the node's name and outputs 3D code accordingly.
+        * IDs are NOT allowed to come in this context.
+        * */
+        switch (node.name) {
+            case 'program':
+                //Alright, the very beginning of the code generator. All natives are
+                //supposed to be already printed. at this point. So basically we just need to evaluate the children
+                //and catch exceptions if any.
+                this.stack.push('program');
+                try {
+                    node.children.forEach(child=>{
+                       this.evaluate_node(child);
+                    });
+                    this.stack.pop();
+                    _log('Compilation finished successfully!');
+                }catch (e) {
+                    _log('One or more errors occurred during compilation. see error log for details. You can select');
+                    reset_compilation_cycle();
+                }
+                return;
+            case 'assignation':
+                //Alright, if everything is correct this method is quite simple & straight forward:
+                //0) value the left side as reference:
+                let left_side = node.children[0];
+                let right_side = node.children[1];
+                this.stack.push('expression');
+                this.value_expression(left_side,false,true);
+                this.value_expression(right_side,false,false);
+                this.stack.pop();
+                let value_type = this.evaluation_stack.pop();
+                let recipient_type = this.evaluation_stack.pop();
+                return;
+            case 'pre-increment':
+            case 'pre-decrement':
+            case 'post-increment':
+            case 'post-decrement':
+                return;
+            default: throw new semantic_exception('Unimplemented node: '+node.name,node);
+        }
+    },
+    mark_as_initialized(signature){
+        /*
+        * This method marks as initialized all entries in the symbol table
+        * for a given signature (since they are not connected marking just one wouldn't update the rest.
+        * */
+        this.SymbolTable.forEach(row=>{
+           if(row.name==signature&&row.final){ //The row.final extra check is just in case.
+               row.initialized = true;
+           }
+        });
+        //that's all!
+    },
+    resolve_final_initialization(local_index) {
+        let final_row = this.SymbolTable[local_index];
+        if(final_row.final&&final_row.initialized){
+            throw new semantic_exception(final_row.name+" is final and has already been initialized.")
+        }else if(final_row.final){
+            //Alright, is final and hasn't been initialized. this means
+            //We're finally initializing it! We can change its state and keep on going normally.
+            this.mark_as_initialized(final_row.name);
+        }
+    },
+    compatible_classes(recipient, value) {
         let _recipient_class = this.classes[recipient];
         let _value_class = this.classes[value];
         if(_recipient_class==undefined||_value_class==undefined)throw new _compiling_exception('FATAL ERROR! Attempted to compare 2 non-classes.');
         return ((_value_class.cc % _recipient_class.cc == 0 && _value_class.cc != _recipient_class.cc) || _recipient_class.id==_value_class.id);
+    },
+    compatible_types(recipient_type, value_type,node) {
+            /*
+            * This method does nothing if both types are compatible
+            * or throws exception otherwise.
+            * */
+            if(recipient_type.is_primitive()&&value_type.is_primitive()){
+                if(recipient_type.is_number()&&value_type.is_number())return; //We're fine.
+                if(recipient_type.is_boolean()&&value_type.is_boolean())return; //We're fine.
+            }else if(recipient_type.is_class()){//I'm expecting value to be null or a compatible class.
+                if(value_type.signature==NULL)return; //null is accepted regardless.
+                if(this.compatible_classes(recipient_type.signature,value_type.signature))return; //we're fine. Both classes are compatible.
+            }else if(recipient_type.is_array()&&value_type.is_array()){
+                if(recipient_type.signature==value_type.signature)return; //Arrays are already abstracted for them to show only the important info in their signatures.
+            }
+           throw new semantic_exception('Incompatible types. Cannot assign: '+value_type.signature+' to: '+recipient_type.signature,node);
     }
 };
