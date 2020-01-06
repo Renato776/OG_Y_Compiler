@@ -11,6 +11,7 @@ const pure_entry_point = '____MAIN____';
 let MAX_CACHE = 400;
 const Code_Generator = {
     root: null,
+    MAX_DECIMAL_DISPLAY: 100000, //5 decimals max
     entry_point: -1,
     stack: [],
     evaluation_stack: [],
@@ -24,7 +25,12 @@ const Code_Generator = {
     abstractMethods: [],
     label_count:0,
     repeated_inherited_id:{},
+    returnTracker:[],
+    foundReturn:false,
     varChainIndex:0,
+    endLabel:null,
+    _display:[],
+    current_function:-1,
     native_constructor_prefix: '___build___',
     C:'C',
     t:'t4',
@@ -173,6 +179,10 @@ const Code_Generator = {
         this.scope = [];
         this.abstractMethods = abstractMethods;
         this.output = '';
+        this.current_function = -1;
+        this.endLabel = null;
+        this.label_count = 0;
+        function_counter = 0;
     },
     malloc:function(){
         Printing.add_function('malloc');
@@ -264,6 +274,7 @@ const Code_Generator = {
                         }
                             //region Exception handling when default value is corrupted.
                         catch (e) {
+                            console.log(e);
                             try{
                                 throw  new semantic_exception('An error occurred while evaluating default value for field: '+f.name+'' +
                                     ' in class: '+f.owner,f.instructions);
@@ -391,7 +402,7 @@ const Code_Generator = {
         this.goto(lClassEnd); //We finish.
         this.set_label(lNull);
         this.get_heap(this.t1,this.t1); //t1 = ID of the class.
-        this.operate(this.t1,'10',this.t1);//t1 = address of the class representation in the heap
+        this.operate(this.t1,'10','+',this.t1);//t1 = address of the class representation in the heap
         this.get_heap(this.t1,this.t1);//t1 = String representation of the class. (charArray)
         this.push_cache(this.t1); //We push the string representation
         this.set_label(lClassEnd);
@@ -499,6 +510,9 @@ const Code_Generator = {
       this.stack.push('expression');
       Printing.add_function(pure_entry_point);
       this.assign('C',0);
+      this.push_cache(10);
+      this.call('malloc');
+      this.pop_cache(this.t1); //We dispose of the return value.
       this.call('load_default_chars'); //We load all chars first.
       this.call('load_all_class_names'); //We load all Class String representations.
       this.assign('P',MAX_CACHE); //We set P to the beginning of the Stack.
@@ -534,6 +548,11 @@ const Code_Generator = {
         const target = this.SymbolTable[this.entry_point];
         if (target == undefined) throw new _compiling_exception('The entry point has changed. Please, re-select a valid starting point.');
         if (!target.func || target.name.includes('-')) throw new _compiling_exception('The entry point has changed. Please, re-select a valid starting point.');
+        //region load all classes to types.
+        Object.values(this.classes).forEach(c=>{
+           this.types[c.name] = new type(c.name,0);
+        });
+        //endregion
         this.compile_entry_point(this.entry_point); //We compile the pure entry point.
         this.evaluate_node(this.root); //We output 3D code for the rest of the user defined functions.
     },
@@ -788,6 +807,7 @@ const Code_Generator = {
                         return;
                     }
                     this.compile_string(node.text);
+                    this.call('build_string');
                     this.evaluation_stack.push(this.types[STRING]);
                     return;
                 case BOOLEAN:
@@ -806,8 +826,8 @@ const Code_Generator = {
         switch (node.name) {
             case 'new':
             {
-                let target = this.children[0].text;
-                let paramL = this.children[1];
+                let target = node.children[0].text;
+                let paramL = node.children[1];
                 target = this.classes[target];
                 if(target==undefined)throw new semantic_exception(target+' is NOT a class.',node);
                 if(value_as_signature){
@@ -1005,6 +1025,7 @@ const Code_Generator = {
                             else this.evaluation_stack.push(this.types[DOUBLE]);
                             return;
                         }else throw new semantic_exception("Cannot resolve operator: +  with types: "+left_arg.signature+" and "+right_arg.signature,node);
+                    return;
                     case "-":
                     case "/":
                     case "*":
@@ -1141,10 +1162,10 @@ const Code_Generator = {
         this.push_cache(32);
         this.call('malloc');
         this.pop_cache('str');
-        this.operate('str','32','+','i');
+        this.assign('i',32);
         this.assign('j',0);
         this.operate('a','0','<','isNegative');
-        let lEnd1;
+        let lEnd1 = this.generate_label();
         this.pureIf('a','0','>',lEnd1);
         this.operate('i','1','-','i');
         this.operate('j','1','+','j');
@@ -1154,26 +1175,29 @@ const Code_Generator = {
         this.get_heap(this.t2,this.t2);
         this.set_heap(this.t1,this.t2);
         this.operate('a','10','/','a');
-        this.operate('a','1','*','a');
+        this.operate('a','-1','*','a');
+        this.remove_decimal_part('a');
         this.set_label(lEnd1);
         let lStart = this.generate_label();
         let whileEnd = this.generate_label();
         this.set_label(lStart);
         this.pureIf('a','0','==',whileEnd);
         this.operate('i','1','-','i');
-        this.operate('str','i',this.t1);
+        this.operate('str','i','+',this.t1);
         this.operate('j','1','+','j');
         this.operate('a','10','%',this.t2);
         this.get_heap(this.t2,this.t2);
         this.set_heap(this.t1,this.t2);
         this.operate('a','10','/','a');
+        this.remove_decimal_part('a');
         this.goto(lStart);
         this.set_label(whileEnd);
-        let lEnd2;
+        let lEnd2 = this.generate_label();
         this.pureIf('isNegative','0','==',lEnd2);
         this.operate('i','1','-','i');
         this.operate('str','i','+',this.t1);
         this.set_heap(this.t1,'-'.charCodeAt(0));
+        this.set_label(lEnd2);
         this.operate('i',1,'-','i');
         this.operate('str','i','+',this.t1);
         this.set_heap(this.t1,'j');
@@ -1357,6 +1381,7 @@ const Code_Generator = {
                 }
                 this.format_text(paramL);
                 if(this.is_within_expression())throw new semantic_exception('Cannot call println from within an expression.',node);
+                this.evaluation_stack.push(this.types['void']);
                 return true;
             case "str":
                 if(value_as_signature){
@@ -1379,9 +1404,7 @@ const Code_Generator = {
     format_text(paramList) {
         //This method takes any parameter, casts it to string (if possible) and prints it.
         if(paramList.children.length!=1)throw new semantic_exception('Only one parameter expected for println function. Found: '+paramList.children.length);
-        this.stack.push('expression');
         this.value_expression(paramList.children[0]); //We value the param as expression.
-        this.stack.pop();
         let type = this.evaluation_stack.pop();
         this.cast_to_string(type,paramList);
         this.get_char_array(); //We remove the String ref from the top and push a charArray ref instead.
@@ -1401,16 +1424,10 @@ const Code_Generator = {
         }
     },
     cast_to_string(og,anchor) {
-        if(this.compatible_classes('String',og.signature))return; //Nothing to do, is already an string
+        if(og.is_class())if(this.compatible_classes('String',og.signature))return; //Nothing to do, is already an string
         this.pop_cache(this.t1); //t1 = value to downcast.
         if(og.signature==CHAR){
-            this.push_cache(2);
-            this.call('malloc');
-            this.pop_cache(this.t2); //t2 = answer
-            this.set_heap(this.t2,1);
-            this.operate(this.t2,'1','+',this.t3);
-            this.set_heap(this.t3,this.t1); //We push the char to the String
-            this.push_cache(this.t2);
+            this.build_unary_char_array(this.t1);
             this.call('build_string'); //We take the charArray and & wrap it within an String class.
         }else if(og.signature==INTEGER){
             this.push_cache(this.t1); //We push it back
@@ -1419,11 +1436,21 @@ const Code_Generator = {
         }else if(og.signature==DOUBLE){
             //We must transform the real to integer before we call the function.
             //Either that or call an special function to handle doubles but atm we'll just transform it to int.
-            this.operate(this.t1,'1','%',this.t2); //t2 = decimal part of the number.
-            this.operate(this.t1,this.t2,'-',this.t1); //We remove the decimal part.
-            this.push_cache(this.t1); //We push it back
+            const double_decimal_part = 'double_decimal_part';
+            const double_integer_part = 'double_integer_part';
+            this.assign(double_integer_part,this.t1); //we copy t1's value to the integer part.
+            this.remove_decimal_part(double_integer_part); //we remove all decimals.
+            this.operate(this.t1,'1','%',double_decimal_part);
+            this.operate(double_decimal_part,this.MAX_DECIMAL_DISPLAY,'*',double_decimal_part);
+            this.remove_decimal_part(double_decimal_part); //in case there's even extra decimals we remove them.
+            this.push_cache(double_decimal_part); //we push the decimals we'll display.
+            this.call('int_to_string'); //We transform them to a char array.
+            this.push_cache(double_integer_part); //we push the integer part of the number
             this.call('int_to_string'); //We transform it to a char array
-            this.call('build_string'); //We wrap it to an String class
+            this.build_unary_char_array('.'.charCodeAt(0)); //we build a unary char array holding the .
+            this.call('___sum_strings___'); //we perform a pure sum (integer + .
+            this.call('___sum_strings___');//we perform a second sum (integer. + decimal)
+            this.call('build_string'); //We wrap the result in a String class.
         }else if(og.signature == BOOLEAN){
             this.push_cache(this.t1); //We push it back
             this.call('boolean_to_string'); //We transform it to a char array
@@ -1463,7 +1490,7 @@ const Code_Generator = {
          * */
         for (let i = this.scope.length -1 ; i >= 0; i--){
             let index = this.scope[i];
-            let res = this.get_var_index(index, signature);
+            let res = Compiler.get_var_index(index, signature);
             if(res != -1){
                 return res;
             }
@@ -1574,11 +1601,11 @@ const Code_Generator = {
         }
     },
     is_within_expression:function () {
-      let found = false;
+      let not_within_expression = false;
       this.stack.forEach(s=>{
-         if(s=='expression')found = true;
+         if(s=='expect-void')not_within_expression = true;
       });
-      return found;
+      return !not_within_expression;
     },
     is_native_method(owner, signature,resolve_as_signature) {
         //Alright, here I can overwrite and implement by hand any native method!
@@ -1597,6 +1624,10 @@ const Code_Generator = {
                 this.evaluation_stack.push('String');
                 return true;
             }
+            //A this reference is already pushed in the cache atm.
+            //We just gotta build an String from it:
+            this.call('get_class');
+            this.call('build_string');
             this.evaluation_stack.push(this.types['String']);
             return true;
         }
@@ -1814,14 +1845,17 @@ const Code_Generator = {
                 //supposed to be already printed. at this point. So basically we just need to evaluate the children
                 //and catch exceptions if any.
                 this.stack.push('program');
+                this.scope.push(this.scope_tracker.pop());//Alright we'll start giving a use to the scope tracker.
                 try {
                     node.children.forEach(child=>{
                        this.evaluate_node(child);
                     });
                     this.stack.pop();
+                    this.scope.pop();
                     _log('Compilation finished successfully!');
                 }catch (e) {
                     _log('One or more errors occurred during compilation. see error log for details. You can select');
+                    console.log(e);
                     reset_compilation_cycle();
                 }
                 return;
@@ -1849,11 +1883,129 @@ const Code_Generator = {
                 this.set_heap(this.t1,this.t); //For use in the heap.
                 this.set_label(lEnd);
                 return;
+            case 'variableDef':
+            {
+                let recipient_type = node.children[0].text; //We get the type name
+                recipient_type = this.types[recipient_type]; //We get the actual type.
+                let name = node.children[1].text; //We get the name of the var
+                if(node.children.length==3){
+                    //Default value was provided.
+                    this.value_expression(node.children[node.children.length-1]); //We value the expression.
+                    let value_type = this.evaluation_stack.pop();
+                    this.compatible_types(recipient_type,value_type);
+                }else this.push_cache(0); //Otherwise we push default value: 0
+                let target_var = this.get_index(name);
+                //This variable must exist. However, just in case:
+                if(target_var==-1)throw new semantic_exception('FATAL ERROR!! Somehow a variable has been declared and yet it doesn\'t' +
+                    ' appear in the symbol table!!! WTF?!',node);
+                //Alright, so the variable we're declaring does exist. Next step is updating its value:
+                this.pop_cache(this.t1); //t1 = default value.
+                this.operate('P',this.SymbolTable[target_var].offset,'+',this.t); //t = address of the variable.
+                this.set_stack(this.t,this.t1); //We set the variable.
+                //That's all!!
+            }
+                return;
+            case 'varChain':
+                //Alright, this is a function call. Is pretty simple, just value the expression as
+                //value and dispose of the result.
+                //pretty simple if you ask me.
+                //Just add context that you're expecting void:
+                this.stack.push('expect-void');
+                this.value_expression(node);
+                let return_type = this.evaluation_stack.pop();
+                if(return_type.signature != 'void'){
+                    this.pop_cache(this.t); //We dispose of the return value. (if any)
+                }
+                this.stack.pop();
+                return;
             case 'pre-increment':
             case 'pre-decrement':
             case 'post-increment':
             case 'post-decrement':
                 this.auto_update(node,false);
+                return;
+            case 'method':
+            case 'staticMethod':
+                /*
+                * Alright, this method is going to output 3D code for user-defined functions.
+                * It handles the following: Scope changing (courtesy of our scope_tracker)
+                * Setting the current function index = scope.peek()
+                * emptying the display (Just in case, should be empty either way)
+                * Generate end label and set it as current end label.
+                * Traverse the tree and verify there's a valid return statement for the function.
+                * that's all! evaluate the children.
+                * Also, provide context that you're compiling a method.
+                * */
+            {
+                this.current_function = this.scope_tracker.pop();
+                this.scope.push(this.current_function);
+                this.stack.push('functionCompilation');
+                this.endLabel = this.generate_label();
+                let block = node.children[node.children.length-1];
+                this.holds_valid_return_stmt(block);
+                Printing.add_function(this.SymbolTable[this.current_function].true_func_signature);
+                try{
+                    block.children.forEach(child=>{
+                       this.evaluate_node(child);
+                    });
+                }catch (e) {
+                    console.log(e);
+                }
+                this.set_label(this.endLabel);
+                Printing.print_function();
+                this.stack.pop();
+                this.scope.pop();
+            }
+                return;
+            case 'return':
+                if(node.children.length==0){//empty return.
+                    //check if the current function is void and throw if otherwise.
+                    let _return_type = this.SymbolTable[this.current_function].type;
+                    if(_return_type!='void')throw new semantic_exception('Incompatible return types. Expected: '+_return_type+' got: void',this.current_function);
+                }else{ //holds expression.
+                    this.value_expression(node.children[0]); //Only one child: expression.
+                    let _return_type = this.evaluation_stack.pop();
+                    let expected_type = this.SymbolTable[this.current_function].type;
+                    expected_type = this.types[expected_type];
+                    this.compatible_types(expected_type,_return_type,node);
+                }
+                //Alright, a value (or none) has been loaded to the cache already. next step is going to end of function:
+                this.goto(this.endLabel);
+                return;
+            case 'ifStmt':
+            {
+                let endLabel = this.generate_label();
+                this.stack.push(endLabel); //We send the end label
+                node.children.forEach(child=>{
+                   this.evaluate_node(child);
+                });
+                this.set_label(endLabel);
+            }return;
+            case 'if':
+            {
+                let endLabel = this.peek(this.stack); //we get the end label
+                let lNext = this.generate_label();
+                //Alright, now let's compile the expression:
+                this.value_expression(node.children[0]); //We value the expression for the if.
+                let _if_type = this.evaluation_stack.pop();
+                if(!_if_type.is_boolean())throw new semantic_exception('Invalid if argument. Expected: boolean, got: '+_if_type.signature,node);
+                this.pop_cache(this.t1); //t1 = true/false
+                this.pureIf(this.t1,'0','==',lNext);
+                //Alright, if it is true the jump must be performed and we must change scopes.
+                this.perform_sub_block_jump(node);
+                this.goto(endLabel);
+                this.set_label(lNext);
+            };
+                return;
+            case 'else':
+            case 'default':
+            {
+                this.perform_sub_block_jump(node); //else is always unconditional.
+            }return;
+            case 'field':
+            case 'staticField':
+            case 'abstractMethod':
+                console.log('irrelevant node for 3D code generation: '+node.name);
                 return;
             default: throw new semantic_exception('Unimplemented node: '+node.name,node);
         }
@@ -1901,5 +2053,136 @@ const Code_Generator = {
                 if(recipient_type.signature==value_type.signature)return; //Arrays are already abstracted for them to show only the important info in their signatures.
             }
            throw new semantic_exception('Incompatible types. Cannot assign: '+value_type.signature+' to: '+recipient_type.signature,node);
+    },
+    holds_valid_return_stmt(block) {
+        if(this.SymbolTable[this.current_function].type=='void')return; //If it is a void function it doesn't matter whether it has a return stmt or not.
+        this.returnTracker = [0];//we reset the return tracker to default.
+        this.trackReturnStmt(block);
+        if(!this.foundReturn)throw new semantic_exception(this.SymbolTable[this.current_function].name+' is missing return statement.',block);
+    },
+    remove_decimal_part(a) {
+        const decimal_part = 'decimal_part';
+        this.operate(a,'1','%',decimal_part); //We get the decimal part
+        this.operate(a,decimal_part,'-',a); //We remove the decimal part
+    },
+    build_unary_char_array(char) {
+        this.push_cache(2);
+        this.call('malloc');
+        this.pop_cache(this.t2); //t2 = answer
+        this.set_heap(this.t2,1);
+        this.operate(this.t2,'1','+',this.t3);
+        this.set_heap(this.t3,char); //We push the char to the String
+        this.push_cache(this.t2); //we push the char array as a result.
+    },
+    trackReturnStmt(block) {
+        /*
+        * This is a recursive method which simply returns silently and turns a
+        * flag : returnStmtFound -> true if a valid return stmt was found.
+        * Otherwise it simply returns. (without doing anything) The caller of this method
+        * must throw an exception if the method returns  & returnStmt wasn't found.
+        * The caller must also initialize the returnTracker stack -> [0] //Since the parent
+        * block is an unconditional block. (only that one, pure blocks and do blocks are unconditional)
+        * The rest of the blocks have conditions. ifStmt can or not be an unconditional block,
+        * switch-case can also (or not) be an unconditional block (if some requirements are met)
+        * for,while are always conditional blocks.
+        * For an ifStmt to classify as unconditional block:
+        * when entering ifStmt push (1).
+        * visit all children.
+        * within each children, if a returnStmt is found add 1 to the top of the cache & return.
+        * If no return stmt is found, track all sub-blocks and return.
+        * when getting back after all sub-blocks of ifStmt have been tracked,
+        * check an else block is within the sub-blocks. If not, return and do nothing.
+        * If an else block is indeed within && tracker.peek = children.length + 1
+        * it means the ifStmt has an unconditional return. If so, check if all previous entries in tracker
+        * are 0s and if so, set found-> true & return.
+        * if one or more of the above conditions aren't met, return without doing anything.
+        * */
+        if(block.name=='ifStmt'||block.name=='switch'){
+            this.returnTracker.push(1); //Could or not be an unconditional return.
+            let hasElse = false;
+            block.children.forEach(child=>{
+                if(child.name=='else'||child.name=='default')hasElse = true;
+                this.trackReturnStmt(child);
+            });
+            let outcome = this.returnTracker.pop();
+            if(outcome==(block.children.length+1)&&hasElse){
+                //has else block and all of them have return stmts.
+                if(this.is_unconditional_return()){ //to make sure it is unconditional
+                    this.foundReturn = true;
+                    return;
+                }else{
+                    let top = this.returnTracker.pop();
+                    top++;
+                    this.returnTracker.push(top);
+                }
+            }
+        }else if (block.name=='if'||block.name=='case'||block.name=='else'||block.name=='default'){
+            if(this.has_immediate_return(block)){
+                let top = this.returnTracker.pop();
+                top++;
+                this.returnTracker.push(top);
+            }
+            block.children.forEach(child=>{
+                if(this.has_relevant_sub_block(child))this.trackReturnStmt(child);
+            });
+        }
+        //Else (do, normal block, pure block):
+        if(this.has_immediate_return(block)&&this.is_unconditional_return()){
+            this.foundReturn = true;
+            return;
+        }else{
+            let top = this.returnTracker.pop();
+            top++;
+            this.returnTracker.push(top);
+        }
+        block.children.forEach(child=>{
+            if(this.has_relevant_sub_block(child))this.trackReturnStmt(child);
+        });
+    },
+    has_immediate_return:function (block) {
+        //this function simply checks all the children of block and if a return stmt is found, returns true.
+        //otherwise returns false.
+        let found = false;
+        block.children.forEach(child=>{
+           if(child.name=='return')found=true;
+        });
+        return found;
+    },
+    has_relevant_sub_block:function (block) {
+     //this method switches the name of the block & returns true if it is a valid block for return tracking.
+     //This means while & for are skipped cause they are always conditional.
+     switch (block.name) {
+         case 'ifStmt':
+         case 'switch':
+         case 'do':
+             return true;
+         default:
+             return false;
+     }
+    },
+    is_unconditional_return:function () {
+        let valid = true;
+        this.returnTracker.forEach(r=>{
+            if(r!=0)valid = false;
+        });
+        return valid;
+    },
+    perform_sub_block_jump(node) {
+        let target_block = this.sub_block_tracker.pop();
+        this.perform_jump(this.peek(this.scope),target_block,this.SymbolTable[this.peek(this.scope)].size);
+        this.scope.push(target_block);
+        this.stack.push(node.name);
+        let block = node.children[node.children.length-1]; //last child of node is always a sub_block.
+        Printing.add_function(this.SymbolTable[target_block].true_func_signature);
+        try{
+            block.children.forEach(child=>{
+                this.evaluate_node(child);
+            });
+        }catch (e) {
+            if(!("semantic" in e))console.log(e);
+        }
+        Printing.print_function();
+        this.stack.pop();
+        this.scope.pop();
     }
 };

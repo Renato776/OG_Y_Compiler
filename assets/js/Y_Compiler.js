@@ -1,9 +1,18 @@
 const  END = "---end---";
 const SUB_BLOCK = "---sub_block---";
 const semantic_exception = function (message,token) {
-    token = token.get_token();
-    let e = new error_entry('Semantic',token.row,token.col,message,token._class,token.file);
-    $("#ErrorTableBody").append(e);
+    let e;
+    if(!isNaN(token)){
+        //Impossible to locate instruction. token is at least an index to the Symbol table
+        //within the function that was being compiled when the exception occurred.
+        message = message+'.</br> Impossible to locate exact position of exception. </br>' +
+            ' However, it occurred when compiling function: '+Code_Generator.SymbolTable[token].name;
+        e = new error_entry('Semantic','Unknown','Unknown',message,'Unknown','Unknown');
+    }else{
+        token = token.get_token();
+        e = new error_entry('Semantic',token.row,token.col,message,token._class,token.file);
+    }
+     $("#ErrorTableBody").append(e);
     _log('One or more errors occurred during compilation. See error tab for details');
 };
 const basic_details = function (type,offset) {
@@ -32,6 +41,7 @@ const Row = function (name,variable=false,details) {
         this.type = details.type;
         this.offset = details.offset;
         this.inherited = toBoolean(details.inherited);
+        this.true_func_signature = 'N/A';
         Compiler.advance_scope();
     }else {
         this.true_func_signature = "___f___"+function_counter;
@@ -53,6 +63,7 @@ const Row = function (name,variable=false,details) {
             "    <td>size</td>\n" +
             "    <td>final</td>\n" +
             "    <td>visibility</td>\n" +
+            "    <td>True_Signature</td>\n" +
             "  </tr>";
     };
     this.get_visualization = function(index){
@@ -70,6 +81,7 @@ const Row = function (name,variable=false,details) {
             "<td> "+this.size+"</td>"+
             "<td> "+this.final+"</td>"+
             "<td> "+this.visibility+"</td>"+
+            "<td> "+this.true_func_signature+"</td>"+
             "</tr>";
     };
     this.is_not_end = function () {
@@ -654,7 +666,7 @@ const Compiler = {
          case 'default':
          case 'while':
              this.stack.push(node.name);
-             this.node.children.forEach(child=>{
+             node.children.forEach(child=>{
                 this.visit_node(child);
              });
              this.stack.pop();

@@ -586,11 +586,13 @@ const location_solver = {
 };
 
 function digest(string) { //We scape the characters (if any)
-    return string.replace('\\n','\n')
-        .replace('\\\\','\\')
-        .replace('\\t','\t')
-        .replace('\\\"','"')
-        .replace('\\\'','\'').substring(1,string.length-1);
+    let res =  string.replace(/\\n/gm,'\n');
+    res = res.replace(/\\\\/gm,'\\');
+    res = res.replace(/\\t/gm,'\t');
+    res =  res.replace(/\\"/gm,'"');
+    res = res.replace(/\\'/gm,'\'');
+    res = res.substring(1,res.length-1);
+    return res;
 }
 const Import_Solver = {
     already_imported: [],
@@ -599,7 +601,6 @@ const Import_Solver = {
         abstractMethods = [];
         field_counter_ = 1; //We're starting a new cycle.
         _token_tracker = [];
-        function_counter = 0;
         location_solver.initialize();
         $("#Main_Console").empty(); //We clear the console.
         $("#ErrorTableBody").empty(); //We clear the previous error log.
