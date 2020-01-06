@@ -60,8 +60,8 @@ if(aux_token!="")token_solver.debug(aux_token,yy_.yylloc.first_line-1,yy_.yylloc
 let _token_tracker = [];
 const native_functions = [];
 const CHAR_ARRAY = 'array|char';
-const INTEGER = 'integer';
-const DOUBLE = 'real';
+const INTEGER = 'int';
+const DOUBLE = 'double';
 const CHAR = 'char';
 const STRING = 'String';
 const BOOLEAN = 'boolean';
@@ -93,7 +93,6 @@ const _field = function (category,name,visibility,type,owner,index = -1) { //Sta
     this.final = false;
     this.instructions = null;
     this.offset = -1; //It must be filled externally after loading the field.
-    this.get_visualization = get_member_visualization(this);
     if(this.category=='field'){
         this.id = field_counter_;
         field_counter_++;
@@ -981,7 +980,9 @@ function generate_code() {
         Code_Generator.generate_code(); //And finally we output the rest of 3D.
         reset_compilation_cycle();
         Printing.publish();
-    }catch (e) {} //Do nothing and wait for the next try.
+    }catch (e) {
+        console.log(e);
+    } //Do nothing and wait for the next try.
 }
 function reset_compilation_cycle() {
     $("#Compilar_Main").unbind();

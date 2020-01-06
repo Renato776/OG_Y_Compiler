@@ -21,7 +21,7 @@ let MAX_HEAP_DISPLAY = 2000; //At default you can only graph up to 2000 cells in
 let MAX_STACK_DISPLAY = 1000; //At default you can only graph up to 1000 cells in the stack.
 let INSTRUCTION_MAX = 50000*3; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences in a single run.
 let FORCE_ENTRY_PROC = null;
-let FORCE_ENTRY_POINT = null;
+let FORCE_ENTRY_POINT = '0';
 let selected_class = null;
 //endregion
 //region Constants for 3D.
@@ -159,7 +159,9 @@ function show_breakpoints(container, bps){
 }
 function find__Next(key, obj) {
     let keys = Object.keys(obj);
-    return keys[(keys.indexOf(key.toString()) + 1) % keys.length];
+    let k =  keys[(keys.indexOf(key.toString()) + 1)];
+    if(k==undefined)throw new _3D_Exception(null,'Reached end of instructions.',false);
+    return k;
 }
 function getReturnAddress(name) {
     let i = -1;
@@ -193,7 +195,14 @@ function end_3d(sucess = true) {
     log("Max Stack size used: "+STACK.length);
 }
 function reset_IP() {
-    if("main" in labels)IP = labels.main;
+    if(FORCE_ENTRY_PROC!=null){
+        if(FORCE_ENTRY_PROC in labels)IP = labels[FORCE_ENTRY_PROC];
+        else throw new _3D_Exception(null,'Failed to force entry proc. procedure not found: '+FORCE_ENTRY_PROC,false);
+    }
+    else if(FORCE_ENTRY_POINT!='0'){
+        IP =  find__Next(FORCE_ENTRY_POINT,instructions);
+    }
+    else if(pure_entry_point in labels)IP = labels[pure_entry_point];
     else {
         new _3D_Exception(null,"NO main method found. could not start code execution.",false);
         return true;
@@ -207,6 +216,8 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     MAX_HEAP = 150000;
     CAP_HEAP = true;
     CAP_INSTRUCTION_EXECUTION = true;
+    FORCE_ENTRY_PROC = null;
+    FORCE_ENTRY_POINT = '0';
     //endregion temporals.clear();
     instructions.clear();
     labels.clear();
@@ -366,7 +377,7 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
         this.signature = "print("+this.format+","+get_signature(this.value)+")";
         break;
     case "exit":
-        this.exitCode = param1; //exit code
+        this.exitCode = param1.text; //exit code
         this.signature = "exit ("+this.exitCode+" )";
     default:
         break;
@@ -431,6 +442,7 @@ function play_instruction(instruction,debug = false) {
                 default:
                     break;
             }
+            if(instruction.c=='C'&&c<0)throw new _3D_Exception(instruction.a,'Cache underflow exception.',true); //We're attempting to put -1 to the cache.
             temporals[instruction.c] = c; //We set the value in the vessel.
             if(debug)update_temporal(instruction.c,c);
             increase_IP();//We update for next instruction.
@@ -452,6 +464,7 @@ function play_instruction(instruction,debug = false) {
         case "GET_HEAP": //We're getting a value from the heap.
             address = instruction.address; //We get the name of the temporal
             address = temporals[address]; //We get the actual value.
+            if(address<0) throw new _3D_Exception(null,"Heap underflow exception. (Should never happen)");
             vessel = instruction.vessel; //We get the name of the recipient temporal.
             temporals[vessel] = HEAP[address]; //We perform the assignation.
             if(debug)update_temporal(vessel,HEAP[address]);
@@ -480,6 +493,7 @@ function play_instruction(instruction,debug = false) {
         case "GET_STACK": //We're getting a value from the Stack.
             address = instruction.address; //We get the name of the temporal
             address = temporals[address]; //We get the actual value.
+            if(address<0) throw new _3D_Exception(null,"Stack underflow exception.");
             vessel = instruction.vessel; //We get the name of the temporal vessel.
             temporals[vessel] = STACK[address]; //We perform the assignation.
             if(debug)update_temporal(vessel,STACK[address]);
@@ -592,6 +606,27 @@ function play_instruction(instruction,debug = false) {
             print(a,b); //We print the value
             increase_IP();//We go to next instruction.
             return true;
+        case 'exit':
+            switch (this.exitCode) {
+                case '0': throw new _3D_Exception(this.token,'Null pointer exception.',true);
+                case '1': {
+                    let badIndex = temporals['C']; //We get the value of c at that moment.
+                    badIndex = STACK[badIndex]; //We get the index out of bounds.
+                    let forLength = Number(temporals['C']) - 1;
+                    forLength = STACK[forLength];
+                    throw new _3D_Exception(this.token,'Array Index out of bounds. for index: '+badIndex+' in length: '+forLength,true);
+                }
+                case '2': {
+                    let type1 = temporals['C']; //We get the value of c at that moment.
+                    type1 = STACK[type1]; //We get the code.
+                    let type2 = Number(temporals['C']) - 1;
+                    type2 = STACK[type2];
+                    throw new _3D_Exception(this.token,'Cannot downcast class: ID ='+type1+" to class: ID = "+type2,true);
+                }
+                case '3':
+                    throw new _3D_Exception(this.token,'Error casting String to int. Invalid String.',true);
+                default: throw new _3D_Exception(this.token,'FATAL ERROR at runtime. Finished execution with code: 4',true);
+            }
         default:
             new _3D_Exception(instruction.token,"Unrecognized 3D instruction: "+instruction.signature,true);
             compiling = false;

@@ -253,29 +253,31 @@ const Code_Generator = {
             this.set_heap(instance_address,c.id);//We set the ID of the new class.
             Object.values(c.fields).forEach(f=>{
                 //Alright, first things first. push default value, either 0 or customized.
-                if(f.instructions!=null){
-                    try{
-                        this.value_expression(f.instructions);   //We evaluate the default value.
-                        let value_type = this.evaluation_stack.pop();
-                        let recipient_type = this.types[f.type];
-                        this.compatible_types(recipient_type,value_type,instructions);
-                        if(f.final)f.initialized = true; //if it was a final field we need to indicate we've initalized it already.
-                    }
-                    //region Exception handling when default value is corrupted.
-                    catch (e) {
+                if(f.category=='field'){
+                    if(f.instructions!=null){
                         try{
-                            throw  new semantic_exception('An error occurred while evaluating default value for field: '+f.name+'' +
-                                ' in class: '+f.owner,f.instructions);
-                        }catch (e) {
-                            this.push_cache(0); //We'll use default value instead.
+                            this.value_expression(f.instructions);   //We evaluate the default value.
+                            let value_type = this.evaluation_stack.pop();
+                            let recipient_type = this.types[f.type];
+                            this.compatible_types(recipient_type,value_type,f.instructions);
+                            if(f.final)f.initialized = true; //if it was a final field we need to indicate we've initalized it already.
                         }
+                            //region Exception handling when default value is corrupted.
+                        catch (e) {
+                            try{
+                                throw  new semantic_exception('An error occurred while evaluating default value for field: '+f.name+'' +
+                                    ' in class: '+f.owner,f.instructions);
+                            }catch (e) {
+                                this.push_cache(0); //We'll use default value instead.
+                            }
 
-                    }
-                    //endregion
-                }else this.push_cache(0); //If no instructions were provided we push 0.
-                this.pop_cache(this.t1);//t1 = value to set.
-                this.operate(instance_address,f.offset,'+',this.t); //t holds the address of the field.
-                this.set_heap(this.t,this.t1); //We set the value.
+                        }
+                        //endregion
+                    }else this.push_cache(0); //If no instructions were provided we push 0.
+                    this.pop_cache(this.t1);//t1 = value to set.
+                    this.operate(instance_address,f.offset,'+',this.t); //t holds the address of the field.
+                    this.set_heap(this.t,this.t1); //We set the value.
+                }
             });
             this.push_cache(instance_address); //We push the answer to the cache.
            Printing.print_function(); //That's all!
@@ -496,6 +498,7 @@ const Code_Generator = {
       this.scope.push(0); //Everything performed here has program scope.
       this.stack.push('expression');
       Printing.add_function(pure_entry_point);
+      this.assign('C',0);
       this.call('load_default_chars'); //We load all chars first.
       this.call('load_all_class_names'); //We load all Class String representations.
       this.assign('P',MAX_CACHE); //We set P to the beginning of the Stack.
@@ -507,7 +510,7 @@ const Code_Generator = {
               this.value_expression(row.instructions); //We value default instruction.
               let value_type = this.evaluation_stack.pop();
               let recipient_type = this.types[row.type];
-              this.compatible_types(recipient_type,value_type);
+              this.compatible_types(recipient_type,value_type,row.instructions);
               this.mark_as_initialized(row.name); //We mark as initialized.
           }else this.push_cache(0);
           //Alright default value has been loaded to the top of the cache.
@@ -531,7 +534,7 @@ const Code_Generator = {
         const target = this.SymbolTable[this.entry_point];
         if (target == undefined) throw new _compiling_exception('The entry point has changed. Please, re-select a valid starting point.');
         if (!target.func || target.name.includes('-')) throw new _compiling_exception('The entry point has changed. Please, re-select a valid starting point.');
-        this.compile_entry_point(target); //We compile the pure entry point.
+        this.compile_entry_point(this.entry_point); //We compile the pure entry point.
         this.evaluate_node(this.root); //We output 3D code for the rest of the user defined functions.
     },
     perform_jump: function (current_scope, target_jump, jump_size) { //We prepare the jump by loading references and Increasing P.
@@ -755,7 +758,7 @@ const Code_Generator = {
                     this.push_cache(0); //We load the null value.
                     this.evaluation_stack.push(this.types[NULL]);
                     return;
-                case INTEGER:
+                case 'integer':
                     if(value_as_signature){
                         this.evaluation_stack.push(INTEGER);
                         return;
@@ -961,7 +964,7 @@ const Code_Generator = {
             default:
             {
                 node.children.forEach(child=>{
-                    this.value_expression(child); //We value the arguments of the operation.
+                    this.value_expression(child,value_as_signature,value_as_ref); //We value the arguments of the operation.
                 });
                 let left_arg;
                 let right_arg;
@@ -1833,11 +1836,24 @@ const Code_Generator = {
                 this.stack.pop();
                 let value_type = this.evaluation_stack.pop();
                 let recipient_type = this.evaluation_stack.pop();
+                this.compatible_types(recipient_type,value_type,node);
+                this.pop_cache(this.t); //t = value
+                this.pop_cache(this.t1); //t1 = ref
+                this.pop_cache(this.t2); //where to use
+                let lEnd = this.generate_label();
+                let lV = this.generate_label();
+                this.pureIf(this.t2,'1','==',lV);
+                this.set_stack(this.t1,this.t); //For use in the stack.
+                this.goto(lEnd);
+                this.set_label(lV);
+                this.set_heap(this.t1,this.t); //For use in the heap.
+                this.set_label(lEnd);
                 return;
             case 'pre-increment':
             case 'pre-decrement':
             case 'post-increment':
             case 'post-decrement':
+                this.auto_update(node,false);
                 return;
             default: throw new semantic_exception('Unimplemented node: '+node.name,node);
         }
