@@ -258,7 +258,7 @@ function print(format = 'char', value = 0) { //ATM the output will be logged to 
      }
     switch (format) {
         case "'%c'":
-            if(value=='\n'){ //Print new line.
+            if(value=='\n'.charCodeAt(0)){ //Print new line.
                 current_line = new line("");
                 append_to_3D_console();
             }else{

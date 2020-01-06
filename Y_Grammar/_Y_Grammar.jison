@@ -179,6 +179,7 @@ stmt: 	block {$$ = $1;}
 		|forStmt {$$ = $1;}
 		|autoStmt {$$ = $1;}
 		|varChain SEMI {$$ = $1;} 
+		|doStmt SEMI {$$ = $1;}
 		;
 		
 basicStmt :	block {$$ = $1;}
@@ -191,6 +192,7 @@ basicStmt :	block {$$ = $1;}
 		|switchStmt {$$ = $1;}
 		|whileStmt {$$ = $1;}
 		|forStmt {$$ = $1;}
+		|doStmt {$$ = $1;}
 		;
 		
 block : LEFT_BRACE stmtL RIGHT_BRACE {$$ = $2;}
@@ -266,6 +268,12 @@ whileStmt : WHILE LEFT_PAREN Exp RIGHT_PAREN block {
 			$$ = new _Node("while");
 			$$.add($3);
 			$$.add($5);
+			}
+			;
+doStmt : DO block WHILE LEFT_PAREN Exp RIGHT_PAREN {
+			$$ = new _Node("do");
+			$$.add($5);
+			$$.add($2);
 			}
 			;
 
