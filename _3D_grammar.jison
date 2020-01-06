@@ -48,6 +48,7 @@
 "var"				return 'VAR';
 "call"				return 'CALL';
 "print"             return 'PRINT';
+"exit"				return 'EXIT';
 ","                 return 'COMMA';
 
 /* Espacios en blanco */
@@ -129,6 +130,7 @@ stmt : varDecl {$$ = $1;}
         | getHeap {$$ = $1;}
         | setStack {$$ = $1;}
         | getStack {$$ = $1;}
+        | exit {$$ = $1;}
         ;
 
 varDecl: VAR ID ASIGNACION value {
@@ -230,6 +232,10 @@ ret : RIGHT_BRACE {
 
 print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {
        $$ = new Instruction("print",$5,$3,$5); //Print(name,token,format,value)
+       }
+       ;
+exit : EXIT LEFT_PAREN value RIGHT_PAREN {
+       $$ = new Instruction("exit",$3,$3); //Print(name,token,format,value)
        }
        ;
 
