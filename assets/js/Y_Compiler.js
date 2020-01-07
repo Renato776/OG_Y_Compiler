@@ -144,7 +144,8 @@ const type = function (signature,dimension = 0) {
       this.array = null;
   }  else {
       this.isArray = true;
-      this.array = new array(dimension,this);
+      this.array = new array(dimension,signature);
+      this.signature = this.array.signature;
   }
   this.is_class = function(){
       return this._class;
