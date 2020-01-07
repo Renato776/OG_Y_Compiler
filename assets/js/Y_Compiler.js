@@ -123,6 +123,17 @@ const array = function (dimensions,true_type) {
     }
     this.signature+=true_type;
     this.dimensions = dimensions;
+    this.get_type_in_dimension = function (target_dimension) {
+        target_dimension = this.dimensions - target_dimension;
+        let i = 0;
+        let res = "";
+        while(i<target_dimension){
+            res+="array|";
+            i++;
+        }
+        res+=this.type;
+        return res;
+    }
 };
 const type = function (signature,dimension = 0) {
   this.signature = signature;

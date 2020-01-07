@@ -438,6 +438,8 @@ const Code_Generator = {
         this.send_this_reference_to_top();
         this.compile_array();
         this.basic_array_allocation();
+        this.get_array_cell_ref();
+        this.get_array_value();
         this.copy_array();
         this.inherit();
         //region sum strings compilation
@@ -748,7 +750,46 @@ const Code_Generator = {
                     });
                     return;
                 case "arrayAccess":
-                    throw semantic_exception('Array Access not implemented yet.',node);
+                {
+                    let indexL = node.children[node.children.length-1];
+                    let i = indexL.children.length-1;
+                    while(i>=0){ //We value the indexes beginning at the last index and going backwards.
+                        this.value_expression(indexL.children[i]);
+                        let index_type = this.evaluation_stack.pop();
+                        if(!index_type.is_integer())throw new semantic_exception("Invalid index type. Expected: integer. Got: "+index_type.signature,indexL.children.get(i));
+                        i--;
+                    } //Alright all indexes are integers and have been valuated. The next thing is pushing the base array address:
+                    this.resolve_varChain(node.children[0],resolve_as_signature,static_access,resolve_as_ref); //We resolve the ID as usual.
+                    let array_type = this.evaluation_stack.pop();
+                    if(!array_type.is_array())throw new semantic_exception("Cannot resolve Array Access in type: "+array_type.signature,node);
+                    //Remember to check at runtime if array is null.
+                    let target_dimension = indexL.children.length;
+                    if(array_type.array.dimensions<target_dimension)throw new semantic_exception("Array: "+node.children[0].name+"" +
+                        " Doesn't have enough dimensions. Target dimension: "+target_dimension+" Max dimension: "+array_type.array.dimensions,node);
+                    let target_type = array_type.array.get_type_in_dimension(target_dimension);
+                    if(!(target_type in this.types)){
+                        this.types[target_type] = new type(array_type.array.type,target_dimension);
+                    }
+                    this.evaluation_stack.push(this.types[target_type]); //We push the target type.
+                    if(resolve_as_ref){
+                        //The top of the cache doesn't hold the base array address but a reference to it instead!
+                        //Gotta use the ref first:
+                        this.pop_cache(this.t); //t = base_array_address
+                        this.pop_cache(this.t1); //t1 = where to use it
+                        let label = this.generate_label();
+                        let labelEnd = this.generate_label();
+                        this.pureIf(this.t1,'1','==',label);
+                        this.get_stack(this.t,this.t); //We get the actual array
+                        this.goto(labelEnd);
+                        this.set_label(label);
+                        this.get_heap(this.t,this.t); //We get the actual array.
+                        this.set_label(labelEnd);
+                        this.push_cache(this.t); //We pusht the actual array back to the cache.
+                    }
+                    this.push_cache(target_dimension);
+                    if(resolve_as_ref) this.call('get_array_cell_ref');
+                        else this.call('get_array_value');
+                }
                     return;
                 case 'functionCall':
                     if(resolve_as_ref)throw new semantic_exception('Cannot extract reference from a function call.',node);
@@ -2862,6 +2903,120 @@ const Code_Generator = {
         this.set_heap(address,R); //We set the size of the array.
         this.push_cache(address); //We push the new Array Address to the cache.
         //that's all!
+        Printing.print_function();
+    },
+    get_array_cell_ref:function(){
+        /*
+         * Same as get_array_value except it returns the address of the cell instead of the
+         * value held within. It will also push 0/1 before the actual ref so you know where to use the ref.
+         * For this method to work the Cache must be prepared the exact same way as if I were to call
+         * get_array_value.
+         *
+         * This method returns the answer like:
+         *
+         * ref
+         * 0/1 (where to use the ref)
+         *
+         * Where the above are the top positions of the cache.
+         * */
+        Printing.add_function('get_array_cell_ref');
+        const r = 'r';
+        const r1 = 'r1';
+        const r2 = 'r2';
+        //1) Pop dim:
+        this.pop_cache(r);//R = dim
+        this.operate(r,'1','-',r); //Decrease dim
+        this.push_cache(r);
+        this.call('get_array_value');
+        /*
+         * This will recurse all the way deep into baseArray and stop one dimension before getting the value.
+         * The cache after calling this function should look like:
+         *
+         * ArrayAddress
+         * index_N
+         *
+         * So we'll simply need to return ArrayAddress + true_position.
+         * */
+        //2) Swap Address & index:
+        this.pop_cache(r); //R = array index.
+        this.pop_cache(r1); //R1 = last index.
+        this.push_cache(r);//we push the array index back.
+        this.operate(r1,'1','+',r); //R is now the true index.
+        this.pop_cache(r1); //R1 holds the ArrayAddress
+        const lFine = this.generate_label();
+        this.pureIf(r1,'0','!=',lFine);
+        this.exit(0);
+        this.set_label(lFine);
+        this.get_heap(r2,r1); //R2 = size of the array.
+        const lWrong = this.generate_label();
+        const lFine2 = this.generate_label();
+        this.pureIf(r1,'0','<=',lWrong);
+        this.pureIf(r1,r2,'>',lWrong);
+        this.goto(lFine2);
+        this.set_label(lWrong);
+        this.exit(1);
+        this.set_label(lFine2);
+        this.operate(r1,r,'+',r); //R holds the cell's address.
+        this.push_cache(1); //We push one to indicate we'll use the reference in the heap.
+        this.push_cache(r); //We push the actual ref.
+        //That's all!!
+        Printing.print_function();
+    },
+    get_array_value:function () {
+        /*
+       * This 4D method pushes the vaue held within an array in the desired position to
+       * the top of the cache.
+       * For this method to work, it expects the Cache to be loaded as follows:
+       *
+       * Dim
+       * BaseArrayAddress
+       * index_0
+       * ...
+       * ...
+       * ...
+       * index_N-1
+       * index_N
+       *
+       * Where Dim is a pure number indicating how deep to go within the array (the number of dimensions to travel)
+       * BaseArrayAddress is the well, the base array address. Based on this data the correspondent value
+       * will be easily fetched!
+       * */
+        Printing.add_function('get_array_value');
+        //1) Initialize aux:
+        this.initialize_aux_segment();
+        const AUX = 'AUX';
+        const r = 'r';
+        const r1 = 'r1';
+        const r2 = 'r2';
+        this.pop_cache(r); //r = dim
+        const whileStart = this.generate_label();
+        const whileEnd = this.generate_label();
+        this.set_label(whileStart);
+        this.pureIf(r,'0','<=',whileEnd);
+        this.operate(r,'1','-',r);
+        this.push_aux(r);
+        this.pop_cache(r); //R = baseArrayAddress
+        this.get_heap(r2,r);  //r2 = size of the array.
+        this.pop_cache(r1); //upper index.
+        this.operate(r1,'1','+',r1); //We get the true index.
+        const lfine = this.generate_label();
+        this.pureIf(r,'0','!=',lfine);
+        this.exit(0);
+        this.set_label(lfine);
+        const lWrong = this.generate_label();
+        const lFine2 = this.generate_label();
+        this.pureIf(r1,'0','<=',lWrong);
+        this.pureIf(r1,r2,'>',lWrong);
+        this.goto(lFine2);
+        this.set_label(lWrong);
+        this.exit(1);
+        this.set_label(lFine2);
+        this.operate(r,r1,'+',r); //The cell's address we're looking for;
+        this.get_heap(r2,r);//R2 = The value stored in this cell.
+        this.push_cache(r2);
+        this.pop_aux(r); //R = dim -1
+        this.goto(whileStart);
+        this.set_label(whileEnd);
         Printing.print_function();
     }
 };
