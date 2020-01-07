@@ -607,25 +607,25 @@ function play_instruction(instruction,debug = false) {
             increase_IP();//We go to next instruction.
             return true;
         case 'exit':
-            switch (this.exitCode) {
-                case '0': throw new _3D_Exception(this.token,'Null pointer exception.',true);
+            switch (instruction.exitCode) {
+                case '0': throw new _3D_Exception(instruction.token,'Null pointer exception.',true);
                 case '1': {
                     let badIndex = temporals['C']; //We get the value of c at that moment.
                     badIndex = STACK[badIndex]; //We get the index out of bounds.
                     let forLength = Number(temporals['C']) - 1;
                     forLength = STACK[forLength];
-                    throw new _3D_Exception(this.token,'Array Index out of bounds. for index: '+badIndex+' in length: '+forLength,true);
+                    throw new _3D_Exception(instruction.token,'Array Index out of bounds. for index: '+badIndex+' in length: '+forLength,true);
                 }
                 case '2': {
                     let type1 = temporals['C']; //We get the value of c at that moment.
                     type1 = STACK[type1]; //We get the code.
                     let type2 = Number(temporals['C']) - 1;
                     type2 = STACK[type2];
-                    throw new _3D_Exception(this.token,'Cannot downcast class: ID ='+type1+" to class: ID = "+type2,true);
+                    throw new _3D_Exception(instruction.token,'Cannot downcast class: ID ='+type1+" to class: ID = "+type2,true);
                 }
                 case '3':
-                    throw new _3D_Exception(this.token,'Error casting String to int. Invalid String.',true);
-                default: throw new _3D_Exception(this.token,'FATAL ERROR at runtime. Finished execution with code: 4',true);
+                    throw new _3D_Exception(instruction.token,'Error casting String to int. Invalid String.',true);
+                default: throw new _3D_Exception(instruction.token,'FATAL ERROR at runtime. Finished execution with code: 4',true);
             }
         default:
             new _3D_Exception(instruction.token,"Unrecognized 3D instruction: "+instruction.signature,true);

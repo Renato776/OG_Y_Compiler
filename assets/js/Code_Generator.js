@@ -787,6 +787,7 @@ const Code_Generator = {
                         this.push_cache(this.t); //We pusht the actual array back to the cache.
                     }
                     this.push_cache(target_dimension);
+                    this.push_cache(this.SymbolTable[this.peek(this.scope)].size);
                     if(resolve_as_ref) this.call('get_array_cell_ref');
                         else this.call('get_array_value');
                 }
@@ -919,6 +920,39 @@ const Code_Generator = {
                     //been created. You can edit this instance trough the custom constructor.
                     this.perform_static_function_call(target_func,paramL,true);
                 }
+            }
+                return;
+            case 'arrayInitialization':
+            {
+                //Alright, the type is most likely not set in the type list yet. So, let's build it and add it if needed.
+                let true_type = node.children[0].text;
+                let indexL = node.children[node.children.length-1];
+                let array_type = new type(true_type,indexL.children.length);
+                if(!(array_type.signature in this.types)){
+                    this.types[array_type.signature] = array_type;
+                }
+                //Alright, next step is loading the cache with the needed values for array compilation:
+                /*
+                * Alright, to compile the array I must simply load the input to the cache:
+                 * Dimension
+                 * Size_N
+                 * ...
+                 * ...
+                 * ...
+                 *  Size_1
+                 *  Size_0
+                * */
+                //therefore, we only need to value the index list in order:
+                indexL.children.forEach(index=>{
+                   this.value_expression(index);
+                   let index_type = this.evaluation_stack.pop();
+                   if(!index_type.is_integer())throw new semantic_exception('Invalid index type. Expected: integer. Got: '+index_type.signature,node);
+                });
+                //Alright, now push the dimension:
+                this.evaluation_stack.push(array_type);
+                this.push_cache(indexL.children.length);
+                this.push_cache(this.SymbolTable[this.peek(this.scope)].size); //We must send the current size of the scope.
+                this.call('compile_array');
             }
                 return;
             case 'downcast':
@@ -2703,7 +2737,8 @@ const Code_Generator = {
         Printing.print_function();
     },
     initialize_aux_segment:function(){
-      this.operate('P',this.SymbolTable[this.peek(this.scope)].size,'+','AUX');
+        this.pop_cache('AUX'); //Aux holds the actual size of the current scope.
+      this.operate('P','AUX','+','AUX');
       this.operate('AUX','5','+','AUX'); //Just to be on the safe side.
     },
     push_aux :function(value){
@@ -2780,7 +2815,7 @@ const Code_Generator = {
         this.pop_cache(r2); //OG array
         this.pop_cache(i1); //new Array
         this.pop_cache(r1); //Size -1
-        this.operate(i1,new_cell_offset,i2);  //i2 = new array cell address.
+        this.operate(i1,new_cell_offset,'+',i2);  //i2 = new array cell address.
         this.set_heap(i2,r); //We set the copy in the newArray's cell address.
         this.push_cache(r2); //OG
         this.push_cache(i1); //NewArray
@@ -2788,6 +2823,7 @@ const Code_Generator = {
         this.pop_cache(r);  //r = size -1.
         this.goto(whileStart);
         this.set_label(whileEnd);
+        this.set_label(lEnd);
         //That's all!!
         Printing.print_function();
     },
@@ -2795,7 +2831,7 @@ const Code_Generator = {
         Printing.add_function('compile_array');
         /*
          * This method takes a lot of input. For this method to work the Cache must look like:
-         *
+         *current_scope_size
          * Dimension
          * Size_N
          * ...
@@ -2923,11 +2959,19 @@ const Code_Generator = {
         const r = 'r';
         const r1 = 'r1';
         const r2 = 'r2';
+        this.initialize_aux_segment();
         //1) Pop dim:
         this.pop_cache(r);//R = dim
         this.operate(r,'1','-',r); //Decrease dim
+        //If dim == 0 we proceed directly:
+        const lProceed = this.generate_label();
+        this.pureIf(r,'0','==',lProceed);
         this.push_cache(r);
+        this.operate('AUX','5','-','AUX'); //We return Aux to OG value.
+        this.operate('AUX','P','-','AUX'); //We return Aux to OG value.
+        this.push_cache('AUX'); //We indicate where the aux segment starts.
         this.call('get_array_value');
+        this.set_label(lProceed);
         /*
          * This will recurse all the way deep into baseArray and stop one dimension before getting the value.
          * The cache after calling this function should look like:
@@ -2950,8 +2994,8 @@ const Code_Generator = {
         this.get_heap(r2,r1); //R2 = size of the array.
         const lWrong = this.generate_label();
         const lFine2 = this.generate_label();
-        this.pureIf(r1,'0','<=',lWrong);
-        this.pureIf(r1,r2,'>',lWrong);
+        this.pureIf(r,'0','<=',lWrong);
+        this.pureIf(r,r2,'>',lWrong);
         this.goto(lFine2);
         this.set_label(lWrong);
         this.exit(1);
