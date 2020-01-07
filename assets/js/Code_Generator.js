@@ -436,6 +436,9 @@ const Code_Generator = {
         this.int_to_string();
         this.compareArrays();
         this.send_this_reference_to_top();
+        this.compile_array();
+        this.basic_array_allocation();
+        this.copy_array();
         this.inherit();
         //region sum strings compilation
         this.___sum_strings___(); //___sum_strings___ is different from sum_strings,
@@ -2656,6 +2659,209 @@ const Code_Generator = {
         this.goto(wS);
         this.set_label(wE);
         this.push_cache(this.t3); //We finally push the this reference at the top.
+        Printing.print_function();
+    },
+    initialize_aux_segment:function(){
+      this.operate('P',this.SymbolTable[this.peek(this.scope)].size,'+','AUX');
+      this.operate('AUX','5','+','AUX'); //Just to be on the safe side.
+    },
+    push_aux :function(value){
+        this.operate('AUX','1','+','AUX');
+        this.set_stack('AUX',value);
+    },
+    pop_aux:function(vessel){
+        this.get_stack(vessel, 'AUX');
+        this.operate('AUX','1','-','AUX');
+    },
+    copy_array:function(){
+        Printing.add_function('copy_array');
+        /*
+               * This method takes an ArrayAddress as parameter, pushes it back immediately and then proceeds to copy it.
+               * If the address this method receives is 0 it returns 0.
+               * After allocating space for a new Array with same size as OG, it will then read each cell in OG
+               * and if the cell != 0 it'll copy the cell & put the result in copy[cell].
+               * This implies copy_array is a powerful recursive method which could iterate trough infinity if
+               * a proper ending array is missing (the ending array should be one with all its cells initialized to 0)
+               * */
+        const r = 'r';
+        const r1 = 'r1';
+        const r2 = 'r2';
+        const new_cell_offset = 'new_cell_offset';
+        const i1 = 'i1';
+        const i2 = 'i2';
+        //1) Get the OG's address and push it back:
+        this.get_stack(r,'C');
+        const l1 = this.generate_label();
+        const lEnd = this.generate_label();
+        this.pureIf(r,'0','!=',l1);
+        this.push_cache(0); //We're attempting to copy a null array. There's nothing to do.
+        this.goto(lEnd);
+        this.set_label(l1);
+        this.get_heap(r,r); // R = Heap[R] = size
+        this.push_cache(r); //We push the size to allocate the new array.
+        this.call('basic_array_allocation');
+        this.get_stack(r,'C'); //R holds the new Array Address.
+        this.get_heap(r,r); //r = size from new Array
+        const whileStart = this.generate_label();
+        const whileEnd = this.generate_label();
+        this.set_label(whileStart);
+        this.pureIf(r,'0','<=',whileEnd);
+        this.assign(new_cell_offset,r);
+        this.operate(r,'1','-',r);
+        this.push_cache(r);
+        this.pop_cache(r);
+        this.pop_cache(r1);
+        this.pop_cache(r2);
+        this.push_cache(r);
+        this.push_cache(r1);
+        this.push_cache(r2);
+        this.get_stack(r,'C');
+        this.operate(new_cell_offset,r,'+',i1);
+        this.get_heap(i1,i1); //I1 = OG's cell value
+        const lF = this.generate_label();
+        this.pureIf(i1,'0','!=',lF);
+        //The OG array is filled with 0s there fore there's nothing else to copy.
+        //However, before we return we must put the cache in proper order:
+        this.pop_cache(r); //R = OG
+        this.pop_cache(r1); //R1 = new array
+        this.pop_cache(r2); //R2 = Size -1. (discard)
+        this.push_cache(r);
+        this.push_cache(r1);
+        //Alright you can leave now
+        this.goto(whileEnd);
+        this.set_label(lF);
+        this.push_cache(new_cell_offset); //new_cell_offset
+        this.push_cache(i1);  //cell's value
+        this.call('copy_array');
+        this.pop_cache(r); //copy
+        this.pop_cache(r1); // cell's value'
+        this.pop_cache(new_cell_offset); // (cell's offset)
+        this.pop_cache(r2); //OG array
+        this.pop_cache(i1); //new Array
+        this.pop_cache(r1); //Size -1
+        this.operate(i1,new_cell_offset,i2);  //i2 = new array cell address.
+        this.set_heap(i2,r); //We set the copy in the newArray's cell address.
+        this.push_cache(r2); //OG
+        this.push_cache(i1); //NewArray
+        this.push_cache(r1); //Size - 1
+        this.pop_cache(r);  //r = size -1.
+        this.goto(whileStart);
+        this.set_label(whileEnd);
+        //That's all!!
+        Printing.print_function();
+    },
+    compile_array:function(){
+        Printing.add_function('compile_array');
+        /*
+         * This method takes a lot of input. For this method to work the Cache must look like:
+         *
+         * Dimension
+         * Size_N
+         * ...
+         * ...
+         * ...
+         *  Size_1
+         *  Size_0
+         *
+         * Where  Size_0 makes reference to the size for the most
+         * outer array (the array with the highest dimension) And Size_N makes reference to the size for
+         * the most inner array (the array with only 1 dimension)
+         *
+         * It takes all of this arguments and returns a single ArrayAddress.
+         *
+         * The Aux array refers to a segment in the Stack above the current scope.
+         * Since we perform no jumps, the Stack remains constant trough this whole process.
+         * */
+        const ag = 'ag';
+        const r1 = 'r1';
+        const r2 = 'r2';
+        const r = 'r';
+        const AUX = 'AUX';
+        //1) //Initialize aux segment:
+        this.initialize_aux_segment();
+        //2) pop the dimension:
+        this.pop_cache(r); //r = dim
+        //3) push initial array to copy:
+        this.push_aux(0);
+        const whileStart = this.generate_label();
+        const whileEnd = this.generate_label();
+        this.set_label(whileStart);
+        this.pureIf(r,'0','<=',whileEnd);
+        this.operate(r,'1','-',r); //r--;
+        this.pop_aux(ag);
+        this.push_aux(r);
+        this.push_aux(ag);
+        //Swap & push Dim to aux. At this point the prev array must be at the top of aux. And Index_N at the top of Cache.
+        this.call('basic_array_allocation');
+        this.pop_cache(r); //r = newArrayAddress
+        this.get_heap(ag,r); //AG = newArraySize
+        this.push_cache(r);
+        this.assign(r,ag); //R = new_array_size
+        const nestedWhileStart = this.generate_label();
+        const nestedWhileEnd = this.generate_label();
+        this.set_label(nestedWhileStart);
+        this.pureIf(r,'0','<=',nestedWhileEnd);
+        this.operate(r,'1','-',r); //We decrease the size of the array.
+        this.pop_aux(r1);
+        this.push_aux(r);
+        this.push_aux(r1);
+        this.pop_aux(r); //R = Address of the previous array.
+        this.push_cache(r); //We push it to the cache
+        this.call('copy_array'); ////We copy the previous array. Also the copy doesn't remove the Address from the cache.
+        this.pop_cache(r);  //R = Copy address.
+        this.get_stack(r1,'AUX');
+        this.operate(r1,'1','+',r1); //We increase it by 1.
+        this.pop_cache(r2); //R2 = prevArrayAddress
+        this.push_aux(r2); //We push it to the aux stack
+        this.get_stack(r2,'C');//R2 = newArrayAddress
+        this.operate(r2,r1,'+',r2); //R2 = cell address within array.
+        this.set_heap(r2,r); //We put the copy in the array.
+        //11) We swap the top positions in aux.
+        this.pop_aux(r);
+        this.pop_aux(r1);
+        this.push_aux(r);
+        this.push_aux(r1);
+        //12) We get the size of the array back:
+        this.pop_aux(r);
+        this.goto(nestedWhileStart);
+        this.set_label(nestedWhileEnd);
+        //15) Alright, at this point the array has been fully initialized. So next step is going to the next dimension:
+        this.pop_aux(r); //discard
+        this.pop_cache(r); //R holds the initialized array.
+        this.push_aux(r); //We push R to the aux segment as we'll use it as prev array in next iteration
+        //16) We get dim counter from aux:
+        this.pop_aux(r1);
+        this.pop_aux(r);
+        this.push_aux(r1);
+        //17) Go to next iteration:
+        this.goto(whileStart);
+        this.set_label(whileEnd);
+        //19) Alright, at this point the resultant array is in the Aux segment. We just gotta take it from there and push it to the cache.
+        this.pop_aux(r);
+        this.push_cache(r);
+        //Alright, that's all!!
+        Printing.print_function();
+    },
+    basic_array_allocation:function () {
+        /*
+         * This method takes the size of the array as parameter from the cache & pushes back
+         * the address of a new array based in the provided size.
+         * */
+        //atm the size of the array is at the top.
+        Printing.add_function('basic_array_allocation');
+        const R = 'R';
+        const address = 'address'
+        this.get_stack(R,'C'); //R holds the size of the array.
+        this.operate(R,'1','+',R); //However the true size R +1 (To make space for the size)
+        this.push_cache(R);
+        this.call('malloc');
+        this.pop_cache(address);//We allocate space in memory for the array.
+        //Alright now we got the address we'll use for this array.
+        //The next thing we must do is setting the array's size.
+        this.pop_cache(R); //We get the OG size of the array (before the increment)
+        this.set_heap(address,R); //We set the size of the array.
+        this.push_cache(address); //We push the new Array Address to the cache.
+        //that's all!
         Printing.print_function();
     }
 };
