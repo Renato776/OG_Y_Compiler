@@ -18,8 +18,12 @@ instance_address = stack[C]
 C = C - 1
 heap[instance_address] = 1
 C = C + 1
+stack[C] = instance_address
+C = C + 1
 stack[C] = 0
 t1 = stack[C]
+C = C - 1
+instance_address = stack[C]
 C = C - 1
 t4 = instance_address + 1
 heap[t4] = t1
@@ -35,21 +39,12 @@ instance_address = stack[C]
 C = C - 1
 heap[instance_address] = 2
 C = C + 1
-stack[C] = 4
-call malloc
-t4 = stack[C]
-C = C - 1
+stack[C] = instance_address
 C = C + 1
-stack[C] = t4
-heap[t4] = 3
-t2 = t4 + 1
-heap[t2] = 73
-t2 = t4 + 2
-heap[t2] = 68
-t2 = t4 + 3
-heap[t2] = 75
-call build_string
+stack[C] = 0
 t1 = stack[C]
+C = C - 1
+instance_address = stack[C]
 C = C - 1
 t4 = instance_address + 1
 heap[t4] = t1
@@ -402,6 +397,40 @@ C = C + 1
 stack[C] = 1
 L32:
 }
+proc send_this_reference_to_top {
+paramCount = stack[C]
+C = C - 1
+t1 = 0
+L36:
+if t1 >= paramCount goto L37
+t2 = stack[C]
+C = C - 1
+H = H + 1
+heap[H] = t2
+t1 = t1 + 1
+goto L36
+L37:
+t3 = stack[C]
+C = C - 1
+L38:
+t1 = 0
+if t1 >= paramCount goto L39
+t2 = heap[H]
+H = H - 1
+C = C + 1
+stack[C] = t2
+goto L38
+L39:
+C = C + 1
+stack[C] = t3
+}
+proc ___inherit___ {
+child = stack[C]
+C = C - 1
+parent = stack[C]
+C = C - 1
+child_id = heap[child]
+}
 proc ___sum_strings___ {
 right = stack[C]
 C = C - 1
@@ -420,27 +449,27 @@ new_size = left_size + right_size
 heap[result] = new_size
 i = 1
 ii = 1
-L36:
-if i > left_size goto L37
+L40:
+if i > left_size goto L41
 next_char = left + i
 next_char = heap[next_char]
 t1 = result + ii
 heap[t1] = next_char
 ii = ii + 1
 i = i + 1
-goto L36
-L37:
+goto L40
+L41:
 i = 1
-L38:
-if i > right_size goto L39
+L42:
+if i > right_size goto L43
 next_char = right + i
 next_char = heap[next_char]
 t1 = result + ii
 heap[t1] = next_char
 ii = ii + 1
 i = i + 1
-goto L38
-L39:
+goto L42
+L43:
 C = C + 1
 stack[C] = result
 }
@@ -500,14 +529,14 @@ t1 = stack[C]
 C = C - 1
 t2 = heap[t1]
 t3 = 1
-L40:
-if t3 > t2 goto L41
+L44:
+if t3 > t2 goto L45
 t4 = t1 + t3
 t4 = heap[t4]
 print('%c',t4)
 t3 = t3 + 1
-goto L40
-L41:
+goto L44
+L45:
 }
 proc build_string {
 call ___build___String
@@ -523,7 +552,7 @@ stack[C] = t1
 proc boolean_to_string {
 t1 = stack[C]
 C = C - 1
-if t1 == 0 goto L42
+if t1 == 0 goto L46
 C = C + 1
 stack[C] = 5
 call malloc
@@ -540,8 +569,8 @@ t2 = t4 + 3
 heap[t2] = 117
 t2 = t4 + 4
 heap[t2] = 101
-goto L43
-L42:
+goto L47
+L46:
 C = C + 1
 stack[C] = 6
 call malloc
@@ -560,7 +589,7 @@ t2 = t4 + 4
 heap[t2] = 115
 t2 = t4 + 5
 heap[t2] = 101
-L43:
+L47:
 }
 proc ____MAIN____ {
 C = 0
@@ -574,115 +603,158 @@ call load_all_class_names
 P = 400
 P = P + 0
 t1 = P - 0
-call ___f___1
+call ___f___3
 P = P - 0
 }
-proc ___f___2 {
+proc ___f___1 {
+t4 = P + 0
 C = C + 1
-stack[C] = 42
+stack[C] = 0
+C = C + 1
+stack[C] = t4
+t1 = stack[C]
+C = C - 1
+t2 = stack[C]
+C = C - 1
+if t2 == 1 goto L49
+t1 = stack[t1]
+goto L50
+L49:
+t1 = heap[t1]
+L50:
+C = C + 1
+stack[C] = t1
+t1 = 1
+C = C + 1
+stack[C] = t1
+call get_field_reference
+t4 = P + 1
+t4 = stack[t4]
+C = C + 1
+stack[C] = t4
+t4 = stack[C]
+C = C - 1
+t1 = stack[C]
+C = C - 1
+t2 = stack[C]
+C = C - 1
+if t2 == 1 goto L52
+stack[t1] = t4
+goto L51
+L52:
+heap[t1] = t4
+L51:
+t4 = P + 0
+t4 = stack[t4]
+C = C + 1
+stack[C] = t4
+L48:
+}
+proc ___f___4 {
+C = C + 1
+stack[C] = 41
 call malloc
 t4 = stack[C]
 C = C - 1
 C = C + 1
 stack[C] = t4
-heap[t4] = 41
+heap[t4] = 40
 t2 = t4 + 1
-heap[t2] = 10
-t2 = t4 + 2
 heap[t2] = 84
-t2 = t4 + 3
+t2 = t4 + 2
 heap[t2] = 104
+t2 = t4 + 3
+heap[t2] = 101
 t2 = t4 + 4
-heap[t2] = 101
+heap[t2] = 32
 t2 = t4 + 5
-heap[t2] = 32
+heap[t2] = 101
 t2 = t4 + 6
-heap[t2] = 101
-t2 = t4 + 7
 heap[t2] = 113
+t2 = t4 + 7
+heap[t2] = 117
 t2 = t4 + 8
-heap[t2] = 117
-t2 = t4 + 9
 heap[t2] = 97
+t2 = t4 + 9
+heap[t2] = 108
 t2 = t4 + 10
-heap[t2] = 108
+heap[t2] = 115
 t2 = t4 + 11
-heap[t2] = 115
+heap[t2] = 32
 t2 = t4 + 12
-heap[t2] = 32
-t2 = t4 + 13
 heap[t2] = 102
-t2 = t4 + 14
+t2 = t4 + 13
 heap[t2] = 117
+t2 = t4 + 14
+heap[t2] = 110
 t2 = t4 + 15
-heap[t2] = 110
-t2 = t4 + 16
 heap[t2] = 99
-t2 = t4 + 17
+t2 = t4 + 16
 heap[t2] = 116
+t2 = t4 + 17
+heap[t2] = 105
 t2 = t4 + 18
-heap[t2] = 105
+heap[t2] = 111
 t2 = t4 + 19
-heap[t2] = 111
+heap[t2] = 110
 t2 = t4 + 20
-heap[t2] = 110
+heap[t2] = 32
 t2 = t4 + 21
-heap[t2] = 32
+heap[t2] = 105
 t2 = t4 + 22
-heap[t2] = 105
-t2 = t4 + 23
 heap[t2] = 115
+t2 = t4 + 23
+heap[t2] = 32
 t2 = t4 + 24
-heap[t2] = 32
-t2 = t4 + 25
 heap[t2] = 119
+t2 = t4 + 25
+heap[t2] = 111
 t2 = t4 + 26
-heap[t2] = 111
+heap[t2] = 114
 t2 = t4 + 27
-heap[t2] = 114
-t2 = t4 + 28
 heap[t2] = 107
-t2 = t4 + 29
+t2 = t4 + 28
 heap[t2] = 105
-t2 = t4 + 30
+t2 = t4 + 29
 heap[t2] = 110
-t2 = t4 + 31
+t2 = t4 + 30
 heap[t2] = 103
-t2 = t4 + 32
+t2 = t4 + 31
 heap[t2] = 32
+t2 = t4 + 32
+heap[t2] = 112
 t2 = t4 + 33
-heap[t2] = 112
+heap[t2] = 114
 t2 = t4 + 34
-heap[t2] = 114
-t2 = t4 + 35
 heap[t2] = 111
-t2 = t4 + 36
+t2 = t4 + 35
 heap[t2] = 112
-t2 = t4 + 37
+t2 = t4 + 36
 heap[t2] = 101
-t2 = t4 + 38
+t2 = t4 + 37
 heap[t2] = 114
-t2 = t4 + 39
+t2 = t4 + 38
 heap[t2] = 108
-t2 = t4 + 40
+t2 = t4 + 39
 heap[t2] = 121
-t2 = t4 + 41
+t2 = t4 + 40
 heap[t2] = 33
 call build_string
 C = C + 1
 stack[C] = 0
 call get_field
 call print_string
+print('%c',10)
 }
-proc ___f___4 {
+proc ___f___6 {
 C = C + 1
-stack[C] = 7
+stack[C] = 6
 call malloc
 t4 = stack[C]
 C = C - 1
 C = C + 1
 stack[C] = t4
-heap[t4] = 6
+heap[t4] = 5
 t2 = t4 + 1
 heap[t2] = 77
 t2 = t4 + 2
@@ -693,23 +765,22 @@ t2 = t4 + 4
 heap[t2] = 109
 t2 = t4 + 5
 heap[t2] = 109
-t2 = t4 + 6
-heap[t2] = 10
 call build_string
 C = C + 1
 stack[C] = 0
 call get_field
 call print_string
+print('%c',10)
 }
-proc ___f___6 {
+proc ___f___8 {
 C = C + 1
-stack[C] = 18
+stack[C] = 17
 call malloc
 t4 = stack[C]
 C = C - 1
 C = C + 1
 stack[C] = t4
-heap[t4] = 17
+heap[t4] = 16
 t2 = t4 + 1
 heap[t2] = 80
 t2 = t4 + 2
@@ -742,13 +813,12 @@ t2 = t4 + 15
 heap[t2] = 108
 t2 = t4 + 16
 heap[t2] = 33
-t2 = t4 + 17
-heap[t2] = 10
 call build_string
 C = C + 1
 stack[C] = 0
 call get_field
 call print_string
+print('%c',10)
 t4 = P + 2
 t4 = stack[t4]
 C = C + 1
@@ -756,20 +826,37 @@ stack[C] = 0
 C = C + 1
 stack[C] = t4
 call ___build___Main
+C = C + 1
+stack[C] = 99
+C = C + 1
+stack[C] = 1
+call send_this_reference_to_top
+P = P + 4
+t4 = P - 4
+t1 = stack[C]
+C = C - 1
+t2 = P + 0
+stack[t2] = t1
+t1 = stack[C]
+C = C - 1
+t2 = P + 1
+stack[t2] = t1
+call ___f___1
+P = P - 4
 t4 = stack[C]
 C = C - 1
 t1 = stack[C]
 C = C - 1
 t2 = stack[C]
 C = C - 1
-if t2 == 1 goto L52
+if t2 == 1 goto L61
 stack[t1] = t4
-goto L51
-L52:
+goto L60
+L61:
 heap[t1] = t4
-L51:
+L60:
 }
-proc ___f___8 {
+proc ___f___10 {
 C = C + 1
 stack[C] = 15
 call malloc
@@ -811,8 +898,9 @@ C = C + 1
 stack[C] = 0
 call get_field
 call print_string
+print('%c',10)
 }
-proc ___f___10 {
+proc ___f___12 {
 C = C + 1
 stack[C] = 14
 call malloc
@@ -868,8 +956,9 @@ C = C + 1
 stack[C] = 0
 call get_field
 call print_string
+print('%c',10)
 }
-proc ___f___12 {
+proc ___f___14 {
 C = C + 1
 stack[C] = 19
 call malloc
@@ -919,8 +1008,9 @@ C = C + 1
 stack[C] = 0
 call get_field
 call print_string
+print('%c',10)
 }
-proc ___f___14 {
+proc ___f___16 {
 C = C + 1
 stack[C] = 36
 call malloc
@@ -1004,8 +1094,9 @@ C = C + 1
 stack[C] = 0
 call get_field
 call print_string
+print('%c',10)
 }
-proc ___f___1 {
+proc ___f___3 {
 call ___build___Main
 t1 = stack[C]
 C = C - 1
@@ -1070,25 +1161,7 @@ call build_string
 call compare_strings
 t1 = stack[C]
 C = C - 1
-if t1 == 0 goto L46
-P = P + 4
-t4 = P - 4
-t1 = t4 + 3
-t2 = P + 3
-stack[t2] = t1
-t1 = t4 + 2
-t2 = P + 2
-stack[t2] = t1
-t1 = t4 + 1
-t2 = P + 1
-stack[t2] = t1
-t1 = t4 + 0
-t2 = P + 0
-stack[t2] = t1
-call ___f___2
-P = P - 4
-goto L45
-L46:
+if t1 == 0 goto L55
 P = P + 4
 t4 = P - 4
 t1 = t4 + 3
@@ -1105,28 +1178,8 @@ t2 = P + 0
 stack[t2] = t1
 call ___f___4
 P = P - 4
-L45:
-t4 = P + 2
-t4 = stack[t4]
-C = C + 1
-stack[C] = t4
-C = C + 1
-stack[C] = 0
-right_value = stack[C]
-C = C - 1
-left_value = stack[C]
-C = C - 1
-if left_value == right_value goto L49
-t4 = 0
-goto L50
-L49:
-t4 = 1
-L50:
-C = C + 1
-stack[C] = t4
-t1 = stack[C]
-C = C - 1
-if t1 == 0 goto L48
+goto L54
+L55:
 P = P + 4
 t4 = P - 4
 t1 = t4 + 3
@@ -1143,9 +1196,47 @@ t2 = P + 0
 stack[t2] = t1
 call ___f___6
 P = P - 4
-goto L47
-L48:
-L47:
+L54:
+t4 = P + 2
+t4 = stack[t4]
+C = C + 1
+stack[C] = t4
+C = C + 1
+stack[C] = 0
+right_value = stack[C]
+C = C - 1
+left_value = stack[C]
+C = C - 1
+if left_value == right_value goto L58
+t4 = 0
+goto L59
+L58:
+t4 = 1
+L59:
+C = C + 1
+stack[C] = t4
+t1 = stack[C]
+C = C - 1
+if t1 == 0 goto L57
+P = P + 4
+t4 = P - 4
+t1 = t4 + 3
+t2 = P + 3
+stack[t2] = t1
+t1 = t4 + 2
+t2 = P + 2
+stack[t2] = t1
+t1 = t4 + 1
+t2 = P + 1
+stack[t2] = t1
+t1 = t4 + 0
+t2 = P + 0
+stack[t2] = t1
+call ___f___8
+P = P - 4
+goto L56
+L57:
+L56:
 C = C + 1
 stack[C] = 25
 call malloc
@@ -1219,11 +1310,18 @@ C = C + 1
 stack[C] = left_value
 C = C + 1
 stack[C] = right_value
+t1 = stack[C]
+C = C - 1
+C = C + 1
+stack[C] = t1
+call int_to_string
+call build_string
 call sum_strings
 C = C + 1
 stack[C] = 0
 call get_field
 call print_string
+print('%c',10)
 t4 = P + 1
 t4 = stack[t4]
 C = C + 1
@@ -1234,56 +1332,17 @@ right_value = stack[C]
 C = C - 1
 left_value = stack[C]
 C = C - 1
-if left_value == right_value goto L55
+if left_value == right_value goto L64
 t4 = 0
-goto L56
-L55:
+goto L65
+L64:
 t4 = 1
-L56:
+L65:
 C = C + 1
 stack[C] = t4
 t1 = stack[C]
 C = C - 1
-if t1 == 0 goto L54
-P = P + 4
-t4 = P - 4
-t1 = t4 + 3
-t2 = P + 3
-stack[t2] = t1
-t1 = t4 + 2
-t2 = P + 2
-stack[t2] = t1
-t1 = t4 + 1
-t2 = P + 1
-stack[t2] = t1
-t1 = t4 + 0
-t2 = P + 0
-stack[t2] = t1
-call ___f___8
-P = P - 4
-goto L53
-L54:
-t4 = P + 1
-t4 = stack[t4]
-C = C + 1
-stack[C] = t4
-C = C + 1
-stack[C] = 1
-right_value = stack[C]
-C = C - 1
-left_value = stack[C]
-C = C - 1
-if left_value == right_value goto L58
-t4 = 0
-goto L59
-L58:
-t4 = 1
-L59:
-C = C + 1
-stack[C] = t4
-t1 = stack[C]
-C = C - 1
-if t1 == 0 goto L57
+if t1 == 0 goto L63
 P = P + 4
 t4 = P - 4
 t1 = t4 + 3
@@ -1300,29 +1359,29 @@ t2 = P + 0
 stack[t2] = t1
 call ___f___10
 P = P - 4
-goto L53
-L57:
+goto L62
+L63:
 t4 = P + 1
 t4 = stack[t4]
 C = C + 1
 stack[C] = t4
 C = C + 1
-stack[C] = 2
+stack[C] = 1
 right_value = stack[C]
 C = C - 1
 left_value = stack[C]
 C = C - 1
-if left_value == right_value goto L61
+if left_value == right_value goto L67
 t4 = 0
-goto L62
-L61:
+goto L68
+L67:
 t4 = 1
-L62:
+L68:
 C = C + 1
 stack[C] = t4
 t1 = stack[C]
 C = C - 1
-if t1 == 0 goto L60
+if t1 == 0 goto L66
 P = P + 4
 t4 = P - 4
 t1 = t4 + 3
@@ -1339,8 +1398,29 @@ t2 = P + 0
 stack[t2] = t1
 call ___f___12
 P = P - 4
-goto L53
-L60:
+goto L62
+L66:
+t4 = P + 1
+t4 = stack[t4]
+C = C + 1
+stack[C] = t4
+C = C + 1
+stack[C] = 2
+right_value = stack[C]
+C = C - 1
+left_value = stack[C]
+C = C - 1
+if left_value == right_value goto L70
+t4 = 0
+goto L71
+L70:
+t4 = 1
+L71:
+C = C + 1
+stack[C] = t4
+t1 = stack[C]
+C = C - 1
+if t1 == 0 goto L69
 P = P + 4
 t4 = P - 4
 t1 = t4 + 3
@@ -1357,77 +1437,92 @@ t2 = P + 0
 stack[t2] = t1
 call ___f___14
 P = P - 4
-L53:
+goto L62
+L69:
+P = P + 4
+t4 = P - 4
+t1 = t4 + 3
+t2 = P + 3
+stack[t2] = t1
+t1 = t4 + 2
+t2 = P + 2
+stack[t2] = t1
+t1 = t4 + 1
+t2 = P + 1
+stack[t2] = t1
+t1 = t4 + 0
+t2 = P + 0
+stack[t2] = t1
+call ___f___16
+P = P - 4
+L62:
 C = C + 1
-stack[C] = 30
+stack[C] = 28
 call malloc
 t4 = stack[C]
 C = C - 1
 C = C + 1
 stack[C] = t4
-heap[t4] = 29
+heap[t4] = 27
 t2 = t4 + 1
-heap[t2] = 10
-t2 = t4 + 2
 heap[t2] = 73
-t2 = t4 + 3
+t2 = t4 + 2
 heap[t2] = 102
-t2 = t4 + 4
+t2 = t4 + 3
 heap[t2] = 83
+t2 = t4 + 4
+heap[t2] = 116
 t2 = t4 + 5
-heap[t2] = 116
-t2 = t4 + 6
 heap[t2] = 109
-t2 = t4 + 7
+t2 = t4 + 6
 heap[t2] = 116
+t2 = t4 + 7
+heap[t2] = 32
 t2 = t4 + 8
-heap[t2] = 32
+heap[t2] = 115
 t2 = t4 + 9
-heap[t2] = 115
-t2 = t4 + 10
 heap[t2] = 111
-t2 = t4 + 11
+t2 = t4 + 10
 heap[t2] = 108
-t2 = t4 + 12
+t2 = t4 + 11
 heap[t2] = 118
-t2 = t4 + 13
+t2 = t4 + 12
 heap[t2] = 101
-t2 = t4 + 14
+t2 = t4 + 13
 heap[t2] = 100
-t2 = t4 + 15
+t2 = t4 + 14
 heap[t2] = 32
-t2 = t4 + 16
+t2 = t4 + 15
 heap[t2] = 115
-t2 = t4 + 17
+t2 = t4 + 16
 heap[t2] = 117
+t2 = t4 + 17
+heap[t2] = 99
 t2 = t4 + 18
 heap[t2] = 99
 t2 = t4 + 19
-heap[t2] = 99
-t2 = t4 + 20
 heap[t2] = 101
+t2 = t4 + 20
+heap[t2] = 115
 t2 = t4 + 21
 heap[t2] = 115
 t2 = t4 + 22
-heap[t2] = 115
-t2 = t4 + 23
 heap[t2] = 102
-t2 = t4 + 24
+t2 = t4 + 23
 heap[t2] = 117
+t2 = t4 + 24
+heap[t2] = 108
 t2 = t4 + 25
 heap[t2] = 108
 t2 = t4 + 26
-heap[t2] = 108
-t2 = t4 + 27
 heap[t2] = 121
-t2 = t4 + 28
+t2 = t4 + 27
 heap[t2] = 33
-t2 = t4 + 29
-heap[t2] = 10
 call build_string
 C = C + 1
 stack[C] = 0
 call get_field
 call print_string
-L44:
+print('%c',10)
+L53:
 }

@@ -856,6 +856,7 @@ const Code_Generator = {
                 let paramL = node.children[1];
                 target = this.classes[target];
                 if(target==undefined)throw new semantic_exception(target+' is NOT a class.',node);
+                if(target.abstract)throw new semantic_exception(target+" is abstract. Cannot be instantiated.");
                 if(value_as_signature){
                     this.evaluation_stack.push(target.name);
                     return;
@@ -2089,9 +2090,7 @@ const Code_Generator = {
                 }catch (e) {
                     console.log(e);
                 }
-                //Alright, before returning I must push the this reference we used:
-                this.get_stored_value(this.get_index('this')); //Alright, the reference is now pushed to the top of the cache.
-                //That's all!!
+                if(compiling_constructor)this.get_stored_value(this.get_index('this')); //Alright, the constructor reference is now pushed to the top of the cache.
                 this.set_label(this.endLabel);
                 Printing.print_function();
                 this.stack.pop();
@@ -2632,11 +2631,13 @@ const Code_Generator = {
         this.assign(this.t1,0);//We need to know how many params we've valuated.
         let WhileStart = this.generate_label();
         let WhileEnd = this.generate_label();
+        const AUX_POINTER = 'aux_pointer';
+        this.operate('H','5','+',AUX_POINTER); //Aux pointer points to a free part in the heap.
         this.set_label(WhileStart);
         this.pureIf(this.t1,paramCount,'>=',WhileEnd);
         this.pop_cache(this.t2); //param value;
-        this.operate('H','1','+','H');
-        this.set_heap('H',this.t2);
+        this.operate(AUX_POINTER,'1','+',AUX_POINTER);
+        this.set_heap(AUX_POINTER,this.t2); //We push to the aux stack.
         this.operate(this.t1,'1','+',this.t1);
         this.goto(WhileStart);
         this.set_label(WhileEnd);
@@ -2645,12 +2646,13 @@ const Code_Generator = {
         //Alright, now let's put all params back in the cache:
         let wS = this.generate_label();
         let wE = this.generate_label();
-        this.set_label(wS);
         this.assign(this.t1,0);
+        this.set_label(wS);
         this.pureIf(this.t1,paramCount,'>=',wE);
-        this.get_heap(this.t2,'H'); //We get the first value
-        this.operate('H','1','-','H');//We decrease H
+        this.get_heap(this.t2,AUX_POINTER); //t2 = We get the first value
+        this.operate(AUX_POINTER,'1','-',AUX_POINTER);//We decrease H
         this.push_cache(this.t2); //We push it back to the cache.
+        this.operate(this.t1,'1','+',this.t1);
         this.goto(wS);
         this.set_label(wE);
         this.push_cache(this.t3); //We finally push the this reference at the top.
