@@ -898,6 +898,10 @@ const Code_Generator = {
             case 'new':
             {
                 let target = node.children[0].text;
+                if(value_as_signature){
+                    this.evaluation_stack.push(target);
+                    return;
+                }
                 let paramL = node.children[1];
                 target = this.classes[target];
                 if(target==undefined)throw new semantic_exception(target+' is NOT a class.',node);
@@ -928,6 +932,10 @@ const Code_Generator = {
                 let true_type = node.children[0].text;
                 let indexL = node.children[node.children.length-1];
                 let array_type = new type(true_type,indexL.children.length);
+                if(value_as_signature){
+                    this.evaluation_stack.push(array_type.signature);
+                    return;
+                }
                 if(!(array_type.signature in this.types)){
                     this.types[array_type.signature] = array_type;
                 }
@@ -953,6 +961,71 @@ const Code_Generator = {
                 this.push_cache(indexL.children.length);
                 this.push_cache(this.SymbolTable[this.peek(this.scope)].size); //We must send the current size of the scope.
                 this.call('compile_array');
+            }
+                return;
+            case 'inlineArrayDef':
+            {
+                //Alright defining arrays in line is actually easy and the most optimal!
+                //Is definitively better than declaring the array and letting the program initialize.
+                //Alright, so first of all: Allocate space in memory for the elements:
+                if(value_as_signature){
+                    this.compile_signature(node);
+                    let array_hint = this.evaluation_stack.pop();
+                    if(array_hint=='')throw new semantic_exception('Cannot send inline empty Arrays as parameters.',node);
+                    array_hint = array_hint.split('-');
+                    let type = array_hint[0];
+                    this.evaluation_stack.push(type);
+                    return;
+                }
+                let size = node.children.length;
+                const address = 'address';
+                this.assign(address,size+1);
+                this.push_cache(address);
+                this.call('malloc');
+                this.pop_cache(address);
+                this.push_cache(address); //We push it back.
+                this.set_heap(address,size); //We set the size of the array.
+                const i = 'i';
+                this.assign(i,1);
+                let types  = [];
+                this.push_cache(i); //We push i.
+                //Next, we process the values:
+                let j = 0;
+                while(j<node.children.length){
+                    let child = node.children[j];
+                    this.value_expression(child);
+                    let element_type = this.evaluation_stack.pop();
+                    let prev_type = types.pop();
+                    if(prev_type==undefined){
+                        types.push(element_type);
+                    }
+                    else {
+                        if(this.compatible_types(prev_type,element_type,child,false)){
+                            types.push(element_type);
+                        }else throw new semantic_exception('All types within an array must match. Previous type: '+prev_type.signature+
+                            " current type: "+element_type.signature+" Failed to compile array.",child);
+                    }
+                    //Right now the top of the cache is the value, below is i and below of that there's address.
+                    this.pop_cache(this.t); //t = current value.
+                    this.pop_cache(this.t1); //t1 = i
+                    this.pop_cache(address); //t2 = address.
+                    this.operate(address,this.t1,'+',this.t3); //relative address of the cell.
+                    this.set_heap(this.t3,this.t); //We set the value.
+                    this.operate(this.t1,'1','+',this.t1); //i++
+                    this.push_cache(address);
+                    this.push_cache(this.t1); //We push them back for the next iteration.
+                    j++;
+                }
+                let top_type = types.pop();
+                if(top_type==undefined)throw new semantic_exception('Cannot declare an empty array.');
+                let top_types = top_type.signature.split('|');
+                top_type = top_types[top_types.length-1]; //We get the last one.
+                let array_type = new type(top_type,top_types.length);
+                if(!(array_type.signature in this.types)){this.types[array_type.signature]=array_type;}
+                this.evaluation_stack.push(array_type);
+                this.pop_cache(i); //i value.
+                this.pop_cache(address);
+                this.push_cache(address); //Alright that's all!
             }
                 return;
             case 'downcast':
@@ -1084,10 +1157,7 @@ const Code_Generator = {
             case 'varChain':
                 this.resolve_varChain(node,value_as_signature,false,value_as_ref);
                 return;
-            case 'inlineArrayDef':
-                throw new semantic_exception('inlineArrayDef not implemented yet',node);
-            case 'arrayInitialization':
-                throw new semantic_exception('arrayInitialization not implemented yet',node);
+
             default:
             {
                 node.children.forEach(child=>{
@@ -1350,6 +1420,7 @@ const Code_Generator = {
         this.pureIf('isNegative','0','==',lEnd2);
         this.operate('i','1','-','i');
         this.operate('str','i','+',this.t1);
+        this.operate('j','1','+','j');
         this.set_heap(this.t1,'-'.charCodeAt(0));
         this.set_label(lEnd2);
         this.operate('i',1,'-','i');
