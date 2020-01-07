@@ -741,7 +741,7 @@ const Compiler = {
              let func_index = this.compile_function(func_signature,node); //We indicate it is a function.
              this.SymbolTable[func_index].type = _class; //Constructors return an instance of class they're making reference to.
              this.SymbolTable[func_index].visibility = visibility;
-             this.finish_function_compilation(func_index,node);
+             this.finish_function_compilation(func_index,node,_class);
          }
             return;
          default:console.log('Unimplemented or unimportant node: '+node.name);

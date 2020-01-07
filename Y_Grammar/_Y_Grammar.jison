@@ -63,8 +63,8 @@
 ([a-zA-Z]|_)+[0-9]*						{return 'ID';}
 [ \r\t]+                                {/*WHITESPACE IGNORE*/}
 \n                                      {/*NEW LINE. IGNORE*/}
-[0-9]+									{return 'INTEGER';}
 [0-9]+("."[0-9]*)?						{return 'DOUBLE';}
+[0-9]+									{return 'INTEGER';}
 <<EOF>>                 			     return 'EOF';
 .										{_pre_compiling_lexical_exception();}
 
