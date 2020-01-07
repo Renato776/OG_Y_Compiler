@@ -435,6 +435,8 @@ const Code_Generator = {
         this.string_to_int();
         this.int_to_string();
         this.compareArrays();
+        this.send_this_reference_to_top();
+        this.inherit();
         //region sum strings compilation
         this.___sum_strings___(); //___sum_strings___ is different from sum_strings,
         // the difference is this one takes 2 char arrays as parameters
@@ -860,15 +862,17 @@ const Code_Generator = {
                 }
                 this.compile_signature(paramL);
                 let signature = this.evaluation_stack.pop();
-                signature = '*.'+target.name+signature;
-                let target_func = this.get_func_index(signature);
+                let target_func = this.get_static_field(signature,target.name,node,true,true);
                 if(target_func==-1){
                     if(signature.includes('-'))throw new semantic_exception('NO suitable constructor found for: '+signature,node);
                     //Since it takes no parameters, we can use default constructor:
                     this.call(this.native_constructor_prefix+target.name);
                     this.evaluation_stack.push(this.types[target.name]); //We push the type and return.
                 }else{
-                    this.perform_static_function_call(target_func,paramL);
+                    //Alright, before calling the constructor we must call default constructor.
+                    this.call(this.native_constructor_prefix+target.name); //Alright, a new instance has now
+                    //been created. You can edit this instance trough the custom constructor.
+                    this.perform_static_function_call(target_func,paramL,true);
                 }
             }
                 return;
@@ -1437,6 +1441,13 @@ const Code_Generator = {
             }
             this.perform_static_function_call(target_func,paramL);
     },
+    is_within_constructor:function(){
+      let indeed = false;
+        this.stack.forEach(s=>{
+           if(s=='constructor')indeed = true;
+        });
+        return indeed;
+    },
     is_native_function(node,value_as_signature=false) {
         /*
         * This function performs the evaluation of a native function and
@@ -1446,6 +1457,35 @@ const Code_Generator = {
         let func_name = node.children[0].text;
         let paramL = node.children[node.children.length-1];
         switch (func_name){
+            case "super":{
+                if(!this.is_within_constructor())throw new semantic_exception('super keyword can only be used within a constructor.',node);
+                if(value_as_signature)
+                {
+                    this.evaluation_stack.push('void');
+                    return
+                }
+                let target = Compiler.get_class(node);
+                target = this.classes[target]; //We get the actual class of the caller.
+                target = target.parent; //We get the name of the immediate parent of the caller.
+                target = this.classes[target]; //We get the actual parent class.
+                this.compile_signature(paramL);
+                let signature = this.evaluation_stack.pop();
+                let target_func = this.get_static_field(signature,target.name,node,true,true);
+                if(target_func==-1){
+                    if(signature.includes('-'))throw new semantic_exception('NO suitable constructor found for super keyword: '+signature,node);
+                    this.call(this.native_constructor_prefix+target.name);
+                }else{
+                    //Alright, before calling the parent constructor we must call default constructor.
+                    this.call(this.native_constructor_prefix+target.name); //Alright, a new instance of parent has now
+                    //been created. You can edit this instance trough the custom constructor.
+                    this.perform_static_function_call(target_func,paramL,true);
+                }
+                //Alright the parent's instance has now been created. We must start the transferring process.
+                //0)Push the this reference we're using:
+                this.get_stored_value(this.get_index('this'));
+                this.call('___inherit___');
+                this.evaluation_stack.push(this.types['void']); //We push the type and return.
+            }return;
             case "println":
                 if(value_as_signature){
                     this.evaluation_stack.push('void');
@@ -1591,31 +1631,8 @@ const Code_Generator = {
         this.value_parameters(paramL);
         //Alright, all params have been valuated backwards, however the this reference is at the bottom of all params.
         //We'll use the heap as a secondary stack for the purpose of taking out the this reference from the bottom and pushing it to the top.
-        this.assign(this.t1,0);//We need to know how many params we've valuated.
-        let WhileStart = this.generate_label();
-        let WhileEnd = this.generate_label();
-        this.set_label(WhileStart);
-        this.pureIf(this.t1,paramL.children.length,'>=',WhileEnd);
-        this.pop_cache(this.t2); //param value;
-        this.operate('H','1','+','H');
-        this.set_heap('H',this.t2);
-        this.operate(this.t1,'1','+',this.t1);
-        this.goto(WhileStart);
-        this.set_label(WhileEnd);
-        //Alright all params have been removed and are now in the heap.
-        this.pop_cache(this.t3); //t3 = this reference.
-        //Alright, now let's put all params back in the cache:
-        let wS = this.generate_label();
-        let wE = this.generate_label();
-        this.set_label(wS);
-        this.assign(this.t1,0);
-        this.pureIf(this.t1,paramL.children.length,'>=',wE);
-        this.get_heap(this.t2,'H'); //We get the first value
-        this.operate('H','1','-','H');//We decrease H
-        this.push_cache(this.t2); //We push it back to the cache.
-        this.goto(wS);
-        this.set_label(wE);
-        this.push_cache(this.t3); //We finally push the this reference at the top.
+        this.push_cache(paramL.children.length);
+        this.call('send_this_reference_to_top');
         this.stack.push("function_call");
         this.perform_jump(this.peek(this.scope),target_func,this.SymbolTable[this.peek(this.scope)].size);
         this.stack.pop(); //That's all!
@@ -1638,10 +1655,12 @@ const Code_Generator = {
             throw new semantic_exception('field: '+field.name+" has private visibility.",token);
         }
     },
-    get_static_field(signature,owner,token,method=false){
+    get_static_field(signature,owner,token,method=false,constructor=false){
         //static fields are stored in the SymbolTable therefore this method returns the index of the field in the symbol table.
         //The owner here is the name of the class that is requesting the field.
-        let static_method = owner+".static."+signature; //If you're requesting a method it must have this signature
+        let static_method;
+        if(constructor) static_method = "*."+owner+signature;
+        else static_method = owner+".static."+signature; //If you're requesting a method it must have this signature
         let static_field = owner+"."+signature;//If you're requesting a field it must have this signature;
         let caller = Compiler.get_class(token);
         caller = this.classes[caller];
@@ -1755,11 +1774,15 @@ const Code_Generator = {
         }
         return false;
     },
-    perform_static_function_call(target_func, paramL) {
+    perform_static_function_call(target_func, paramL,constructorCall = false) {
         if(this.is_within_expression())
             if(this.SymbolTable[target_func].type=='void')
                 throw new semantic_exception('Cannot call a void function from within an expression. Function: '+signature,paramL);
         this.value_parameters(paramL);
+        if(constructorCall){
+         this.push_cache(paramL.children.length);
+         this.call('send_this_reference_to_top');
+        }
         this.stack.push("function_call");
         this.perform_jump(this.peek(this.scope),target_func,this.SymbolTable[this.peek(this.scope)].size);
         this.stack.pop();
@@ -2021,6 +2044,22 @@ const Code_Generator = {
             case 'post-decrement':
                 this.auto_update(node,false);
                 return;
+
+            case 'constructor':
+                /**
+                //Alright, time to define custom constructors!
+                //A custom constructor will NOT actually build a new param from scratch.
+                //It will simply update the default one a native constructor returns.
+                //At the end it return the this reference it used.
+                //The super constructor might be kind of an issue, as it'd
+                //imply building an ancestor object and then transferring its properties
+                //to the caller. Doable but I'll implement later.
+                 Is basically the same as a normal method, except it returns the this reference
+                 at the end & I must not check whether it has or not valid return stmts.
+                 The usage of return stmts might produce unexpected behaviour, however,
+                 they aren't completely forbidden. I leave correct usage
+                 of returns to the user.
+                **/
             case 'method':
             case 'staticMethod':
                 /*
@@ -2034,12 +2073,14 @@ const Code_Generator = {
                 * Also, provide context that you're compiling a method.
                 * */
             {
+                let compiling_constructor = node.name=='constructor';
                 this.current_function = this.scope_tracker.pop();
                 this.scope.push(this.current_function);
-                this.stack.push('functionCompilation');
+                if(compiling_constructor) this.stack.push('constructor');
+                    else this.stack.push('functionCompilation');
                 this.endLabel = this.generate_label();
                 let block = node.children[node.children.length-1];
-                this.holds_valid_return_stmt(block);
+                if(!compiling_constructor)this.holds_valid_return_stmt(block);
                 Printing.add_function(this.SymbolTable[this.current_function].true_func_signature);
                 try{
                     block.children.forEach(child=>{
@@ -2048,6 +2089,9 @@ const Code_Generator = {
                 }catch (e) {
                     console.log(e);
                 }
+                //Alright, before returning I must push the this reference we used:
+                this.get_stored_value(this.get_index('this')); //Alright, the reference is now pushed to the top of the cache.
+                //That's all!!
                 this.set_label(this.endLabel);
                 Printing.print_function();
                 this.stack.pop();
@@ -2276,7 +2320,7 @@ const Code_Generator = {
             case 'field':
             case 'staticField':
             case 'abstractMethod':
-                console.log('irrelevant node for 3D code generation: '+node.name);
+                //console.log('irrelevant node for 3D code generation: '+node.name); ignored.
                 return;
             default: throw new semantic_exception('Unimplemented node: '+node.name,node);
         }
@@ -2457,6 +2501,42 @@ const Code_Generator = {
         this.stack.pop();
         this.scope.pop();
     },
+    inherit:function(){
+      Printing.add_function('___inherit___');
+      /*
+      * This method takes 2 parameters: a child obj reference (at the top)
+      * And a parent reference (below)
+      * It will overwrite any inherited field from Obj by the value of the field in parent.
+      * This is a void method.
+      * */
+        const child = 'child';
+        const parent = 'parent';
+        const child_id = 'child_id';
+        this.pop_cache(child);
+        this.pop_cache(parent);
+        this.get_heap(child_id,child); //We get the child's id
+        const _classes = sorting.mergeSort(Object.values(this.classes),compare_classes_by_level);
+        _classes.forEach(_class=>{
+            if(_class.ancestors.length>1){
+                let lNext = this.generate_label();
+                this.pureIf(child_id,_class.id,'!=',lNext);
+                //Alright, let's start the transferring process:
+                Object.values(_class.fields).forEach(field=>{
+                   if(field.inherited){ //We only perform the transfer if it is inherited.
+                       //Alright, let's get the field from the parent:
+                       this.push_cache(parent); //We push the parent
+                       this.push_cache(field.id); //We push the field we'd like to get (we're sure both the og and this one have the same id)
+                       this.call('get_field');
+                       this.pop_cache(this.t1); //t1 = parent's value in the field.
+                       this.operate(child,field.offset,'+',this.t); //We get the address of the field.
+                       this.set_heap(this.t,this.t1); //We set the value.
+                   }
+                });
+                this.set_label(lNext);
+            }
+        });
+      Printing.print_function();
+    },
     close_all_scopes:function(code){
         /*
         * code indicates if we're closing all scopes for a function return or if we're closing them
@@ -2532,5 +2612,48 @@ const Code_Generator = {
                 row.name.includes('case'))return i;
             i--;
         }
+    },
+    send_this_reference_to_top() {
+        /*
+        * This method must be called after valuating all params and before a constructor/method call.
+        * Is a full 3D method which takes the number of valuated params as a parameter and reverses the stack.
+        * TLDR: stack must look like:
+        * paramL.length
+        * param1
+        * param2
+        * param3
+        * ...
+        * paramN
+        * this
+        * */
+        Printing.add_function('send_this_reference_to_top');
+        const paramCount = 'paramCount';
+        this.pop_cache(paramCount); //We get the number of params
+        this.assign(this.t1,0);//We need to know how many params we've valuated.
+        let WhileStart = this.generate_label();
+        let WhileEnd = this.generate_label();
+        this.set_label(WhileStart);
+        this.pureIf(this.t1,paramCount,'>=',WhileEnd);
+        this.pop_cache(this.t2); //param value;
+        this.operate('H','1','+','H');
+        this.set_heap('H',this.t2);
+        this.operate(this.t1,'1','+',this.t1);
+        this.goto(WhileStart);
+        this.set_label(WhileEnd);
+        //Alright all params have been removed and are now in the heap.
+        this.pop_cache(this.t3); //t3 = this reference.
+        //Alright, now let's put all params back in the cache:
+        let wS = this.generate_label();
+        let wE = this.generate_label();
+        this.set_label(wS);
+        this.assign(this.t1,0);
+        this.pureIf(this.t1,paramCount,'>=',wE);
+        this.get_heap(this.t2,'H'); //We get the first value
+        this.operate('H','1','-','H');//We decrease H
+        this.push_cache(this.t2); //We push it back to the cache.
+        this.goto(wS);
+        this.set_label(wE);
+        this.push_cache(this.t3); //We finally push the this reference at the top.
+        Printing.print_function();
     }
 };
