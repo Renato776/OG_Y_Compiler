@@ -29,7 +29,8 @@ const Code_Generator = {
     foundReturn:false,
     varChainIndex:0,
     endLabel:null,
-    _display:[],
+    break_display:[],
+    continue_display:[],
     current_function:-1,
     native_constructor_prefix: '___build___',
     C:'C',
@@ -170,7 +171,8 @@ const Code_Generator = {
         Printing.initialize();
         this.root = Compiler.root;
         this.classes = Compiler.classes;
-        this.types = Compiler.types;
+        this.types = Compiler.types; //We get the all the types
+        this.types["null"] = new type('null'); //We register NULL as a valid type.
         this.SymbolTable = Compiler.SymbolTable;
         this.scope_tracker = Compiler.scope_tracker.reverse(); //All methods & constructors will be visited in the same order they were while compiling.
         this.sub_block_tracker = Compiler.sub_block_tracker.reverse(); //All sub-blocks will be visited the same order they were while compiling.
@@ -264,6 +266,7 @@ const Code_Generator = {
             Object.values(c.fields).forEach(f=>{
                 //Alright, first things first. push default value, either 0 or customized.
                 if(f.category=='field'){
+                    this.push_cache(instance_address);//We save it before proceeding.
                     if(f.instructions!=null){
                         try{
                             this.value_expression(f.instructions);   //We evaluate the default value.
@@ -286,6 +289,7 @@ const Code_Generator = {
                         //endregion
                     }else this.push_cache(0); //If no instructions were provided we push 0.
                     this.pop_cache(this.t1);//t1 = value to set.
+                    this.pop_cache(instance_address); //We retrieve the instance address.
                     this.operate(instance_address,f.offset,'+',this.t); //t holds the address of the field.
                     this.set_heap(this.t,this.t1); //We set the value.
                 }
@@ -430,6 +434,7 @@ const Code_Generator = {
         this.malloc();
         this.string_to_int();
         this.int_to_string();
+        this.compareArrays();
         //region sum strings compilation
         this.___sum_strings___(); //___sum_strings___ is different from sum_strings,
         // the difference is this one takes 2 char arrays as parameters
@@ -453,6 +458,24 @@ const Code_Generator = {
         //Now the right char array is at the top & below the left char array.
         this.call('___sum_strings___');
         this.call('build_string');
+        Printing.print_function();
+
+        Printing.add_function('compare_strings');
+        //This function compares 2 String instances.
+        this.get_char_array();
+        this.pop_cache(this.t1);
+        this.pop_cache(this.t2);
+        this.push_cache(this.t1);
+        this.push_cache(this.t2);
+        //top cache: left string
+        //below right char array
+        this.get_char_array();
+        this.pop_cache(this.t1); //left char array
+        this.pop_cache(this.t2); //right char array
+        this.push_cache(this.t1);
+        this.push_cache(this.t2);
+        //Alright both Char arrays have been extracted, we can compare them now.
+        this.call('___compareArrays___'); //The answer will be boolean & will already be pushed in the cache.
         Printing.print_function();
         //endregion
         //region printString compilation
@@ -746,7 +769,7 @@ const Code_Generator = {
                             this.perform_static_function_call(target_func,paramL);
                             return;
                         }
-                        if(this.is_native_method(owner.signature,signature,resolve_as_signature))return;
+                        if(this.is_native_method(owner.signature,signature,resolve_as_signature,paramL))return;
                         let field = this.get_field(signature,owner.signature,node);
                         if(field==undefined)throw new semantic_exception('Undefined function: '+signature,node);
                         this.resolve_method_call(field,node,resolve_as_signature);
@@ -758,6 +781,7 @@ const Code_Generator = {
                     owner = this.types[owner];
                     if(!owner.is_class())throw new semantic_exception(owner.signature+" is NOT a class.",node);
                     this.varChainIndex++;
+                    this.evaluation_stack.push(owner);
                     this.resolve_varChain(node.children[1],resolve_as_signature,true,resolve_as_ref);
                 }
                     return;
@@ -1051,8 +1075,11 @@ const Code_Generator = {
                     case "<":
                     case ">=":
                     case "<=":
-                        if(!(left_arg.is_primitive()&&right_arg.is_primitive()))throw new semantic_exception("Cannot perform: "+node.name+" " +
-                            "On types: "+left_arg.signature+" and "+right_arg.signature,node);
+                        if(!((left_arg.is_class()||right_arg.is_class())&&
+                            (left_arg.signature==NULL||right_arg.signature==NULL))){
+                            if(!(left_arg.is_primitive()&&right_arg.is_primitive()))throw new semantic_exception("Cannot perform: "+node.name+" " +
+                                "On types: "+left_arg.signature+" and "+right_arg.signature,node);
+                        }
                         if(value_as_signature){
                             this.evaluation_stack.push(BOOLEAN);
                             return;
@@ -1114,6 +1141,50 @@ const Code_Generator = {
             i++;
         }
     }, //Compiles a charArray NOT an actual String instance.
+    compareArrays:function(){
+        Printing.add_function('___compareArrays___');
+        /*
+         * This method takes 2 arrays from the cache and compares each cell.
+         * If they're the same on every char returns true. Otherwise returns false.
+         * */
+        const right_string_address = 'right_string_address';
+        const left_string_address = 'left_string_address';
+        this.pop_cache(right_string_address); //we get the right array
+        this.pop_cache(left_string_address); //we get the left array
+        const right_size = 'right_size';
+        const left_size = 'left_size';
+        this.get_heap(right_size,right_string_address);
+        this.get_heap(left_size,left_string_address);
+        let lV = this.generate_label();
+        let lEnd = this.generate_label();
+        this.pureIf(left_size,right_size,'==',lV);
+        this.push_cache(0); //They're different.
+        this.goto(lEnd);
+        this.set_label(lV);
+        const i = 'i';
+        this.assign(i,1);
+        let WhileStart = this.generate_label();
+        let WhileEnd = this.generate_label();
+        let lFine = this.generate_label();
+        this.set_label(WhileStart);
+        this.pureIf(i,right_size,'>',WhileEnd);
+        const right_char_address = 'right_char_address';
+        const left_char_address = 'left_char_address';
+        this.operate(right_string_address,i,'+',right_char_address);
+        this.operate(left_string_address,i,'+',left_char_address);
+        this.get_heap(right_char_address,right_char_address); //We get the actual char
+        this.get_heap(left_char_address,left_char_address); //We get the actual char
+        this.pureIf(left_char_address,right_char_address,'==',lFine);
+        this.push_cache(0);
+        this.goto(lEnd);
+        this.set_label(lFine);
+        this.operate(i,'1','+',i);
+        this.goto(WhileStart);
+        this.set_label(WhileEnd);
+        this.push_cache(1); //Is fine
+        this.set_label(lEnd);
+        Printing.print_function();
+    },
     string_to_int:function () {
         Printing.add_function('string_to_int');
         this.assign('answer',0);
@@ -1249,7 +1320,7 @@ const Code_Generator = {
         }
         this.evaluation_stack.push(_type);
         if(resolve_as_ref){
-            this.resolve_final_initialization(local_index);
+            this.resolve_final_initialization(local_index,node);
             if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_ref(local_index);
             else this.get_stored_ref(local_index);
         }else{
@@ -1304,13 +1375,14 @@ const Code_Generator = {
             }
             this.evaluation_stack.push(this.types[this.SymbolTable[target].type]);
             if(resolve_as_ref){
-                this.resolve_final_initialization(target);
+                this.resolve_final_initialization(target,node);
                 if(this.SymbolTable[target].inherited)this.get_stored_inherited_ref(target);
                 else this.get_stored_ref(target);
             }else{
                 if(this.SymbolTable[target].inherited)this.get_stored_inherited_value(target); //a) Is a normal by Value variable.
                 else this.get_stored_value(target); //b) Is an Inherited variable of a by Value variable.
             }
+            return;
         }
         let field = this.get_field(name,owner.signature,node);
         if(field==undefined)throw new semantic_exception("Undefined field: "+node.text+" In class:"+owner.signature,node);
@@ -1409,6 +1481,7 @@ const Code_Generator = {
         this.cast_to_string(type,paramList);
         this.get_char_array(); //We remove the String ref from the top and push a charArray ref instead.
         this.call('print_string'); //We print the String
+        this.printChar('\n'.charCodeAt(0));
     },
     cast_to_double:function(og){
         this.pop_cache(this.t1); //t1 = value to downcast.
@@ -1607,15 +1680,35 @@ const Code_Generator = {
       });
       return !not_within_expression;
     },
-    is_native_method(owner, signature,resolve_as_signature) {
+    is_native_method(owner, signature,resolve_as_signature,paramL) {
         //Alright, here I can overwrite and implement by hand any native method!
         //This is different from is_native_function, because that one is used for native static functions.
         //This is used for native normal methods (like equals, length, toLowerCase, etc)
         //Object native methods:
+        owner = this.types[owner];
         if(signature.startsWith('equals')){ //The highest precedence amongst all native functions. Doesn't matter who's the caller or what are the params.
             if(resolve_as_signature){
                 this.evaluation_stack.push(BOOLEAN);
                 return true;
+            }
+            //Alright, first things first, value he parameters:
+            if(paramL.children.length!=1)throw new semantic_exception('Incorrect amount of parameters for equals function. Expected: 1. Got: '+paramL.length,paramL);
+            this.value_expression(paramL.children[0]);
+            let param_type = this.evaluation_stack.pop();
+            if(this.compatible_types(this.types['String'],owner,paramL,false)&&
+            this.compatible_types(this.types['String'],param_type,paramL,false)){
+                //Both are Strings and both are already pushed to the top of the cache.
+                //let's just compare them:
+                this.call('compare_strings');
+            }else{
+                if(!(owner.is_class()&&param_type.is_class()))throw new semantic_exception('equals method can only be called with 1 Object as parameter.' +
+                    'Expected: Object, got: '+param_type.signature,paramL);
+                //Alright, just made sure both are objects, in that case, just compare their IDs.
+                //Or should I compare their instance address?
+                this.pop_cache(this.t1); //Obj1
+                this.pop_cache(this.t2); //Obj2
+                this.operate(this.t1,this.t2,'==',this.t3);
+                this.push_cache(this.t3); //We'll just compare their instance address.
             }
             this.evaluation_stack.push(this.types[BOOLEAN]);
             return true;
@@ -1631,20 +1724,24 @@ const Code_Generator = {
             this.evaluation_stack.push(this.types['String']);
             return true;
         }
-        if(owner=='String'){
+        if(this.compatible_types(this.types['String'],owner,paramL,false)){
             //String compatible
             switch (signature) {
                 case 'length':if(resolve_as_signature){
                     this.evaluation_stack.push(INTEGER);
                     return true;
                 }
+                    this.get_char_array();
+                    this.pop_cache(this.t1); //t1 holds a CharArray address.
+                    this.get_heap(this.t1,this.t1); //We get the size of the array.
+                    this.push_cache(this.t1); //We push the size.
                     this.evaluation_stack.push(this.types[INTEGER]);
                     return true;
                 case 'toLowerCase':
                     if(resolve_as_signature){
-                    this.evaluation_stack.push('String');
-                    return true;
-                }
+                        this.evaluation_stack.push('String');
+                        return true;
+                    }
                     this.evaluation_stack.push(this.types['String']);
                     return true;
                 case 'toUpperCase':
@@ -1892,7 +1989,7 @@ const Code_Generator = {
                     //Default value was provided.
                     this.value_expression(node.children[node.children.length-1]); //We value the expression.
                     let value_type = this.evaluation_stack.pop();
-                    this.compatible_types(recipient_type,value_type);
+                    this.compatible_types(recipient_type,value_type,node);
                 }else this.push_cache(0); //Otherwise we push default value: 0
                 let target_var = this.get_index(name);
                 //This variable must exist. However, just in case:
@@ -1969,9 +2066,29 @@ const Code_Generator = {
                     expected_type = this.types[expected_type];
                     this.compatible_types(expected_type,_return_type,node);
                 }
-                //Alright, a value (or none) has been loaded to the cache already. next step is going to end of function:
+                //Alright, a value (or none) has been loaded to the cache already.
+                // Next step is closing all scopes we opened:
+                this.close_all_scopes(0);
+                // Alright, we can jump to the end now:
                 this.goto(this.endLabel);
                 return;
+            case 'break':
+            {
+                let target_jump = this.break_display.pop();
+                if(target_jump==undefined)throw new semantic_exception('Invalid break instruction. Can only use break instructions within' +
+                    ' loops or switch blocks.',this.current_function);
+                //Alright, is a valid break, however we must close all scopes before jumping:
+                this.close_all_scopes(1);
+                this.goto(target_jump);
+            }
+                return;
+            case 'continue':{
+                let target_jump = this.continue_display.pop();
+                if(target_jump==undefined)throw new semantic_exception('Invalid continue instruction. Can only use continue instructions within ' +
+                    'loop blocks.',this.current_function);
+                this.close_all_scopes(2);
+                this.goto(target_jump);
+            }return;
             case 'ifStmt':
             {
                 let endLabel = this.generate_label();
@@ -1981,6 +2098,59 @@ const Code_Generator = {
                 });
                 this.set_label(endLabel);
             }return;
+            case 'switch':
+            {
+                //Alright, first things first: Value expression and verify it is primitive or String:
+                this.value_expression(node.children[0]); //The first child is the expression.
+                let switch_type = this.peek(this.evaluation_stack);
+                if(!this.compatible_types(this.types['String'],switch_type,node,false)){
+                    //If it isn't an String it can still be a primitive:
+                    if(!switch_type.is_primitive())throw new semantic_exception('Invalid switch argument. Expected: String|primitive. Got: '+switch_type.signature);
+                }
+                let endLabel = this.generate_label();
+                let caseL = node.children[node.children.length-1]; //The las node is the caseL
+                this.break_display.push(endLabel); //We push the end label (if it ends up using a continue statement, the end label will be used instead.)
+                caseL.children.forEach(child=>{
+                   this.evaluate_node(child);
+                });
+                this.set_label(endLabel);
+                this.pop_cache(this.t); //We dispose of the switched value.
+                this.evaluation_stack.pop(); //We dispose of the Switch type.
+                this.break_display.pop(); //we dispose of the end label.
+            }
+                return;
+            case 'case':
+            {
+                //First of all, let's value the expression:
+                let exp = node.children[0];
+                let block = node.children[node.children.length-1];
+                this.value_expression(exp);
+                let case_type = this.evaluation_stack.pop();
+                let switch_type = this.peek(this.evaluation_stack);
+                this.compatible_types(switch_type,case_type,node); //We verify they're both compatible.
+                let nextL = this.generate_label();
+                //Alright, case value is at the top of the cache & switch value below.
+                //Next thing we gotta do is check if the switch is an String:
+                if(this.compatible_types(this.types['String'],switch_type,node,false)){ //compare Strings
+                    this.pop_cache(this.t1); //exp value
+                    this.pop_cache(this.t2); //switch value.
+                    this.push_cache(this.t2); //We push the switch back as we'll use it again for next iteration.
+                    this.push_cache(this.t2); //We push it a second time to use it as comparison parameter.
+                    this.push_cache(this.t1); //We push it again to compare.
+                    this.call('compare_strings'); //Alright, compare them.
+                    this.pop_cache(this.t); //t = true/false.
+                    this.pureIf(this.t,'0','==',nextL); //If they aren't the same go to next.
+                    this.perform_sub_block_jump(block);  //Alright, perform the jump!
+                }else{ //Compare normal primitive values.
+                    this.pop_cache(this.t1);
+                    this.pop_cache(this.t2);
+                    this.push_cache(this.t2); //We push it back.
+                    this.pureIf(this.t1,this.t2,'!=',nextL);
+                    this.perform_sub_block_jump(block);
+                }
+                this.set_label(nextL);
+            }
+                return;
             case 'if':
             {
                 let endLabel = this.peek(this.stack); //we get the end label
@@ -1992,7 +2162,8 @@ const Code_Generator = {
                 this.pop_cache(this.t1); //t1 = true/false
                 this.pureIf(this.t1,'0','==',lNext);
                 //Alright, if it is true the jump must be performed and we must change scopes.
-                this.perform_sub_block_jump(node);
+                let block = node.children[node.children.length-1];
+                this.perform_sub_block_jump(block);
                 this.goto(endLabel);
                 this.set_label(lNext);
             };
@@ -2000,7 +2171,107 @@ const Code_Generator = {
             case 'else':
             case 'default':
             {
-                this.perform_sub_block_jump(node); //else is always unconditional.
+                let block = node.children[node.children.length-1];
+                this.perform_sub_block_jump(block); //else is always unconditional.
+            }return;
+            case 'while':
+            {
+                let exp = node.children[0];
+                let block = node.children[node.children.length-1];
+                let WhileStart = this.generate_label();
+                let continueLabel = this.generate_label();
+                let WhileFinal = this.generate_label();
+                this.break_display.push(WhileFinal);
+                this.continue_display.push(continueLabel);
+                this.set_label(WhileStart); //First of all let's indicate where the While starts.
+                //Now, let's value the expresion:
+                this.value_expression(exp);
+                let while_type = this.evaluation_stack.pop();
+                if(!while_type.is_boolean())throw new semantic_exception('invalid while parameter. Expected: boolean ' +
+                    'got: '+while_type.signature);
+                this.pop_cache(this.t1); //t1 = true/false
+                this.pureIf(this.t1,'0','==',WhileFinal);
+                this.perform_sub_block_jump(block,continueLabel);
+                this.goto(WhileStart);
+                this.set_label(WhileFinal);
+                this.break_display.pop();
+                this.continue_display.pop();
+            }
+                return;
+            case 'do':
+            {
+                let exp = node.children[0];
+                let block = node.children[node.children.length-1];
+                let WhileStart = this.generate_label();
+                let continueLabel = this.generate_label();
+                let WhileFinal = this.generate_label();
+                this.break_display.push(WhileFinal);
+                this.continue_display.push(continueLabel);
+                this.set_label(WhileStart); //First of all let's indicate where the While starts.
+                //Now, let's value the expresion:
+                this.perform_sub_block_jump(block,continueLabel); //We execute the first time.
+                this.value_expression(exp);
+                let while_type = this.evaluation_stack.pop();
+                if(!while_type.is_boolean())throw new semantic_exception('invalid do-while parameter. Expected: boolean ' +
+                    'got: '+while_type.signature);
+                this.pop_cache(this.t1); //t1 = true/false
+                this.pureIf(this.t1,'1','==',WhileStart); //We repeat if it is true.
+                this.set_label(WhileFinal);
+                this.break_display.pop();
+                this.continue_display.pop();
+            }return;
+            case 'for':
+            {
+                /*
+                * Alright, fors are a bit more complex than regular loops.
+                * The approach we took here is to build a custom while-for-loop at runtime and have it bounded
+                * by the rules of regular loops.
+                * */
+                //0) Grab the info from the for node:
+                let new_var = node.children[0];
+                let exp = node.children[1];
+                let update = node.children[2];
+                let block = node.children[3];
+                let target_block = this.scope_tracker.pop();
+                let whileStart = this.generate_label();
+                let whileEnd = this.generate_label();
+                let lF = this.generate_label();
+                this.continue_display.push(whileStart);
+                this.break_display.push(whileEnd);
+                //Alright, first things first: perform the jump:
+                this.perform_jump(this.peek(this.scope),target_block,this.SymbolTable[this.peek(this.scope)].size);
+                this.set_label(whileEnd);
+                this.scope.push(target_block);
+                this.stack.push('for');
+                Printing.add_function(this.SymbolTable[target_block].true_func_signature);
+                //Alright, we'll put special instructions by hand here:
+                //First of all, let's perform the variable initialization:
+                this.evaluate_node(new_var);
+                //Alright, next step is setting the WhileStart:
+                this.set_label(whileStart);
+                //Next step is to value the expr:
+                this.value_expression(exp);
+                let for_type = this.evaluation_stack.pop();
+                if(!for_type.is_boolean())throw new semantic_exception('Invalid for argument. Expected: boolean,' +
+                    ' got: '+for_type.signature);
+                this.pop_cache(this.t1); //t1 = true/false
+                this.pureIf(this.t1,'0','==',lF);
+                //Alright, we can now output the rest of the block instructions here!
+                block.children.forEach(child=>{
+                    try{
+                        this.evaluate_node(child);
+                    }catch (e) {
+                        if(!("semantic" in e))console.log(e);
+                    }
+                });
+                this.evaluate_node(update); //We update the for variable.
+                this.goto(whileStart);
+                this.set_label(lF);
+                Printing.print_function();
+                this.break_display.pop();
+                this.continue_display.pop();
+                this.stack.pop();
+                this.scope.pop();
             }return;
             case 'field':
             case 'staticField':
@@ -2022,10 +2293,10 @@ const Code_Generator = {
         });
         //that's all!
     },
-    resolve_final_initialization(local_index) {
+    resolve_final_initialization(local_index,node) {
         let final_row = this.SymbolTable[local_index];
         if(final_row.final&&final_row.initialized){
-            throw new semantic_exception(final_row.name+" is final and has already been initialized.")
+            throw new semantic_exception(final_row.name+" is final and has already been initialized.",node)
         }else if(final_row.final){
             //Alright, is final and hasn't been initialized. this means
             //We're finally initializing it! We can change its state and keep on going normally.
@@ -2038,22 +2309,23 @@ const Code_Generator = {
         if(_recipient_class==undefined||_value_class==undefined)throw new _compiling_exception('FATAL ERROR! Attempted to compare 2 non-classes.');
         return ((_value_class.cc % _recipient_class.cc == 0 && _value_class.cc != _recipient_class.cc) || _recipient_class.id==_value_class.id);
     },
-    compatible_types(recipient_type, value_type,node) {
+    compatible_types(recipient_type, value_type,node,throwException = true) {
             /*
             * This method does nothing if both types are compatible
             * or throws exception otherwise.
             * */
             if(recipient_type.is_primitive()&&value_type.is_primitive()){
-                if(recipient_type.is_number()&&value_type.is_number())return; //We're fine.
-                if(recipient_type.is_boolean()&&value_type.is_boolean())return; //We're fine.
+                if(recipient_type.is_number()&&value_type.is_number())return true; //We're fine.
+                if(recipient_type.is_boolean()&&value_type.is_boolean())return true; //We're fine.
             }else if(recipient_type.is_class()){//I'm expecting value to be null or a compatible class.
-                if(value_type.signature==NULL)return; //null is accepted regardless.
-                if(this.compatible_classes(recipient_type.signature,value_type.signature))return; //we're fine. Both classes are compatible.
+                if(value_type.signature==NULL)return true; //null is accepted regardless.
+                if(this.compatible_classes(recipient_type.signature,value_type.signature))return true; //we're fine. Both classes are compatible.
             }else if(recipient_type.is_array()&&value_type.is_array()){
-                if(recipient_type.signature==value_type.signature)return; //Arrays are already abstracted for them to show only the important info in their signatures.
+                if(recipient_type.signature==value_type.signature)return true; //Arrays are already abstracted for them to show only the important info in their signatures.
             }
-           throw new semantic_exception('Incompatible types. Cannot assign: '+value_type.signature+' to: '+recipient_type.signature,node);
-    },
+           if(throwException)throw new semantic_exception('Incompatible types. Cannot assign: '+value_type.signature+' to: '+recipient_type.signature,node);
+           else return false;
+       },
     holds_valid_return_stmt(block) {
         if(this.SymbolTable[this.current_function].type=='void')return; //If it is a void function it doesn't matter whether it has a return stmt or not.
         this.returnTracker = [0];//we reset the return tracker to default.
@@ -2167,12 +2439,11 @@ const Code_Generator = {
         });
         return valid;
     },
-    perform_sub_block_jump(node) {
+    perform_sub_block_jump(block,continueLabel=null) {
         let target_block = this.sub_block_tracker.pop();
         this.perform_jump(this.peek(this.scope),target_block,this.SymbolTable[this.peek(this.scope)].size);
         this.scope.push(target_block);
-        this.stack.push(node.name);
-        let block = node.children[node.children.length-1]; //last child of node is always a sub_block.
+        this.stack.push(block.name);
         Printing.add_function(this.SymbolTable[target_block].true_func_signature);
         try{
             block.children.forEach(child=>{
@@ -2181,8 +2452,85 @@ const Code_Generator = {
         }catch (e) {
             if(!("semantic" in e))console.log(e);
         }
+        if(continueLabel!=null)this.set_label(continueLabel);
         Printing.print_function();
         this.stack.pop();
         this.scope.pop();
+    },
+    close_all_scopes:function(code){
+        /*
+        * code indicates if we're closing all scopes for a function return or if we're closing them
+        * for a break jump or a continue jump.
+        * This method will close all scopes from index -> scope.length -2
+        * By closing scopes I mean returning P to its original position.
+        * */
+        let index;
+        switch (code) {
+            case 0: //return jump
+            {
+                index = this.get_scope_index_of_current_function();
+                if(index==(this.scope.length-1))return; //If the index is at the top, there's no need to close anything.
+                let i = index;
+                while(i<this.scope.length-1){
+                    this.operate('P',this.SymbolTable[this.scope[i]].size,'-','P');
+                    i++;
+                }
+                return;
+            }case 1: //break jump
+            {
+                index = this.get_scope_index_of_top_break();
+                index = index -1; //We go to the parent scope of the block.
+                let i = index;
+                while(i<this.scope.length-1){
+                    this.operate('P',this.SymbolTable[this.scope[i]].size,'-','P');
+                    i++;
+                }
+            }return;
+            case 2: //continue jump
+            {
+                index = this.get_scope_index_of_top_continue();
+                if(index==(this.scope.length-1))return; //If the index is at the top, there's no need to close anything.
+                let i = index;
+                while(i<this.scope.length-1){
+                    this.operate('P',this.SymbolTable[this.scope[i]].size,'-','P');
+                    i++;
+                }
+            }return;
+            default: throw new semantic_exception('FATAL ERROR. unrecognized close scope code.',this.scope[index]);
+        }
+    },
+    get_scope_index_of_current_function:function () {
+        let i = this.scope.length-1;
+        while(i>=0){
+            if(this.scope[i]==this.current_function)return i;
+            i--;
+        }
+    },
+    get_scope_index_of_top_continue:function () {
+        /*
+        * This method returns the index for the index of the first loop found staring at the top of the scope stack.
+        * */
+        let i = this.scope.length-1;
+        while(i>=0){
+            let row = this.SymbolTable[this.scope[i]]; //We get the row first.
+            if(row.name.includes('while')||
+                row.name.includes('for')||
+                row.name.includes('do'))return i;
+            i--;
+        }
+    },
+    get_scope_index_of_top_break:function () {
+        /*
+        * This method returns the index for the index of the first loop found staring at the top of the scope stack.
+        * */
+        let i = this.scope.length-1;
+        while(i>=0){
+            let row = this.SymbolTable[this.scope[i]]; //We get the row first.
+            if(row.name.includes('while')||
+                row.name.includes('for')||
+                row.name.includes('do')||
+                row.name.includes('case'))return i;
+            i--;
+        }
     }
 };
