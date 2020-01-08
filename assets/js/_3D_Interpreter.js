@@ -23,6 +23,7 @@ let INSTRUCTION_MAX = 50000*3; //To prevent infinite loops any program will NOT 
 let FORCE_ENTRY_PROC = null;
 let FORCE_ENTRY_POINT = '0';
 let selected_class = null;
+let SHOW_ALL_DETAILS = true;
 //endregion
 //region Constants for 3D.
 const classes = {};
@@ -165,11 +166,18 @@ function find__Next(key, obj) {
 }
 function getReturnAddress(name) {
     let i = -1;
-    INSTRUCTION_STACK.forEach((f,j)=>{
-        if(f.func==name)i =j;
-    });
+    let j = INSTRUCTION_STACK.length-1;
+    while(j>=0){
+        let f = INSTRUCTION_STACK[j];
+            if(f.func==name){
+                i = j;
+                break;
+            }
+        j--;
+    }
     if(i == -1) return 'end';
     let a =  INSTRUCTION_STACK[i].returnTo;
+    CALLING_STACK = CALLING_STACK.slice(0,i);
     INSTRUCTION_STACK = INSTRUCTION_STACK.slice(0, i);
     return a;
 }
@@ -225,6 +233,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     HEAP = [];
     STACK = [];
     INSTRUCTION_STACK = [];
+    CALLING_STACK = [];
     token_tracker = [];
     set_IP(0);
     IC = 0;
@@ -285,33 +294,41 @@ const _3D_Token = function (text, row, col, negative = false) {
   this.col = col;
   this.negative = negative;
 };
-const _3D_Exception = function (token,message,show_position = false,type = 'Runtime',optimizing=false) {
-   let $row = $("<tr>");
+const _3D_error_entry = function(token,message,show_position,type){
+    let $row = $("<tr>");
     let $type = $("<td>");
     let $line = $("<td>");
     let $col = $("<td>");
     let $details = $("<td>");
     let $class = $("<td>");
     let $file = $("<td>");
-    $file.html('N/A');
-    $type.html(type);
     if(show_position){
         $line.html(token.row);
         $col.html(token.col);
         $class.html('N/A');
+        $file.html('N/A');
+        $type.html(type);
+        $details.html(message);
+        $row.append($type);
+        $row.append($details);
+        $row.append($line);
+        $row.append($col);
+        $row.append($class);
+        $row.append($file);
     }else{
-        $line.html('N/A');
-        $col.html('N/A');
-        $class.html('N/A');
+        $details.html(message);
+        $row.append($details);
     }
-    $details.html(message);
-    $row.append($type);
-    $row.append($details);
-    $row.append($line);
-    $row.append($col);
-    $row.append($class);
-    $row.append($file);
+    return $row;
+};
+const _3D_Exception = function (token,message,show_position = false,type = 'Runtime',optimizing=false) {
+   let $row = new _3D_error_entry(token,message,show_position,type);
     $("#ErrorTableBody").append($row);
+    if(typeof type == "boolean"){
+        if(type){
+            print_stack_trace();
+        }
+    }
     if(optimizing){
         $("#Optimized_code").html('An error has occurred during optimization. See error tab for details.');
     }else log("An error occurred during code execution. See error tab for details.");
@@ -379,12 +396,62 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
     case "exit":
         this.exitCode = param1.text; //exit code
         this.signature = "exit ("+this.exitCode+" )";
+        break;
+    case "write":
+        this.signature = "write (0)";
+        break;
     default:
         break;
     }
 };
 //endregion
+//region Utility functions to print Stack trace & also accessing the Structures by hand.
+function print_stack_trace(){
+    //at this point the CALLING STACK has no use any longer since an exception has been thrown.
+    //We can reverse it and print it.
+    CALLING_STACK = CALLING_STACK.reverse();
+    let $header = new _3D_error_entry(null,'Stack Trace:',false);
+    $("#ErrorTableBody").append($header);
+    CALLING_STACK.forEach(call=>{
+        //call is an String holding the name of the procedure we just called.
+        //the first thing we should do is to get the name of it from the Compiler's Symbol Table.
+        let name = get_name_of_proc(call);
+        if(name==null)name = call;
+        let $row = new _3D_error_entry(null,name,false);
+        $("#ErrorTableBody").append($row);
+    });
+}
+function pop_cache(){
+    let a = temporals['C'];
+    let b = STACK[a];
+    a = a - 1;
+    temporals['C'] = a;
+    return b;
+}
+function push_cache(value) {
+    let a = Number(temporals['C']);
+    a++;
+    temporals['C'] = a;
+    STACK[a] = value;
+}
+function get_heap(address){
+    address = Number(address);
+    let value = HEAP[address];
+    if(value==undefined)value = HEAP[address.toString()];
+    return value;
+}
+function get_name_of_proc(proc){
+    //This method takes a true_func_signature as parameter and searches all the SymbolTable for it.
+    //returns null if not found.
+    for(let i = 0; i<Compiler.SymbolTable.length; i++){
+        let st = Compiler.SymbolTable[i];
+        if(st.true_func_signature==proc)return st.name;
+    }
+    return null;
+}
+//endregion
 //region Play Instruction
+let CALLING_STACK = [];
 function play_instruction(instruction,debug = false) {
     IC++;
     if(IC>=INSTRUCTION_MAX&&CAP_INSTRUCTION_EXECUTION){
@@ -526,6 +593,7 @@ function play_instruction(instruction,debug = false) {
             return true; //We perform the jump.
         case "call": //How to perform jumps:
             INSTRUCTION_STACK.push({func:instruction.target,returnTo:find__Next(IP,instructions)}); //We push the instruction where we're supposed to return.
+            CALLING_STACK.push(instruction.target); //we push the name of the call.
             destiny = instruction.target; //We get the name of the target.
             destiny = labels[destiny]; //We get the actual index of the instruction to execute.
             if(destiny==undefined){
@@ -606,25 +674,36 @@ function play_instruction(instruction,debug = false) {
             print(a,b); //We print the value
             increase_IP();//We go to next instruction.
             return true;
+        case 'write':
+            console.log('yet to be implemented...');
+            break;
         case 'exit':
             switch (instruction.exitCode) {
                 case '0': throw new _3D_Exception(instruction.token,'Null pointer exception.',true);
                 case '1': {
-                    let badIndex = temporals['C']; //We get the value of c at that moment.
-                    badIndex = STACK[badIndex]; //We get the index out of bounds.
-                    let forLength = Number(temporals['C']) - 1;
-                    forLength = STACK[forLength];
-                    throw new _3D_Exception(instruction.token,'Array Index out of bounds. for index: '+badIndex+' in length: '+forLength,true);
+                    let badIndex = pop_cache();
+                    let forLength = pop_cache();
+                    throw new _3D_Exception(instruction.token,'Array Index out of bounds. for index: '+badIndex+' in length: '+forLength,true,true);
                 }
                 case '2': {
-                    let type1 = temporals['C']; //We get the value of c at that moment.
-                    type1 = STACK[type1]; //We get the code.
-                    let type2 = Number(temporals['C']) - 1;
-                    type2 = STACK[type2];
-                    throw new _3D_Exception(instruction.token,'Cannot downcast class: ID ='+type1+" to class: ID = "+type2,true);
+                    let instanceAttemptingToGetCasted = Number(pop_cache()); //just in case.
+                    let castTarget = Number(pop_cache()); // just in case
+                    if(castTarget==-1){
+                        throw new _3D_Exception(instruction.token,'Cannot cast number :'+instanceAttemptingToGetCasted+" to CharCode.",true,true);
+                    }
+                    let a;
+                    Object.values(Code_Generator.classes).forEach(c=>{
+                       if(Number(c.id)==instanceAttemptingToGetCasted)a = c.name;
+                    });
+                    let b;
+                    Object.values(Code_Generator.classes).forEach(c=>{
+                        if(Number(c.id)==castTarget)b = c.name;
+                    });
+                    throw new _3D_Exception(instruction.token,'Cannot downcast class '+a+" to class "+b,true,true);
                 }
                 case '3':
-                    throw new _3D_Exception(instruction.token,'Error casting String to int. Invalid String.',true);
+                    let invalidString = pop_cache();
+                    throw new _3D_Exception(instruction.token,'Error casting String to int. Invalid String.',true,true);
                 default: throw new _3D_Exception(instruction.token,'FATAL ERROR at runtime. Finished execution with code: 4',true);
             }
         default:

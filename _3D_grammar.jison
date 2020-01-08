@@ -49,6 +49,7 @@
 "call"				return 'CALL';
 "print"             return 'PRINT';
 "exit"				return 'EXIT';
+"write_file"		return 'WRITE_FILE'
 ","                 return 'COMMA';
 
 /* Espacios en blanco */
@@ -131,6 +132,7 @@ stmt : varDecl {$$ = $1;}
         | setStack {$$ = $1;}
         | getStack {$$ = $1;}
         | exit {$$ = $1;}
+        | write {$$ = $1;}
         ;
 
 varDecl: VAR ID ASIGNACION value {
@@ -232,6 +234,11 @@ ret : RIGHT_BRACE {
 
 print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {
        $$ = new Instruction("print",$5,$3,$5); //Print(name,token,format,value)
+       }
+       ;
+       
+write : WRITE_FILE LEFT_PAREN value RIGHT_PAREN {
+       $$ = new Instruction("write",$3,$3); //Print(name,token,format,value)
        }
        ;
 exit : EXIT LEFT_PAREN value RIGHT_PAREN {

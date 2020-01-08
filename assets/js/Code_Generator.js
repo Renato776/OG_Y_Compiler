@@ -3362,6 +3362,6 @@ const Code_Generator = {
         Printing.print_function();
     },
     write_file() {
-        Printing.print_in_context('write_file()');
+        Printing.print_in_context('write_file(0)');
     }
 };
