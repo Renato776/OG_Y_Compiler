@@ -9,6 +9,7 @@
 
 %%
 
+
 ";".*              {/*ignore*/}
 "proc"           return 'PROC';
 "{"           return 'LEFT_BRACE';
@@ -38,15 +39,16 @@
 "var"				return 'VAR';
 "call"				return 'CALL';
 "print"             return 'PRINT';
-"exit"                 return 'EXIT';
+"exit"				return 'EXIT';
+"write_file"		return 'WRITE_FILE'
 ","                 return 'COMMA';
 
 /* Espacios en blanco */
 [ \r\t]+            {}
 \n                  {}
 [0-9]+(".0")\b    return 'BETA_NUM';
-[0-9]+\b        return 'NUM';
 [0-9]+("."[0-9]+)\b    return 'FLOAT';
+[0-9]+\b        return 'NUM';
 ("L")[0-9]+             return 'LABEL';
 ([a-zA-Z]|_)+[0-9]*\b    return 'ID';
 ("'%d'")|("'%e'")|("'%c'") return 'FORMAT';
@@ -124,6 +126,7 @@ stmt : varDecl {$$ = $1;}
         | setStack {$$ = $1;}
         | getStack {$$ = $1;}
         | exit {$$ = $1;}
+        | write {$$ = $1;}
         ;
 
 varDecl: VAR ID ASIGNACION value {
@@ -211,6 +214,10 @@ print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {
        ;
 exit : EXIT LEFT_PAREN value RIGHT_PAREN {
        $$ = new Instruction("exit",$3,$3.text); //Exit(code)
+       }
+       ;
+exit : WRITE LEFT_PAREN value RIGHT_PAREN {
+       $$ = new Instruction("write",$3,$3.text); //Write instruction (code)
        }
        ;
 
