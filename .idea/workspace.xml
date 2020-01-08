@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Aux_Grammar/_Aux_Grammar.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Y_Grammar/_Y_Grammar.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Aux_Grammar/_Aux_Grammar.jison" beforeDir="false" afterPath="$PROJECT_DIR$/Aux_Grammar/_Aux_Grammar.jison" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Y_Grammar/_Y_Grammar.jison" beforeDir="false" afterPath="$PROJECT_DIR$/Y_Grammar/_Y_Grammar.jison" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/Code_Generator.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/Code_Generator.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/Y_Compiler.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/Y_Compiler.js" afterDir="false" />
     </list>
@@ -113,7 +109,7 @@
       <workItem from="1578319391360" duration="43661000" />
       <workItem from="1578381607193" duration="12373000" />
       <workItem from="1578414052742" duration="26416000" />
-      <workItem from="1578466441526" duration="26370000" />
+      <workItem from="1578466441526" duration="28461000" />
     </task>
     <servers />
   </component>
