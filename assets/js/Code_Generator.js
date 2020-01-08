@@ -172,7 +172,8 @@ const Code_Generator = {
         this.root = Compiler.root;
         this.classes = Compiler.classes;
         this.types = Compiler.types; //We get the all the types
-        this.types["null"] = new type('null'); //We register NULL as a valid type.
+        this.types[NULL] = new type(NULL); //We register NULL as a valid type.
+        if(!(CHAR_ARRAY in this.types))this.types[CHAR_ARRAY] = new type(CHAR,1); //just in case.
         this.SymbolTable = Compiler.SymbolTable;
         this.scope_tracker = Compiler.scope_tracker.reverse(); //All methods & constructors will be visited in the same order they were while compiling.
         this.sub_block_tracker = Compiler.sub_block_tracker.reverse(); //All sub-blocks will be visited the same order they were while compiling.
@@ -426,7 +427,7 @@ const Code_Generator = {
         this.pureIf(this.t1,this.t3,'==',lFine);
         this.push_cache(this.t1);
         this.push_cache(this.t3);
-        this.exit(2);
+        this.exit(2); //downcast exception
         this.set_label(lFine);
         this.push_cache(this.t2);
         Printing.print_function();
@@ -440,8 +441,12 @@ const Code_Generator = {
         this.basic_array_allocation();
         this.get_array_cell_ref();
         this.get_array_value();
+        this.to_String();
         this.copy_array();
         this.inherit();
+        this.to_case();
+        this.is_upper_case();
+        this.is_lower_case();
         //region sum strings compilation
         this.___sum_strings___(); //___sum_strings___ is different from sum_strings,
         // the difference is this one takes 2 char arrays as parameters
@@ -761,6 +766,9 @@ const Code_Generator = {
                     } //Alright all indexes are integers and have been valuated. The next thing is pushing the base array address:
                     this.resolve_varChain(node.children[0],resolve_as_signature,static_access,resolve_as_ref); //We resolve the ID as usual.
                     let array_type = this.evaluation_stack.pop();
+                    if(resolve_as_signature){
+                        array_type = this.types[array_type]; //if we're valuating as signature array_type is a mere String.
+                    }
                     if(!array_type.is_array())throw new semantic_exception("Cannot resolve Array Access in type: "+array_type.signature,node);
                     //Remember to check at runtime if array is null.
                     let target_dimension = indexL.children.length;
@@ -769,6 +777,10 @@ const Code_Generator = {
                     let target_type = array_type.array.get_type_in_dimension(target_dimension);
                     if(!(target_type in this.types)){
                         this.types[target_type] = new type(array_type.array.type,target_dimension);
+                    }
+                    if(resolve_as_signature){
+                        this.evaluation_stack.push(target_type);
+                        return;
                     }
                     this.evaluation_stack.push(this.types[target_type]); //We push the target type.
                     if(resolve_as_ref){
@@ -799,6 +811,9 @@ const Code_Generator = {
                         this.varChainIndex++;
                     }else {
                         let owner = this.evaluation_stack.pop(); //The value returned by the previous member.
+                        if(resolve_as_signature){
+                            owner = this.types[owner]; //if solving as signature the previous member returned an String. NOT a type.
+                        }
                         if(!owner.is_class())throw new semantic_exception(owner.signature+' is NOT a class.',node);
                         let function_name = node.children[0].text;
                         let paramL = node.children[node.children.length-1];
@@ -1516,6 +1531,25 @@ const Code_Generator = {
         * */
         let name = node.text;
         let owner = this.evaluation_stack.pop(); //We get the type from the past member of the chain
+        if(owner.is_array()){
+            //Alright, the previous member resolved as Array. This means there's only one option:
+            //.length has been called.
+            if(name!='length')throw new semantic_exception('Cannot read property: '+length+" of: Array");
+            if(resolve_as_signature){
+                this.evaluation_stack.push(INTEGER);
+                return;
+            }
+            this.pop_cache(this.t); //t = array_address.
+            if(resolve_as_ref){
+               this.push_cache(1); //where to use
+               this.push_cache(this.t); //ref
+            }else{
+                this.get_heap(this.t,this.t); //We get the length of the array.
+                this.push_cache(this.t); //We push the answer.
+            }
+            this.evaluation_stack.push(this.types[INTEGER]); //that's all!
+            return;
+        }
         if(!owner.is_class())throw new semantic_exception("Cannot resolve field access in type: "+owner.signature,node);
         if(static_access){
             //Alright, let's search for it in the SymbolTable:
@@ -1657,6 +1691,39 @@ const Code_Generator = {
                     let type = this.evaluation_stack.pop();
                     this.cast_to_string(type,node);
                     this.evaluation_stack.push(this.types['String']);
+                }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
+                return true;
+            case "toInt":
+            case "toDouble":
+                if(value_as_signature){
+                    if(node.name=='toDouble') this.evaluation_stack.push(DOUBLE);
+                    else this.evaluation_stack.push(INTEGER);
+                    return true;
+                }
+                if(paramL.children.length==1){//Only one parameter allowed.
+                    this.value_expression(paramL.children[0]); //We value the param.
+                    let type = this.evaluation_stack.pop();
+                    this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
+                    this.cast_to_integer(type); //We cast it to Integer.
+                    if(node.name=='toDouble') this.evaluation_stack.push(this.types[DOUBLE]);
+                        else this.evaluation_stack.push(this.types[INTEGER]);
+                }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
+                return true;
+            case "toChar":
+                if(value_as_signature){
+                    this.evaluation_stack.push(CHAR);
+                    return true;
+                }
+                if(paramL.children.length==1){//Only one parameter allowed.
+                    this.value_expression(paramL.children[0]); //We value the param.
+                    let type = this.evaluation_stack.pop();
+                    this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
+                    this.get_char_array();
+                    this.pop_cache(this.t);//t = char array address.
+                    this.operate(this.t,'1','+',this.t); //we increase t by one to get the first char in the array.
+                    this.get_heap(this.t,this.t); //we get the first char.
+                    this.push_cache(this.t); //we push the char.
+                    this.evaluation_stack.push(this.types[CHAR]);
                 }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
                 return true;
             default:
@@ -1881,7 +1948,20 @@ const Code_Generator = {
             }
             this.evaluation_stack.push(this.types[BOOLEAN]);
             return true;
-        }else if(signature=='getClass'){//Second highest precedence, doesn't matter who's the caller.
+        }
+        else if(signature = 'toString'){
+         //Returns null or an String saying it is an Object with certain ID.
+         //Please, try to avoid its usage at all costs. As it performs a series of String summing that is NOT optimal at all.
+            if(resolve_as_signature){
+                this.evaluation_stack.push('String');
+                return true;
+            }
+            this.call('___toString___');
+            this.call('build_string');
+            this.evaluation_stack.push(this.types['String']);
+            return true;
+        }
+        else if(signature=='getClass'){//Second highest precedence, doesn't matter who's the caller.
             if(resolve_as_signature){
                 this.evaluation_stack.push('String');
                 return true;
@@ -1896,6 +1976,14 @@ const Code_Generator = {
         if(this.compatible_types(this.types['String'],owner,paramL,false)){
             //String compatible
             switch (signature) {
+                case 'toCharArray':
+                    if(resolve_as_signature){
+                    this.evaluation_stack.push(CHAR_ARRAY);
+                    return true;
+                    }
+                    this.get_char_array();
+                    this.evaluation_stack.push(this.types[CHAR_ARRAY]);
+                    return true;
                 case 'length':if(resolve_as_signature){
                     this.evaluation_stack.push(INTEGER);
                     return true;
@@ -1911,6 +1999,9 @@ const Code_Generator = {
                         this.evaluation_stack.push('String');
                         return true;
                     }
+                    this.get_char_array(); //we get the char array from the String instance.
+                    this.call('to_lower_case');
+                    this.call('build_string');
                     this.evaluation_stack.push(this.types['String']);
                     return true;
                 case 'toUpperCase':
@@ -1918,11 +2009,89 @@ const Code_Generator = {
                         this.evaluation_stack.push('String');
                         return true;
                     }
+                    this.get_char_array();
+                    this.call('to_upper_case');
+                    this.call('build_string');
                     this.evaluation_stack.push(this.types['String']);
                     return true;
             }
         }
         return false;
+    },
+    is_lower_case:function(){
+      Printing.add_function('is_lower_case') ;
+      this.pop_cache(this.t); //t = char.
+        const lF = this.generate_label();
+        const lEnd = this.generate_label();
+        this.pureIf(this.t,96,'<=',lF);
+        this.pureIf(this.t,123,'>=',lF);
+        this.assign(this.t3,1);
+        this.goto(lEnd);
+        this.set_label(lF);
+        this.assign(this.t3,0);
+        this.set_label(lEnd);
+        this.push_cache(this.t3);
+        Printing.print_function();
+    },is_upper_case:function(){
+        Printing.add_function('is_upper_case') ;
+        this.pop_cache(this.t); //t = char.
+        const lF = this.generate_label();
+        const lEnd = this.generate_label();
+        this.pureIf(this.t,64,'<=',lF);
+        this.pureIf(this.t,91,'>=',lF);
+        this.assign(this.t3,1);
+        this.goto(lEnd);
+        this.set_label(lF);
+        this.assign(this.t3,0);
+        this.set_label(lEnd);
+        this.push_cache(this.t3);
+        Printing.print_function();
+    },
+    to_case:function(){
+      /*
+      * This method prints both toUpperCase & toLowerCase methods.
+      * */
+      let counter = 0;
+      while(counter<2){
+          if(counter==0)Printing.add_function('to_lower_case');
+          else Printing.add_function('to_upper_case');
+          const charArray = 'charArray';
+          const og_charArray = 'ogCharArray';
+          const char = 'char';
+          const size = 'size';
+          const i = 'i';
+          const whileStart = this.generate_label();
+          const whileEnd = this.generate_label();
+          this.pop_cache(og_charArray);
+          this.get_heap(size,og_charArray);
+          this.operate(size,1,'+','ag');
+          this.push_cache('ag');
+          this.call('malloc');
+          this.pop_cache(charArray); //charArray -> New String
+          this.set_heap(charArray,size); //We set the size of the new String.
+          this.assign(i,1);
+          this.set_label(whileStart);
+          this.pureIf(i,size,'>',whileEnd);
+          this.operate(og_charArray,i,'+',char);
+          this.get_heap(char,char); //we get the actual char.
+          this.push_cache(char); //We push the char
+          if(counter==0)this.call('is_upper_case');
+          else this.call('is_lower_case');
+          this.pop_cache(this.t); //t = true/false.
+          const lNext = this.generate_label();
+          this.pureIf(this.t,'0','==',lNext);
+          if(counter==0)this.operate(char,'32','+',char);//we update the char
+          else this.operate(char,'32','-',char);
+          this.set_label(lNext);
+          this.operate(charArray,i,'+',this.t3); //we get the char's address in the new String.
+          this.set_heap(this.t3,char); //We replace the char.
+          this.operate(i,1,'+',i);
+          this.goto(whileStart);
+          this.set_label(whileEnd);
+          this.push_cache(charArray); //we push the modified array.
+          Printing.print_function();
+          counter++;
+      }
     },
     perform_static_function_call(target_func, paramL,constructorCall = false) {
         if(this.is_within_expression())
@@ -1940,6 +2109,14 @@ const Code_Generator = {
     },
     cast_to_integer(og) {
         this.pop_cache(this.t1); //t1 = value to downcast.
+        if(og.is_class()){
+            //We'll assume that if it is a class it is an String compatible class.
+            //We must check first before calling this method.
+            this.push_cache(this.t1); //We push back the String instance address.
+            this.get_char_array(); //We get the char Array.
+            this.call('string_to_int'); //that's all!
+            return;
+        }
         switch (og.signature) {
             case INTEGER:
             case BOOLEAN:
@@ -1971,7 +2148,9 @@ const Code_Generator = {
                 this.push_cache(this.t1);
                 this.goto(lEnd);
                 this.set_label(lWrong);
-                this.exit(2);
+                this.push_cache(-1);
+                this.push_cache(this.t1);
+                this.exit(2); //cant cast numeric to char.
                 this.set_label(lEnd);
                 return;
             default:
@@ -3069,7 +3248,9 @@ const Code_Generator = {
         this.pureIf(r,r2,'>',lWrong);
         this.goto(lFine2);
         this.set_label(lWrong);
-        this.exit(1);
+        this.push_cache(r);
+        this.push_cache(r2);
+        this.exit(1); //Array index out of bounds
         this.set_label(lFine2);
         this.operate(r1,r,'+',r); //R holds the cell's address.
         this.push_cache(1); //We push one to indicate we'll use the reference in the heap.
@@ -3124,7 +3305,9 @@ const Code_Generator = {
         this.pureIf(r1,r2,'>',lWrong);
         this.goto(lFine2);
         this.set_label(lWrong);
-        this.exit(1);
+        this.push_cache(r1);
+        this.push_cache(r2);
+        this.exit(1); //Array index out of bounds.
         this.set_label(lFine2);
         this.operate(r,r1,'+',r); //The cell's address we're looking for;
         this.get_heap(r2,r);//R2 = The value stored in this cell.
@@ -3132,6 +3315,31 @@ const Code_Generator = {
         this.pop_aux(r); //R = dim -1
         this.goto(whileStart);
         this.set_label(whileEnd);
+        Printing.print_function();
+    },
+    to_String:function () {
+        //This functions prints a 3D function that returns an String saying null
+        // Or Object. Class: num Address: num
+        Printing.add_function('___toString___');
+        this.pop_cache(this.t); //t = object instance.
+        const lEnd = this.generate_label();
+        const notNullL = this.generate_label();
+        this.pureIf(this.t,'0','!=',notNullL);
+        this.compile_string('null');
+        this.goto(lEnd);
+        this.set_label(notNullL);
+        //Alright is an Instance of an Object. let's start building the String representation:
+        this.compile_string('Object. Class:');
+        this.get_heap(this.t1,this.t); //we get the ID of the Object.
+        this.push_cache(this.t1); //we push the numeric value.
+        this.call('int_to_string'); //We get its charArray representation.
+        this.call('___sum_strings___'); //We concatenate them.
+        this.compile_string(' Address: ');
+        this.call('___sum_strings___'); //we concatenate.
+        this.push_cache(this.t);
+        this.call('int_to_string'); //we push the String representation of the address.
+        this.call('___sum_strings___'); //We concatenate.
+        this.set_label(lEnd);
         Printing.print_function();
     }
 };
