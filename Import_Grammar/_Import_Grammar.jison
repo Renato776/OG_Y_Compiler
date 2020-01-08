@@ -26,7 +26,7 @@
 %% /* Definición de la gramática */
 
 //inicio : IMPORT EOF {};
-s_0 : anything_list EOF {$("#Unified_Source").html($1);};
+s_0 : anything_list EOF {Import_Solver.Unified_Source = $1;};
 
 anything_list : anything_list ANYTHING { $$ = $1+$2; }
 					| anything_list IMPORT_SENTENCE { $$ = Import_Solver.compile_import_sentence($1, $2); }

@@ -30,7 +30,7 @@
 
 %% /* Definición de la gramática */
 
-s_0 : program separator EOF {$("#Unified_Source").html($1+$2);};
+s_0 : program separator EOF {Import_Solver.Unified_Source = $1+$2; };
 
 program : program  separator CLASS_DECL separator LEFT_BRACE stmtL RIGHT_BRACE
             {$$ = $1 +$2 + pre_register_class($3,false)+$4 + $6 +"\n&&&&END\n";}

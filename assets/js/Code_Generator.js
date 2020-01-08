@@ -209,7 +209,7 @@ const Code_Generator = {
     compile_abstract_methods: function () {
         this.abstractMethods.forEach(am=>{
             const target_row = this.SymbolTable[am.index];
-            Printing.add_function(target_row.name); //Alright, time to compile the abstract method.
+            Printing.add_function(target_row.true_func_signature); //Alright, time to compile the abstract method.
             //0)First things first, push to the cache all params (which are all in the Stack atm) (don't forget to do it backwards)
             const param_amount = target_row.name.split('-').length-1 + 1; //+1 for the this reference
             let i = am.index + param_amount; //Index of the last param in the function.
@@ -758,6 +758,7 @@ const Code_Generator = {
                         if(!index_type.is_integer())throw new semantic_exception("Invalid index type. Expected: integer. Got: "+index_type.signature,indexL.children.get(i));
                         i--;
                     } //Alright all indexes are integers and have been valuated. The next thing is pushing the base array address:
+                    this.varChainIndex  = 0; //We set it to 0 since atm it only accepts IDs, Ideally it'd accept a whole varChain.
                     this.resolve_varChain(node.children[0],resolve_as_signature,static_access,resolve_as_ref); //We resolve the ID as usual.
                     let array_type = this.evaluation_stack.pop();
                     if(resolve_as_signature){
@@ -773,7 +774,7 @@ const Code_Generator = {
                         this.types[target_type] = new type(array_type.array.type,target_dimension);
                     }
                     if(resolve_as_signature){
-                        this.evaluation_stack.push(target_type);
+                        this.evaluation_stack.push(target_type.signature);
                         return;
                     }
                     this.evaluation_stack.push(this.types[target_type]); //We push the target type.
@@ -1641,7 +1642,7 @@ const Code_Generator = {
                 if(value_as_signature)
                 {
                     this.evaluation_stack.push('void');
-                    return
+                    return true;
                 }
                 let target = Compiler.get_class(node);
                 target = this.classes[target]; //We get the actual class of the caller.
@@ -1664,7 +1665,7 @@ const Code_Generator = {
                 this.get_stored_value(this.get_index('this'));
                 this.call('___inherit___');
                 this.evaluation_stack.push(this.types[VOID]); //We push the type and return.
-            }return;
+            }return true;
             case "println":
                 if(value_as_signature){
                     this.evaluation_stack.push(VOID);
@@ -1743,6 +1744,22 @@ const Code_Generator = {
                     this.evaluation_stack.push(this.types[DOUBLE]);
                 }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
             }
+                return true;
+            case "abs":
+                if(value_as_signature){
+                    this.evaluation_stack.push(INTEGER);
+                    return ;
+                }
+                if(paramL.children.length==1){//Only 1 parameters allowed.
+                    this.value_expression(paramL.children[0]); //We value the first param.
+                    let type = this.evaluation_stack.pop();
+                    if(!type.is_primitive())throw new semantic_exception('Invalid abs parameter. Expected: double|int|char. got: '+type.signature);
+                    //Alright, both numbers are currently in the cache, let's pow them:
+                    this.pop_cache(this.t3);
+                    this.get_abs(this.t3);
+                    this.push_cache(this.t3);
+                    this.evaluation_stack.push(type);
+                }else return false;
                 return true;
             case "write_file":
                 if(value_as_signature){
@@ -2228,9 +2245,9 @@ const Code_Generator = {
     },
     auto_update(node, returnValue) {
         //0) first of all, value expression as reference.
-        this.value_expression(node,false,true);
+        this.value_expression(node.children[0],false,true);
         //1) now, value it again as value:
-        this.value_expression(node);
+        this.value_expression(node.children[0]);
         let i_type = this.evaluation_stack.pop(); //the expression type
         this.evaluation_stack.pop(); //We dispose of the second one as they're obviously the same.
         if(!i_type.is_number())throw new semantic_exception('Auto increment operator can only be used with numeric variables.',node);
@@ -2486,7 +2503,7 @@ const Code_Generator = {
                 return;
             case 'break':
             {
-                let target_jump = this.break_display.pop();
+                let target_jump = this.peek(this.break_display);
                 if(target_jump==undefined)throw new semantic_exception('Invalid break instruction. Can only use break instructions within' +
                     ' loops or switch blocks.',this.current_function);
                 //Alright, is a valid break, however we must close all scopes before jumping:
@@ -2495,7 +2512,7 @@ const Code_Generator = {
             }
                 return;
             case 'continue':{
-                let target_jump = this.continue_display.pop();
+                let target_jump = this.peek(this.continue_display);
                 if(target_jump==undefined)throw new semantic_exception('Invalid continue instruction. Can only use continue instructions within ' +
                     'loop blocks.',this.current_function);
                 this.close_all_scopes(2);
@@ -2513,12 +2530,15 @@ const Code_Generator = {
             case 'switch':
             {
                 //Alright, first things first: Value expression and verify it is primitive or String:
+                Printing.print_in_context(';Begin Switch');
                 this.value_expression(node.children[0]); //The first child is the expression.
+                this.push_cache(0); //We push 0 to indicate no cases have been matched yet.
                 let switch_type = this.peek(this.evaluation_stack);
-                if(!this.compatible_types(this.types['String'],switch_type,node,false)){
-                    //If it isn't an String it can still be a primitive:
-                    if(!switch_type.is_primitive())throw new semantic_exception('Invalid switch argument. Expected: String|primitive. Got: '+switch_type.signature);
+                if(!switch_type.is_primitive()){
+                    //If it isn't primitive, it can still be an String:
+                    this.compatible_types(this.types['String'],switch_type,node);
                 }
+
                 let endLabel = this.generate_label();
                 let caseL = node.children[node.children.length-1]; //The las node is the caseL
                 this.break_display.push(endLabel); //We push the end label (if it ends up using a continue statement, the end label will be used instead.)
@@ -2526,7 +2546,8 @@ const Code_Generator = {
                    this.evaluate_node(child);
                 });
                 this.set_label(endLabel);
-                this.pop_cache(this.t); //We dispose of the switched value.
+                this.pop_cache(this.t); //We dispose of the matched case flag
+                this.pop_cache(this.t); //We dispose of the switched value
                 this.evaluation_stack.pop(); //We dispose of the Switch type.
                 this.break_display.pop(); //we dispose of the end label.
             }
@@ -2543,21 +2564,30 @@ const Code_Generator = {
                 let nextL = this.generate_label();
                 //Alright, case value is at the top of the cache & switch value below.
                 //Next thing we gotta do is check if the switch is an String:
-                if(this.compatible_types(this.types['String'],switch_type,node,false)){ //compare Strings
-                    this.pop_cache(this.t1); //exp value
-                    this.pop_cache(this.t2); //switch value.
-                    this.push_cache(this.t2); //We push the switch back as we'll use it again for next iteration.
+                this.pop_cache(this.t1); //exp value
+                this.pop_cache('prev'); //Previous case matched.
+                this.pop_cache(this.t2); //Switched value
+                this.push_cache(this.t2); //We push it back.
+                const lEnterCase = this.generate_label();
+                if(switch_type.is_string()){ //compare Strings
                     this.push_cache(this.t2); //We push it a second time to use it as comparison parameter.
                     this.push_cache(this.t1); //We push it again to compare.
                     this.call('compare_strings'); //Alright, compare them.
                     this.pop_cache(this.t); //t = true/false.
-                    this.pureIf(this.t,'0','==',nextL); //If they aren't the same go to next.
+                    this.pureIf('prev','1','==',lEnterCase);
+                    this.pureIf(this.t,'1','==',lEnterCase); //If they aren't the same go to next.
+                    this.push_cache('prev');
+                    this.goto(nextL);
+                    this.set_label(lEnterCase);
+                    this.push_cache(1); //We push 1 to indicate we matched the case.
                     this.perform_sub_block_jump(block);  //Alright, perform the jump!
                 }else{ //Compare normal primitive values.
-                    this.pop_cache(this.t1);
-                    this.pop_cache(this.t2);
-                    this.push_cache(this.t2); //We push it back.
-                    this.pureIf(this.t1,this.t2,'!=',nextL);
+                    this.pureIf('prev','1','==',lEnterCase);
+                    this.pureIf(this.t1,this.t2,'==',lEnterCase);
+                    this.push_cache('prev'); //We push it back.
+                    this.goto(nextL);
+                    this.set_label(lEnterCase);
+                    this.push_cache(1);
                     this.perform_sub_block_jump(block);
                 }
                 this.set_label(nextL);
@@ -2644,7 +2674,7 @@ const Code_Generator = {
                 let exp = node.children[1];
                 let update = node.children[2];
                 let block = node.children[3];
-                let target_block = this.scope_tracker.pop();
+                let target_block = this.sub_block_tracker.pop();
                 let whileStart = this.generate_label();
                 let whileEnd = this.generate_label();
                 let lF = this.generate_label();
@@ -2685,6 +2715,29 @@ const Code_Generator = {
                 this.stack.pop();
                 this.scope.pop();
             }return;
+            case "update":
+            {
+                node = node.children[0]; //It seems like we have an Update wrapped within an external Update
+                let vessel = node.children[0];
+                let exp = node.children[1];
+                this.varChainIndex = 0; //We initialize the varChain index since vessel is ID and NOT a varChain node.
+                this.resolve_varChain(vessel,false,false,true);
+                this.value_expression(exp);
+                this.evaluation_stack.pop();
+                this.evaluation_stack.pop(); //We dispose of them directly because we are sure they have the same type.
+                this.pop_cache(this.t); //t = new value.
+                this.pop_cache(this.t1); //t1 = ref
+                this.pop_cache(this.t2); //where to use
+                let lIf = this.generate_label();
+                let lE = this.generate_label();
+                this.pureIf(this.t2,'1','==',lIf);
+                this.set_stack(this.t1,this.t);
+                this.goto(lE);
+                this.set_label(lIf);
+                this.set_heap(this.t1,this.t);
+                this.set_label(lE);
+            }
+                return;
             case 'field':
             case 'staticField':
             case 'abstractMethod':
@@ -2892,7 +2945,7 @@ const Code_Generator = {
                 this.pureIf(child_id,_class.id,'!=',lNext);
                 //Alright, let's start the transferring process:
                 Object.values(_class.fields).forEach(field=>{
-                   if(field.inherited){ //We only perform the transfer if it is inherited.
+                   if(field.inherited&&field.category=='field'){ //We only perform the transferring if it is an inherited field.
                        //Alright, let's get the field from the parent:
                        this.push_cache(parent); //We push the parent
                        this.push_cache(field.id); //We push the field we'd like to get (we're sure both the og and this one have the same id)

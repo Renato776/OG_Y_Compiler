@@ -84,7 +84,7 @@ performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* actio
 var $0 = $$.length - 1;
 switch (yystate) {
 case 1:
-$("#Unified_Source").html($$[$0-2]+$$[$0-1]);
+Import_Solver.Unified_Source = $$[$0-2]+$$[$0-1]; 
 break;
 case 2:
 this.$ = $$[$0-6] +$$[$0-5] + pre_register_class($$[$0-4],false)+$$[$0-3] + $$[$0-1] +"\n&&&&END\n";
@@ -593,9 +593,9 @@ stateStackSize:function stateStackSize() {
 options: {},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 var YYSTATE=YY_START;
-let aux_token = yy_.yytext;
-aux_token = aux_token.trim();
-if(aux_token!="")location_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
+    let aux_token = yy_.yytext;
+    aux_token = aux_token.trim();
+    if(aux_token!="")location_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 switch($avoiding_name_collisions) {
 case 0: return 11; 
 break;

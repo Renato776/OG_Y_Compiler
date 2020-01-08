@@ -679,6 +679,7 @@ const Compiler = {
          case 'case':
          case 'default':
          case 'while':
+         case 'do':
              this.stack.push(node.name);
              node.children.forEach(child=>{
                 this.visit_node(child);

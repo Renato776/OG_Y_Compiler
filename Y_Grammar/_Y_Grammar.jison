@@ -12,8 +12,8 @@
 "//"[^\r\n]*													{/*Inline Comment, ignore.*/}
 [/][*][^*]*[*]+([^/*][^*]*[*]+)*[/] 							{/* Block comment, ignore. */}
 (("public"|"private"|"protected")[ \r\t]+)?("static"[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"@"([a-zA-Z]|_)+[0-9]*   {return 'TYPE';}
-"&amp;&amp;&amp;@"([a-zA-Z]|_)+[0-9]*			{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
-"&amp;&amp;&amp;&amp;END"														{token_solver.end_class(); return 'END_CLASS';}
+"&&&@"([a-zA-Z]|_)+[0-9]*			{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
+"&&&&END"														{token_solver.end_class(); return 'END_CLASS';}
 "####END"								{token_solver.end_import(yylloc.first_line-1); return 'END_IMPORT';}
 "###"("/"("@")?([a-zA-Z]|_)+[0-9]*("."([a-zA-Z]|_)+)?)+		{token_solver.begin_import(yytext.trim(),yylloc.first_line-1); return 'BEGIN_IMPORT';}
 ("true"|"false")						{return 'BOOLEAN';}
@@ -46,14 +46,14 @@
 "-"									return 'MINUS';
 "?"									return 'TERNARIO';
 "%"									return 'MOD';
-"&gt;"									return 'MAYORQ';
-"&lt;"									return 'MENORQ';
-"&gt;="								return 'MAYORIGUAL';
-"&lt;="								return 'MENORIGUAL';
+">"									return 'MAYORQ';
+"<"									return 'MENORQ';
+">="								return 'MAYORIGUAL';
+"<="								return 'MENORIGUAL';
 "=="								return 'COMPARACION';
 "!="								return 'DISTINTO';
 "!"									return 'NOT';
-"&amp;&amp;"						return 'AND';
+"&&"         						return 'AND';
 "||"								return 'OR';
 "="									return 'ASIGNACION';
 ";"									return 'SEMI';
@@ -310,6 +310,7 @@ var : ID {$$ = Compiler.varNode(
 					token_solver.build_token('id',$1,@1.first_line,@1.first_column),true,null);}
 		| ID dimAccessL {$$ = Compiler.varNode(
 					token_solver.build_token('id',$1,@1.first_line,@1.first_column),true,$2);}
+		| ID LEFT_PAREN paramList RIGHT_PAREN dimAccessL {console.log('not implemented yet..');}
 		| ID LEFT_PAREN paramList RIGHT_PAREN {$$ = Compiler.varNode(
 					token_solver.build_token('id',$1,@1.first_line,@1.first_column),false,$3);}
 		;
