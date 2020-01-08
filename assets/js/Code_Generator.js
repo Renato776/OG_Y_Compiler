@@ -1886,6 +1886,9 @@ const Code_Generator = {
         return -1;  //Not found :(
     },
     resolve_method_call(field, node,resolve_as_signature=false) {
+        let n;
+        if(field.name=="_toString_")n = "toString"; //Some dirty hacks to allow toString overloading (since JS finds a naming conflict with it)
+        else n = field.name;
         if(this.is_within_expression()){
             if(field.type=='void')throw new semantic_exception('Cannot call a void function from within an expression. Function: '+field.name,node);
         }
@@ -1901,7 +1904,7 @@ const Code_Generator = {
             if(this.SymbolTable[this_index].inherited)this.get_stored_inherited_value(this_index); //We push it to the evaluation stack
             else this.get_stored_value(this_index); //We push the this reference to the cache.
         }
-        let signature = field.owner+"."+field.name;
+        let signature = field.owner+"."+n;
         let target_func = this.get_func_index(signature);
         this.value_parameters(paramL);
         //Alright, all params have been valuated backwards, however the this reference is at the bottom of all params.
@@ -1914,6 +1917,7 @@ const Code_Generator = {
         this.evaluation_stack.push(this.types[this.SymbolTable[target_func].type]);
     },
     get_field:function(name,owner,token){
+        if(name=='toString')name='_toString_';
         let _class = this.classes[owner];
         if(_class==undefined)throw new semantic_exception(owner+' is NOT a class',token);
         let field = _class.fields[name];
@@ -1981,15 +1985,17 @@ const Code_Generator = {
         //Object native methods:
 
         owner = this.types[owner];
-        /**
+
         if(owner.is_class()){ //This small block here allows the user to override native methods.
             let t_owner = this.classes[owner.signature];
-            let overridden = t_owner.fields[signature];
+            let overridden;
+            if(signature=='toString')overridden = t_owner.fields["_"+signature+"_"]; //We must change the signature's name to prevent errors with JS.
+              else overridden= t_owner.fields[signature];
             if(signature.startsWith('equals')||
                 signature=='toString'||
                 signature == 'getClass'
             ){
-                if(overridden.owner!='Object')return false; //This means this method has been implemented
+                if(overridden!=undefined)if(overridden.owner!='Object')return false; //This means this method has been implemented
             }
             if(signature=='length'||
                 signature=='toCharArray'||
@@ -1999,7 +2005,6 @@ const Code_Generator = {
                 if(overridden.owner!='String')return false; //This means this method has been implemented
             }
         }
-        **/
         if(signature.startsWith('equals')){ //The highest precedence amongst all native functions. Doesn't matter who's the caller or what are the params.
             if(resolve_as_signature){
                 this.evaluation_stack.push(BOOLEAN);

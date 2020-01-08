@@ -637,8 +637,9 @@ const Compiler = {
              this.SymbolTable[func_index].visibility = details.visibility;
              if(node.name=='method'||node.name=='abstractMethod'){
                  let owner = this.classes[_class];
+                 if(fun_name=='toString')fun_name = '_toString_';
                  let methodName = fun_name+this.evaluation_stack.pop(); //We get the type signature.
-                 let notValidName = methodName in owner.fields && methodName != 'toString' && methodName != 'equals';
+                 let notValidName = methodName in owner.fields;
                  if(notValidName)throw new semantic_exception('There is another member with the same name: '+methodName,node);
                  owner.fields[methodName] = new _field('method',methodName,details.visibility,func_type,_class,func_index);
                  if(node.name=='abstractMethod'){
