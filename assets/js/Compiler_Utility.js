@@ -598,7 +598,9 @@ function digest(string) { //We scape the characters (if any)
 const Import_Solver = {
     already_imported: [],
     import_tracker:[],
+    Unified_Source : '',
     initialize: function(){
+        this.Unified_Source = '';
         abstractMethods = [];
         field_counter_ = 1; //We're starting a new cycle.
         _token_tracker = [];
@@ -607,7 +609,6 @@ const Import_Solver = {
         $("#ErrorTableBody").empty(); //We clear the previous error log.
         $("#Classes_Body").empty();
         $("#Classes_Header").empty();
-        $("#Unified_Source").empty();
         clear_object(classes); //We clear the class list.
         classes['Object'] = Object_Class; //We add default Object class.
         classes['String'] = String_Class; //We add default String class.
@@ -627,7 +628,7 @@ const Import_Solver = {
     unify_source: function(source){
       try{
         _Import_Grammar.parse(source);
-        return $("#Unified_Source").html();
+        return this.Unified_Source;
       }  catch (e) {
           return "";
       }
@@ -723,7 +724,7 @@ const token_solver = {
         return res;
     },
     begin_class:function(token){
-        token = token.replace(new RegExp('&amp;','gm'),'').replace('@','').trim(); //We remove the Ampersands and the @
+        token = token.replace(new RegExp('&','gm'),'').replace('@','').trim(); //We remove the Ampersands and the @
         this.class_tracker.push(token); //We push the name of the class
         let c = this.imported_classes.pop();
         if(c==undefined)c = -1; //Could be undefined if I haven't made any imports yet.
@@ -889,6 +890,7 @@ function perform_inheritance() {
                 if(am==undefined){ //It has not been registered yet, let's register it:
                    am = new AbstractMethod(field.index,[]);
                    abstractMethods.push(am);
+                   Compiler.scope_tracker.splice( Compiler.scope_tracker.indexOf(field.index), 1 );
                 }
             }
             if(field.name in _class.fields){ //True if we overrode a method/field
@@ -919,7 +921,7 @@ function compile_source() {
     }catch (e) {
         return;
     }
-    let unified_source = $("#Unified_Source").html();
+    let unified_source = Import_Solver.Unified_Source;
     try{
         _Aux_Grammar.parse(unified_source);
     }catch (e) {
@@ -934,7 +936,7 @@ function compile_source() {
     }
     Compiler.initialize();
     token_solver.initialize();
-    let pre_compiled_source = $("#Unified_Source").html();
+    let pre_compiled_source = Import_Solver.Unified_Source;
     pre_compiled_source = prepare_all_types(pre_compiled_source);
     try {
         _Y_Grammar.parse(pre_compiled_source);
@@ -944,6 +946,7 @@ function compile_source() {
        }
        return;
     }
+    Import_Solver.Unified_Source = ''; //We empty the String as it is no longer of use.
     Compiler.build_nodeStructure(); //aka graph AST
     Compiler.build_symbolTable(); //Compile & graph Symbol Table.
     perform_inheritance(); //perform inheritance on all classes.
@@ -964,7 +967,7 @@ function generate_code() {
         const valid_entry_point_details = 'For an static method to be valid as starting point' +
             ' it only needs to take no parameters.';
          */
-        let main_class = Code_Generator.classes['Main'];
+        let main_class = Compiler.classes['Main'];
         if(main_class==undefined){
             _log('NO Main class found. Either: Create a Main class or select a valid static method as ' +
                 'starting point in the folders & classes tab.');

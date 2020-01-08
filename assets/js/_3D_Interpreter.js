@@ -328,12 +328,12 @@ const _3D_Exception = function (token,message,show_position = false,type = 'Runt
     if(typeof type == "boolean"){
         let $row = new _3D_error_entry(token,message,show_position,'Runtime');
         $("#ErrorTableBody").append($row);
-        if(type){
-            print_stack_trace();
-        }
     }else{
         let $row = new _3D_error_entry(token,message,show_position,type);
         $("#ErrorTableBody").append($row);
+    }
+    if(SHOW_ALL_DETAILS){
+        print_stack_trace();
     }
     if(optimizing){
         $("#Optimized_code").html('An error has occurred during optimization. See error tab for details.');
@@ -713,7 +713,10 @@ function play_instruction(instruction,debug = false) {
             return false;
         case 'exit':
             switch (instruction.exitCode) {
-                case '0': throw new _3D_Exception(instruction.token,'Null pointer exception.',true);
+                case '0': {
+                    throw new _3D_Exception(instruction.token,'Null pointer exception.',true);
+                    print_stack_trace();
+                }
                 case '1': {
                     let forLength = pop_cache();
                     let badIndex = Number(pop_cache()) - 1;
