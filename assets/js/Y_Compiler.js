@@ -638,7 +638,8 @@ const Compiler = {
              if(node.name=='method'||node.name=='abstractMethod'){
                  let owner = this.classes[_class];
                  let methodName = fun_name+this.evaluation_stack.pop(); //We get the type signature.
-                 if(methodName in owner.fields)throw new semantic_exception('There is another member with the same name: '+methodName,node);
+                 let notValidName = methodName in owner.fields && methodName != 'toString' && methodName != 'equals';
+                 if(notValidName)throw new semantic_exception('There is another member with the same name: '+methodName,node);
                  owner.fields[methodName] = new _field('method',methodName,details.visibility,func_type,_class,func_index);
                  if(node.name=='abstractMethod'){
                      owner.fields[methodName].abstract = true;

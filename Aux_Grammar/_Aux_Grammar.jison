@@ -9,6 +9,9 @@
 
 /* keywords */
 
+
+"//"[^\r\n]*													{return 'ANYTHING'}
+[/][*][^*]*[*]+([^/*][^*]*[*]+)*[/] 							{return 'ANYTHING'}
 (("public"|"private"|"protected")[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+"extends"[ \r\t]+([a-zA-Z]|_)+[0-9]*    { return 'SUB_CLASS_DECL'; }
 (("public"|"private"|"protected")[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"class"[ \r\t]+([a-zA-Z]|_)+[0-9]*      return 'CLASS_DECL';
 "{"										return 'LEFT_BRACE';

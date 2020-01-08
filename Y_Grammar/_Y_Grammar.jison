@@ -309,8 +309,12 @@ varChain : varChain DOT var {$$ = $1; $$.add($3); }
 var : ID {$$ = Compiler.varNode(
 					token_solver.build_token('id',$1,@1.first_line,@1.first_column),true,null);}
 		| ID dimAccessL {$$ = Compiler.varNode(
-					token_solver.build_token('id',$1,@1.first_line,@1.first_column),true,$2);}
-		| ID LEFT_PAREN paramList RIGHT_PAREN dimAccessL {console.log('not implemented yet..');}
+					token_solver.build_token('id',$1,@1.first_line,@1.first_column),true,$2);
+					}
+		| ID LEFT_PAREN paramList RIGHT_PAREN dimAccessL {
+		$$ = Compiler.varNode(token_solver.build_token('id',$1,@1.first_line,@1.first_column),true,$5);
+		$$.children[0] = Compiler.varNode(token_solver.build_token('id',$1,@1.first_line,@1.first_column),false,$3);
+		}
 		| ID LEFT_PAREN paramList RIGHT_PAREN {$$ = Compiler.varNode(
 					token_solver.build_token('id',$1,@1.first_line,@1.first_column),false,$3);}
 		;
