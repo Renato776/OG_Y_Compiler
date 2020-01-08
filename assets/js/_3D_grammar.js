@@ -851,9 +851,9 @@ case 43:
 break;
 case 44:return 64;
 break;
-case 45:return 63;
+case 45:return 62;
 break;
-case 46:return 62;
+case 46:return 63;
 break;
 case 47:return 11;
 break;
@@ -868,7 +868,7 @@ default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.
     break;
 }
 },
-rules: [/^(?:#UNCAP_HEAP\b)/i,/^(?:#UNCAP_HEAP_DISPLAY\b)/i,/^(?:#UNCAP_STACK_DISPLAY\b)/i,/^(?:#UNCAP_INSTRUCTION_EXECUTION\b)/i,/^(?:#MAX_HEAP[ \r\t]+[0-9]+)/i,/^(?:#MAX_HEAP_DISPLAY[ \r\t]+[0-9]+)/i,/^(?:#MAX_STACK_DISPLAY[ \r\t]+[0-9]+)/i,/^(?:#MAX_INSTRUCTION[ \r\t]+[0-9]+)/i,/^(?:#FORCE_ENTRY_PROC[ \r\t]+([a-zA-Z]|_)+[0-9]*)/i,/^(?:#FORCE_ENTRY_POINT[ \r\t]+[0-9]+)/i,/^(?:;.*)/i,/^(?:proc\b)/i,/^(?:\{)/i,/^(?:\})/i,/^(?:\()/i,/^(?:\))/i,/^(?:stack\b)/i,/^(?:heap\b)/i,/^(?:\[)/i,/^(?:\])/i,/^(?:<=)/i,/^(?:>=)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\+)/i,/^(?:-)/i,/^(?:\*)/i,/^(?:\/)/i,/^(?:%)/i,/^(?:!=)/i,/^(?:==)/i,/^(?:=)/i,/^(?:if\b)/i,/^(?:ifFalse\b)/i,/^(?:goto\b)/i,/^(?::)/i,/^(?:var\b)/i,/^(?:call\b)/i,/^(?:print\b)/i,/^(?:exit\b)/i,/^(?:write_file\b)/i,/^(?:,)/i,/^(?:[ \r\t]+)/i,/^(?:\n)/i,/^(?:[0-9]+(\.0)\b)/i,/^(?:[0-9]+\b)/i,/^(?:[0-9]+(\.[0-9]+)\b)/i,/^(?:(L)[0-9]+)/i,/^(?:([a-zA-Z]|_)+[0-9]*\b)/i,/^(?:('%d')|('%e')|('%c'))/i,/^(?:$)/i,/^(?:.)/i],
+rules: [/^(?:#UNCAP_HEAP\b)/i,/^(?:#UNCAP_HEAP_DISPLAY\b)/i,/^(?:#UNCAP_STACK_DISPLAY\b)/i,/^(?:#UNCAP_INSTRUCTION_EXECUTION\b)/i,/^(?:#MAX_HEAP[ \r\t]+[0-9]+)/i,/^(?:#MAX_HEAP_DISPLAY[ \r\t]+[0-9]+)/i,/^(?:#MAX_STACK_DISPLAY[ \r\t]+[0-9]+)/i,/^(?:#MAX_INSTRUCTION[ \r\t]+[0-9]+)/i,/^(?:#FORCE_ENTRY_PROC[ \r\t]+([a-zA-Z]|_)+[0-9]*)/i,/^(?:#FORCE_ENTRY_POINT[ \r\t]+[0-9]+)/i,/^(?:;.*)/i,/^(?:proc\b)/i,/^(?:\{)/i,/^(?:\})/i,/^(?:\()/i,/^(?:\))/i,/^(?:stack\b)/i,/^(?:heap\b)/i,/^(?:\[)/i,/^(?:\])/i,/^(?:<=)/i,/^(?:>=)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\+)/i,/^(?:-)/i,/^(?:\*)/i,/^(?:\/)/i,/^(?:%)/i,/^(?:!=)/i,/^(?:==)/i,/^(?:=)/i,/^(?:if\b)/i,/^(?:ifFalse\b)/i,/^(?:goto\b)/i,/^(?::)/i,/^(?:var\b)/i,/^(?:call\b)/i,/^(?:print\b)/i,/^(?:exit\b)/i,/^(?:write_file\b)/i,/^(?:,)/i,/^(?:[ \r\t]+)/i,/^(?:\n)/i,/^(?:[0-9]+(\.0)\b)/i,/^(?:[0-9]+(\.[0-9]+)\b)/i,/^(?:[0-9]+\b)/i,/^(?:(L)[0-9]+)/i,/^(?:([a-zA-Z]|_)+[0-9]*\b)/i,/^(?:('%d')|('%e')|('%c'))/i,/^(?:$)/i,/^(?:.)/i],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51],"inclusive":true}}
 });
 return lexer;

@@ -317,17 +317,21 @@ const _3D_error_entry = function(token,message,show_position,type){
         $row.append($file);
     }else{
         $details.html(message);
+        $details.attr("colspan",6);
         $row.append($details);
     }
     return $row;
 };
 const _3D_Exception = function (token,message,show_position = false,type = 'Runtime',optimizing=false) {
-   let $row = new _3D_error_entry(token,message,show_position,type);
-    $("#ErrorTableBody").append($row);
     if(typeof type == "boolean"){
+        let $row = new _3D_error_entry(token,message,show_position,'Runtime');
+        $("#ErrorTableBody").append($row);
         if(type){
             print_stack_trace();
         }
+    }else{
+        let $row = new _3D_error_entry(token,message,show_position,type);
+        $("#ErrorTableBody").append($row);
     }
     if(optimizing){
         $("#Optimized_code").html('An error has occurred during optimization. See error tab for details.');
@@ -681,9 +685,9 @@ function play_instruction(instruction,debug = false) {
             switch (instruction.exitCode) {
                 case '0': throw new _3D_Exception(instruction.token,'Null pointer exception.',true);
                 case '1': {
-                    let badIndex = pop_cache();
                     let forLength = pop_cache();
-                    throw new _3D_Exception(instruction.token,'Array Index out of bounds. for index: '+badIndex+' in length: '+forLength,true,true);
+                    let badIndex = Number(pop_cache()) - 1;
+                    throw new _3D_Exception(instruction.token,'Array Index out of bounds. Index: '+badIndex+' out of bounds for length: '+forLength,true,true);
                 }
                 case '2': {
                     let instanceAttemptingToGetCasted = Number(pop_cache()); //just in case.

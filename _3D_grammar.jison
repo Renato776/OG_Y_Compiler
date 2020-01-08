@@ -56,8 +56,8 @@
 [ \r\t]+            {}
 \n                  {}
 [0-9]+(".0")\b    return 'BETA_NUM';
-[0-9]+\b        return 'NUM';
 [0-9]+("."[0-9]+)\b    return 'FLOAT';
+[0-9]+\b        return 'NUM';
 ("L")[0-9]+             return 'LABEL';
 ([a-zA-Z]|_)+[0-9]*\b    return 'ID';
 ("'%d'")|("'%e'")|("'%c'") return 'FORMAT';

@@ -26,6 +26,11 @@ const Printing = {
         $("#Ejecutar_Button").trigger('click');
         CodeMirror_Execute.setValue(Code_Generator.output);
         Code_Generator.output = ''; //We dispose of the old content as it is no longer of use.
+        $("#Ejecutar_Console").empty();
+        if(SEMANTIC_ERROR_OCCURRED){
+            log('One or more semantic errors occurred. See error tab for details.');
+            log('If you choose to proceed regardless, unexpected behaviour might happen.');
+        }
     }
 };
 
