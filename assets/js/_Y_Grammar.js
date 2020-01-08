@@ -930,13 +930,13 @@ stateStackSize:function stateStackSize() {
 options: {},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 var YYSTATE=YY_START;
-let aux_token = yy_.yytext;
-aux_token = aux_token.trim();
-if(aux_token!="")token_solver.debug(aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
+    let aux_token = yy_.yytext;
+    aux_token = aux_token.trim();
+    if(aux_token!="")token_solver.debug(aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 switch($avoiding_name_collisions) {
 case 0:/*Inline Comment, ignore.*/
 break;
-case 1:/*Block Comment, ignore.*/
+case 1:/* Block comment, ignore. */
 break;
 case 2:return 17;
 break;
@@ -1052,7 +1052,7 @@ case 57:_pre_compiling_lexical_exception();
 break;
 }
 },
-rules: [/^(?:\/\/[^\r\n]*)/,/^(?:\/\*([^"*\/"])*\*\/)/,/^(?:((public|private|protected)[ \r\t]+)?(static[ \r\t]+)?((abstract|final)[ \r\t]+)?@([a-zA-Z]|_)+[0-9]*)/,/^(?:&amp;&amp;&amp;@([a-zA-Z]|_)+[0-9]*)/,/^(?:&amp;&amp;&amp;&amp;END\b)/,/^(?:####END\b)/,/^(?:###(\/(@)?([a-zA-Z]|_)+[0-9]*(\.([a-zA-Z]|_)+)?)+)/,/^(?:(true|false))/,/^(?:null\b)/,/^(?:'([^"'"\\]|\\.)*')/,/^(?:"([^"\""\\]|\\.)*")/,/^(?:return\b)/,/^(?:break\b)/,/^(?:if\b)/,/^(?:else\b)/,/^(?:case\b)/,/^(?:default\b)/,/^(?:while\b)/,/^(?:for\b)/,/^(?:do\b)/,/^(?:switch\b)/,/^(?:continue\b)/,/^(?:new\b)/,/^(?:\{)/,/^(?:\})/,/^(?:\[)/,/^(?:\])/,/^(?:\()/,/^(?:\))/,/^(?:\+\+)/,/^(?:--)/,/^(?:\*)/,/^(?:\/)/,/^(?:\+)/,/^(?:-)/,/^(?:\?)/,/^(?:%)/,/^(?:&gt;)/,/^(?:&lt;)/,/^(?:&gt;=)/,/^(?:&lt;=)/,/^(?:==)/,/^(?:!=)/,/^(?:!)/,/^(?:&amp;&amp;)/,/^(?:\|\|)/,/^(?:=)/,/^(?:;)/,/^(?::)/,/^(?:\.)/,/^(?:,)/,/^(?:([a-zA-Z]|_)+[0-9]*)/,/^(?:[ \r\t]+)/,/^(?:\n)/,/^(?:[0-9]+\.[0-9]*)/,/^(?:[0-9]+)/,/^(?:$)/,/^(?:.)/],
+rules: [/^(?:\/\/[^\r\n]*)/,/^(?:[\/][*][^*]*[*]+([^\/*][^*]*[*]+)*[\/])/,/^(?:((public|private|protected)[ \r\t]+)?(static[ \r\t]+)?((abstract|final)[ \r\t]+)?@([a-zA-Z]|_)+[0-9]*)/,/^(?:&amp;&amp;&amp;@([a-zA-Z]|_)+[0-9]*)/,/^(?:&amp;&amp;&amp;&amp;END\b)/,/^(?:####END\b)/,/^(?:###(\/(@)?([a-zA-Z]|_)+[0-9]*(\.([a-zA-Z]|_)+)?)+)/,/^(?:(true|false))/,/^(?:null\b)/,/^(?:'([^"'"\\]|\\.)*')/,/^(?:"([^"\""\\]|\\.)*")/,/^(?:return\b)/,/^(?:break\b)/,/^(?:if\b)/,/^(?:else\b)/,/^(?:case\b)/,/^(?:default\b)/,/^(?:while\b)/,/^(?:for\b)/,/^(?:do\b)/,/^(?:switch\b)/,/^(?:continue\b)/,/^(?:new\b)/,/^(?:\{)/,/^(?:\})/,/^(?:\[)/,/^(?:\])/,/^(?:\()/,/^(?:\))/,/^(?:\+\+)/,/^(?:--)/,/^(?:\*)/,/^(?:\/)/,/^(?:\+)/,/^(?:-)/,/^(?:\?)/,/^(?:%)/,/^(?:&gt;)/,/^(?:&lt;)/,/^(?:&gt;=)/,/^(?:&lt;=)/,/^(?:==)/,/^(?:!=)/,/^(?:!)/,/^(?:&amp;&amp;)/,/^(?:\|\|)/,/^(?:=)/,/^(?:;)/,/^(?::)/,/^(?:\.)/,/^(?:,)/,/^(?:([a-zA-Z]|_)+[0-9]*)/,/^(?:[ \r\t]+)/,/^(?:\n)/,/^(?:[0-9]+\.[0-9]*)/,/^(?:[0-9]+)/,/^(?:$)/,/^(?:.)/],
 conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57],"inclusive":true}}
 });
 return lexer;

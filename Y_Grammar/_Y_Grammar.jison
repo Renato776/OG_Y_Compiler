@@ -10,7 +10,7 @@
 /* keywords */
 
 "//"[^\r\n]*													{/*Inline Comment, ignore.*/}
-"/*"([^"*/"])*"*/"													{/*Block Comment, ignore.*/}
+[/][*][^*]*[*]+([^/*][^*]*[*]+)*[/] 							{/* Block comment, ignore. */}
 (("public"|"private"|"protected")[ \r\t]+)?("static"[ \r\t]+)?(("abstract"|"final")[ \r\t]+)?"@"([a-zA-Z]|_)+[0-9]*   {return 'TYPE';}
 "&amp;&amp;&amp;@"([a-zA-Z]|_)+[0-9]*			{token_solver.begin_class(yytext.trim()); return 'CLASS_BEGIN';}
 "&amp;&amp;&amp;&amp;END"														{token_solver.end_class(); return 'END_CLASS';}
