@@ -1668,16 +1668,16 @@ const Code_Generator = {
                 //0)Push the this reference we're using:
                 this.get_stored_value(this.get_index('this'));
                 this.call('___inherit___');
-                this.evaluation_stack.push(this.types['void']); //We push the type and return.
+                this.evaluation_stack.push(this.types[VOID]); //We push the type and return.
             }return;
             case "println":
                 if(value_as_signature){
-                    this.evaluation_stack.push('void');
+                    this.evaluation_stack.push(VOID);
                     return true;
                 }
                 this.format_text(paramL);
                 if(this.is_within_expression())throw new semantic_exception('Cannot call println from within an expression.',node);
-                this.evaluation_stack.push(this.types['void']);
+                this.evaluation_stack.push(this.types[VOID]);
                 return true;
             case "str":
                 if(value_as_signature){
@@ -1725,6 +1725,25 @@ const Code_Generator = {
                     this.push_cache(this.t); //we push the char.
                     this.evaluation_stack.push(this.types[CHAR]);
                 }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
+                return true;
+            case "write_file":
+                if(value_as_signature){
+                    this.evaluation_stack.push(VOID);
+                    return true;
+                }
+                if(this.is_within_expression())throw new semantic_exception('Cannot call write_file from within an expression.',node);
+                if(paramL.children.length==2){//Only two parameters allowed.
+                    this.value_expression(paramL.children[0]); //We value the first param.
+                    let type = this.evaluation_stack.pop();
+                    this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
+                    this.get_char_array(); //we replace the String by the charArray.
+                    this.value_expression(paramL.children[1]); //We value the second param.
+                    type = this.evaluation_stack.pop();
+                    this.compatible_types(this.types['String'],type,paramL); //We verify it is an String too.
+                    this.get_char_array(); //we replace the String by the charArray.
+                    this.write_file(); //We print the file.
+                    this.evaluation_stack.push(this.types[VOID]);
+                }else throw new semantic_exception("More or less parameters than expected for function: "+func_name,node);
                 return true;
             default:
                 return false;
@@ -3341,5 +3360,8 @@ const Code_Generator = {
         this.call('___sum_strings___'); //We concatenate.
         this.set_label(lEnd);
         Printing.print_function();
+    },
+    write_file() {
+        Printing.print_in_context('write_file()');
     }
 };
