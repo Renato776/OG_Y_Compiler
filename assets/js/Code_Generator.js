@@ -1979,7 +1979,27 @@ const Code_Generator = {
         //This is different from is_native_function, because that one is used for native static functions.
         //This is used for native normal methods (like equals, length, toLowerCase, etc)
         //Object native methods:
+
         owner = this.types[owner];
+        /**
+        if(owner.is_class()){ //This small block here allows the user to override native methods.
+            let t_owner = this.classes[owner.signature];
+            let overridden = t_owner.fields[signature];
+            if(signature.startsWith('equals')||
+                signature=='toString'||
+                signature == 'getClass'
+            ){
+                if(overridden.owner!='Object')return false; //This means this method has been implemented
+            }
+            if(signature=='length'||
+                signature=='toCharArray'||
+                signature=='toUpperCase'||
+                signature=='toLowerCase'
+            ){
+                if(overridden.owner!='String')return false; //This means this method has been implemented
+            }
+        }
+        **/
         if(signature.startsWith('equals')){ //The highest precedence amongst all native functions. Doesn't matter who's the caller or what are the params.
             if(resolve_as_signature){
                 this.evaluation_stack.push(BOOLEAN);
