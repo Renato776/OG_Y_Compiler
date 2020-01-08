@@ -930,9 +930,6 @@ stateStackSize:function stateStackSize() {
 options: {},
 performAction: function anonymous(yy,yy_,$avoiding_name_collisions,YY_START) {
 var YYSTATE=YY_START;
-let aux_token = yy_.yytext;
-aux_token = aux_token.trim();
-if(aux_token!="")token_solver.debug(aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 switch($avoiding_name_collisions) {
 case 0:/*Inline Comment, ignore.*/
 break;

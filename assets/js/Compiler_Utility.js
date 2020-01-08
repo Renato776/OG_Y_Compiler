@@ -278,6 +278,7 @@ const _compiling_exception = function (message,node = null) {
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
     this.semantic = true;
+    SEMANTIC_ERROR_OCCURRED = true;
 };
 //endregion
 function apply_native_functions() {
@@ -911,6 +912,7 @@ function perform_inheritance() {
 }
 function compile_source() {
     if(current_source_mirror==null)return; //There's nothing to compile in the first place.
+    SEMANTIC_ERROR_OCCURRED = false;
     Import_Solver.initialize();
     try{
         _Import_Grammar.parse(current_source_mirror.getValue());

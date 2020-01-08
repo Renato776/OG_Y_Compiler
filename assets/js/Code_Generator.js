@@ -1703,6 +1703,8 @@ const Code_Generator = {
                 if(paramL.children.length==1){//Only one parameter allowed.
                     this.value_expression(paramL.children[0]); //We value the param.
                     let type = this.evaluation_stack.pop();
+                    if(!type.is_class())throw new semantic_exception('Invalid parameter for '+func_name+" function." +
+                        " Expected: String. Got: "+type.signature,node);
                     this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
                     this.cast_to_integer(type); //We cast it to Integer.
                     if(node.name=='toDouble') this.evaluation_stack.push(this.types[DOUBLE]);
@@ -1717,6 +1719,8 @@ const Code_Generator = {
                 if(paramL.children.length==1){//Only one parameter allowed.
                     this.value_expression(paramL.children[0]); //We value the param.
                     let type = this.evaluation_stack.pop();
+                    if(!type.is_class())throw new semantic_exception('Invalid parameter for '+func_name+" function." +
+                        " Expected: String. Got: "+type.signature,node);
                     this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
                     this.get_char_array();
                     this.pop_cache(this.t);//t = char array address.
@@ -1735,10 +1739,14 @@ const Code_Generator = {
                 if(paramL.children.length==2){//Only two parameters allowed.
                     this.value_expression(paramL.children[0]); //We value the first param.
                     let type = this.evaluation_stack.pop();
+                    if(!type.is_class())throw new semantic_exception('Invalid parameter for '+func_name+" function." +
+                        " Expected: String. Got: "+type.signature,node);
                     this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
                     this.get_char_array(); //we replace the String by the charArray.
                     this.value_expression(paramL.children[1]); //We value the second param.
                     type = this.evaluation_stack.pop();
+                    if(!type.is_class())throw new semantic_exception('Invalid parameter for '+func_name+" function." +
+                        " Expected: String. Got: "+type.signature,node);
                     this.compatible_types(this.types['String'],type,paramL); //We verify it is an String too.
                     this.get_char_array(); //we replace the String by the charArray.
                     this.write_file(); //We print the file.
@@ -1792,12 +1800,12 @@ const Code_Generator = {
             this.operate(this.t1,'1','%',double_decimal_part);
             this.operate(double_decimal_part,this.MAX_DECIMAL_DISPLAY,'*',double_decimal_part);
             this.remove_decimal_part(double_decimal_part); //in case there's even extra decimals we remove them.
-            this.push_cache(double_decimal_part); //we push the decimals we'll display.
-            this.call('int_to_string'); //We transform them to a char array.
             this.push_cache(double_integer_part); //we push the integer part of the number
             this.call('int_to_string'); //We transform it to a char array
             this.build_unary_char_array('.'.charCodeAt(0)); //we build a unary char array holding the .
             this.call('___sum_strings___'); //we perform a pure sum (integer + .
+            this.push_cache(double_decimal_part); //we push the decimals we'll display.
+            this.call('int_to_string'); //We transform them to a char array.
             this.call('___sum_strings___');//we perform a second sum (integer. + decimal)
             this.call('build_string'); //We wrap the result in a String class.
         }else if(og.signature == BOOLEAN){
@@ -2332,13 +2340,15 @@ const Code_Generator = {
                 //0) value the left side as reference:
                 let left_side = node.children[0];
                 let right_side = node.children[1];
-                this.stack.push('expression');
                 this.value_expression(left_side,false,true);
                 this.value_expression(right_side,false,false);
-                this.stack.pop();
                 let value_type = this.evaluation_stack.pop();
                 let recipient_type = this.evaluation_stack.pop();
                 this.compatible_types(recipient_type,value_type,node);
+                if(value_type.signature=='double'){
+                    if(recipient_type.is_integer())throw new semantic_exception('incompatible types: possible lossy conversion from double to '+
+                    recipient_type.signature,node);
+                }
                 this.pop_cache(this.t); //t = value
                 this.pop_cache(this.t1); //t1 = ref
                 this.pop_cache(this.t2); //where to use
@@ -2696,7 +2706,9 @@ const Code_Generator = {
     compatible_classes(recipient, value) {
         let _recipient_class = this.classes[recipient];
         let _value_class = this.classes[value];
-        if(_recipient_class==undefined||_value_class==undefined)throw new _compiling_exception('FATAL ERROR! Attempted to compare 2 non-classes.');
+        if(_recipient_class==undefined||_value_class==undefined){
+            throw new _compiling_exception('FATAL ERROR! Attempted to compare 2 non-classes: '+recipient+' and '+value,null);
+        }
         return ((_value_class.cc % _recipient_class.cc == 0 && _value_class.cc != _recipient_class.cc) || _recipient_class.id==_value_class.id);
     },
     compatible_types(recipient_type, value_type,node,throwException = true) {

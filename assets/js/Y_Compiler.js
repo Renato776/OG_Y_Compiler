@@ -1,5 +1,6 @@
 const  END = "---end---";
 const SUB_BLOCK = "---sub_block---";
+let SEMANTIC_ERROR_OCCURRED = false;
 const semantic_exception = function (message,token) {
     let e;
     if(!isNaN(token)){
@@ -14,6 +15,7 @@ const semantic_exception = function (message,token) {
     }
      $("#ErrorTableBody").append(e);
     _log('One or more errors occurred during compilation. See error tab for details');
+    SEMANTIC_ERROR_OCCURRED = true;
 };
 const basic_details = function (type,offset) {
   return {visibility:'public',inherited:false,final:false,type:type,offset:offset};
@@ -165,10 +167,10 @@ const type = function (signature,dimension = 0) {
       return this.signature == 'String';
   };
   this.is_number = function () {
-      return this.signature==CHAR|this.signature==INTEGER||this.signature==DOUBLE;
+      return this.signature==CHAR||this.signature==INTEGER||this.signature==DOUBLE;
   };
   this.is_integer = function(){
-      return this.signature==CHAR|this.signature==INTEGER;
+      return this.signature==CHAR||this.signature==INTEGER;
   };
 };
 const Compiler = {
