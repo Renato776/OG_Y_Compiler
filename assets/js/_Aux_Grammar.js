@@ -597,30 +597,34 @@ var YYSTATE=YY_START;
     aux_token = aux_token.trim();
     if(aux_token!="")location_solver.debug('token',aux_token,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 switch($avoiding_name_collisions) {
-case 0: return 11; 
+case 0:return 12
 break;
-case 1:return 7;
+case 1:return 12
 break;
-case 2:return 8;
+case 2: return 11; 
 break;
-case 3:return 10;
+case 3:return 7;
 break;
-case 4:location_solver.end_import(yy_.yylloc.first_line-1); return 12;
+case 4:return 8;
 break;
-case 5:location_solver.begin_import(yy_.yytext.trim(),yy_.yylloc.first_line-1); return 12;
+case 5:return 10;
 break;
-case 6:return 13;
+case 6:location_solver.end_import(yy_.yylloc.first_line-1); return 12;
 break;
-case 7:return 14;
+case 7:location_solver.begin_import(yy_.yytext.trim(),yy_.yylloc.first_line-1); return 12;
 break;
-case 8:return 6;
+case 8:return 13;
 break;
-case 9:return 12;
+case 9:return 14;
+break;
+case 10:return 6;
+break;
+case 11:return 12;
 break;
 }
 },
-rules: [/^(?:((public|private|protected)[ \r\t]+)?((abstract|final)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+extends[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:((public|private|protected)[ \r\t]+)?((abstract|final)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:\{)/,/^(?:\})/,/^(?:####END\b)/,/^(?:###[^\r\n]+)/,/^(?:[ \r\t]+)/,/^(?:\n)/,/^(?:$)/,/^(?:[^])/],
-conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9],"inclusive":true}}
+rules: [/^(?:\/\/[^\r\n]*)/,/^(?:[\/][*][^*]*[*]+([^\/*][^*]*[*]+)*[\/])/,/^(?:((public|private|protected)[ \r\t]+)?((abstract|final)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*[ \r\t]+extends[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:((public|private|protected)[ \r\t]+)?((abstract|final)[ \r\t]+)?class[ \r\t]+([a-zA-Z]|_)+[0-9]*)/,/^(?:\{)/,/^(?:\})/,/^(?:####END\b)/,/^(?:###[^\r\n]+)/,/^(?:[ \r\t]+)/,/^(?:\n)/,/^(?:$)/,/^(?:[^])/],
+conditions: {"INITIAL":{"rules":[0,1,2,3,4,5,6,7,8,9,10,11],"inclusive":true}}
 });
 return lexer;
 })();
