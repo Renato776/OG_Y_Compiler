@@ -22,6 +22,7 @@ let MAX_STACK_DISPLAY = 1000; //At default you can only graph up to 1000 cells i
 let INSTRUCTION_MAX = 50000*3; //To prevent infinite loops any program will NOT be able to execute more than Instruction Max sentences in a single run.
 let FORCE_ENTRY_PROC = null;
 let FORCE_ENTRY_POINT = '0';
+let ACCURACY = 10;
 let selected_class = null;
 let SHOW_ALL_DETAILS = true;
 //endregion
@@ -226,6 +227,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     CAP_INSTRUCTION_EXECUTION = true;
     FORCE_ENTRY_PROC = null;
     FORCE_ENTRY_POINT = '0';
+    SHOW_ALL_DETAILS = true;
     //endregion temporals.clear();
     instructions.clear();
     labels.clear();
@@ -277,8 +279,8 @@ function print(format = 'char', value = 0) { //ATM the output will be logged to 
             break;
         case "'%e'":
         case "'%d'":
-            current_line.children()[1].append(parseInt(value));
-            current_line2.children()[1].append(parseFloat(value));
+            current_line.children()[1].append(value);
+            current_line2.children()[1].append(value);
             break;
     }
 }
@@ -420,10 +422,33 @@ function print_stack_trace(){
         //call is an String holding the name of the procedure we just called.
         //the first thing we should do is to get the name of it from the Compiler's Symbol Table.
         let name = get_name_of_proc(call);
-        if(name==null)name = call;
-        let $row = new _3D_error_entry(null,name,false);
-        $("#ErrorTableBody").append($row);
+        if(name==null){
+            if(SHOW_ALL_DETAILS){
+                name = call;
+                let $row = new _3D_error_entry(null,name,false);
+                $("#ErrorTableBody").append($row);
+            }
+        }else{
+            let $row = new _3D_error_entry(null,name,false);
+            $("#ErrorTableBody").append($row);
+        }
     });
+}
+function extract_String(address){
+    /*
+    * This method extracts an String from the heap & builds it into a high level String representation.
+    * */
+    let size = get_heap(address);
+    address = address + 1; //First char address.
+    let i = 0;
+    let res = "";
+    while(i<size){
+        let char = get_heap(address);
+            res+= String.fromCharCode(char);
+            address++;
+        i++;
+    }
+    return res;
 }
 function pop_cache(){
     let a = temporals['C'];
@@ -442,7 +467,7 @@ function get_heap(address){
     address = Number(address);
     let value = HEAP[address];
     if(value==undefined)value = HEAP[address.toString()];
-    return value;
+    return Number(value);
 }
 function get_name_of_proc(proc){
     //This method takes a true_func_signature as parameter and searches all the SymbolTable for it.
@@ -679,8 +704,13 @@ function play_instruction(instruction,debug = false) {
             increase_IP();//We go to next instruction.
             return true;
         case 'write':
-            console.log('yet to be implemented...');
-            break;
+            let content = pop_cache();
+            let path = pop_cache();
+            content = extract_String(content);
+            path = extract_String(path);
+            download(path,content);
+            log('Cannot resume execution after writing & downloading a file. Exit code: 1');
+            return false;
         case 'exit':
             switch (instruction.exitCode) {
                 case '0': throw new _3D_Exception(instruction.token,'Null pointer exception.',true);
@@ -707,7 +737,8 @@ function play_instruction(instruction,debug = false) {
                 }
                 case '3':
                     let invalidString = pop_cache();
-                    throw new _3D_Exception(instruction.token,'Error casting String to int. Invalid String.',true,true);
+                    invalidString = extract_String(invalidString);
+                    throw new _3D_Exception(instruction.token,'Error casting String to int. Invalid String:'+invalidString,true,true);
                 default: throw new _3D_Exception(instruction.token,'FATAL ERROR at runtime. Finished execution with code: 4',true);
             }
         default:

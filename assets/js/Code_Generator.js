@@ -11,7 +11,6 @@ const pure_entry_point = '____MAIN____';
 let MAX_CACHE = 400;
 const Code_Generator = {
     root: null,
-    MAX_DECIMAL_DISPLAY: 100000, //5 decimals max
     entry_point: -1,
     stack: [],
     evaluation_stack: [],
@@ -175,8 +174,8 @@ const Code_Generator = {
         this.types[NULL] = new type(NULL); //We register NULL as a valid type.
         if(!(CHAR_ARRAY in this.types))this.types[CHAR_ARRAY] = new type(CHAR,1); //just in case.
         this.SymbolTable = Compiler.SymbolTable;
-        this.scope_tracker = Compiler.scope_tracker.reverse(); //All methods & constructors will be visited in the same order they were while compiling.
-        this.sub_block_tracker = Compiler.sub_block_tracker.reverse(); //All sub-blocks will be visited the same order they were while compiling.
+        this.scope_tracker = Compiler.scope_tracker.slice(); //All methods & constructors will be visited in the same order they were while compiling.
+        this.sub_block_tracker = Compiler.sub_block_tracker.slice(); //All sub-blocks will be visited the same order they were while compiling.
         this.evaluation_stack = [];
         this.stack = [];
         this.scope = [];
@@ -186,6 +185,7 @@ const Code_Generator = {
         this.endLabel = null;
         this.label_count = 0;
         function_counter = 0;
+        this.scope.push(this.scope_tracker.pop()); //We set the program as base scope.
     },
     malloc:function(){
         Printing.add_function('malloc');
@@ -255,8 +255,6 @@ const Code_Generator = {
         const _classes = Object.values(this.classes);
         const _class_size = 'class_size';
         const instance_address = 'instance_address';
-        this.scope.push(0);
-        this.stack.push('expression');
         _classes.forEach(c=>{
             Printing.add_function(this.native_constructor_prefix+c.name);
             this.assign(_class_size,Compiler.count_fields(c.name)+1); //1 extra space for the ID.
@@ -298,8 +296,6 @@ const Code_Generator = {
             this.push_cache(instance_address); //We push the answer to the cache.
            Printing.print_function(); //That's all!
         });
-        this.scope.pop();
-        this.stack.pop();
     },
     compile_utility_functions: function () {
         /*
@@ -433,6 +429,7 @@ const Code_Generator = {
         Printing.print_function();
         //endregion
         this.malloc();
+        this.native_arithmetics();
         this.string_to_int();
         this.int_to_string();
         this.compareArrays();
@@ -541,8 +538,6 @@ const Code_Generator = {
       * Initializes all static variables
       * and finally performs the jump.
       * */
-      this.scope.push(0); //Everything performed here has program scope.
-      this.stack.push('expression');
       Printing.add_function(pure_entry_point);
       this.assign('C',0);
       this.push_cache(10);
@@ -576,8 +571,6 @@ const Code_Generator = {
         this.stack.pop();
         //That's all!!
       Printing.print_function();
-      this.stack.pop();
-      this.scope.pop();
     },
     generate_code() {
         const target = this.SymbolTable[this.entry_point];
@@ -590,6 +583,7 @@ const Code_Generator = {
         //endregion
         this.compile_entry_point(this.entry_point); //We compile the pure entry point.
         this.evaluate_node(this.root); //We output 3D code for the rest of the user defined functions.
+        this.scope.pop(); //Alright that's all!
     },
     perform_jump: function (current_scope, target_jump, jump_size) { //We prepare the jump by loading references and Increasing P.
         this.prepare_jump(current_scope,target_jump,jump_size); //We prepare the jump by loading references and Increasing P.
@@ -1382,6 +1376,7 @@ const Code_Generator = {
         this.pureIf(this.t1,upper_limit,'>',lWrong);
         this.goto(lFine);
         this.set_label(lWrong);
+        this.push_cache('str');
         this.exit(3); //Cannot cast String to integer.
         this.set_label(lFine);
         this.operate(this.t1,lower_limit,'-',this.t1);
@@ -1730,6 +1725,25 @@ const Code_Generator = {
                     this.evaluation_stack.push(this.types[CHAR]);
                 }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
                 return true;
+            case "pow":
+            {
+                if(value_as_signature){
+                    this.evaluation_stack.push(DOUBLE);
+                    return ;
+                }
+                if(paramL.children.length==2){//Only 2 parameters allowed.
+                    this.value_expression(paramL.children[0]); //We value the first param.
+                    let type = this.evaluation_stack.pop();
+                    if(!type.is_primitive())throw new semantic_exception('Invalid pow parameter. Expected: double|int|char. got: '+type.signature);
+                    this.value_expression(paramL.children[1]); //We value the second param.
+                    type = this.evaluation_stack.pop();
+                    if(!type.is_primitive())throw new semantic_exception('Invalid pow parameter. Expected: double|int|char. got: '+type.signature);
+                    //Alright, both numbers are currently in the cache, let's pow them:
+                    this.call('pow');
+                    this.evaluation_stack.push(this.types[DOUBLE]);
+                }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
+            }
+                return true;
             case "write_file":
                 if(value_as_signature){
                     this.evaluation_stack.push(VOID);
@@ -1798,7 +1812,7 @@ const Code_Generator = {
             this.assign(double_integer_part,this.t1); //we copy t1's value to the integer part.
             this.remove_decimal_part(double_integer_part); //we remove all decimals.
             this.operate(this.t1,'1','%',double_decimal_part);
-            this.operate(double_decimal_part,this.MAX_DECIMAL_DISPLAY,'*',double_decimal_part);
+            this.operate(double_decimal_part,ACCURACY*10000,'*',double_decimal_part);
             this.remove_decimal_part(double_decimal_part); //in case there's even extra decimals we remove them.
             this.push_cache(double_integer_part); //we push the integer part of the number
             this.call('int_to_string'); //We transform it to a char array
@@ -1976,7 +1990,7 @@ const Code_Generator = {
             this.evaluation_stack.push(this.types[BOOLEAN]);
             return true;
         }
-        else if(signature = 'toString'){
+        else if(signature == 'toString'){
          //Returns null or an String saying it is an Object with certain ID.
          //Please, try to avoid its usage at all costs. As it performs a series of String summing that is NOT optimal at all.
             if(resolve_as_signature){
@@ -2321,17 +2335,15 @@ const Code_Generator = {
                 //supposed to be already printed. at this point. So basically we just need to evaluate the children
                 //and catch exceptions if any.
                 this.stack.push('program');
-                this.scope.push(this.scope_tracker.pop());//Alright we'll start giving a use to the scope tracker.
                 try {
                     node.children.forEach(child=>{
                        this.evaluate_node(child);
                     });
                     this.stack.pop();
-                    this.scope.pop();
                     _log('Compilation finished successfully!');
                 }catch (e) {
-                    _log('One or more errors occurred during compilation. see error log for details. You can select');
-                    console.log(e);
+                    _log('One or more errors occurred during compilation. see error tab for details.');
+                    if(!("semantic" in e))console.log(e);
                     reset_compilation_cycle();
                 }
                 return;
@@ -3348,11 +3360,148 @@ const Code_Generator = {
         this.set_label(whileEnd);
         Printing.print_function();
     },
+    native_arithmetics:function(){
+        /*
+        * This method takes 2 numeric values from the cache: base, exponent and pows them.
+        *exponent
+        * base
+        * cache
+        * */
+        let exponent = 'exponent';
+        let base = 'base';
+        const root = 'root';
+        Printing.add_function('pow');
+        this.pop_cache(exponent);
+        this.pop_cache(base);
+        const lPositive = this.generate_label();
+        const lEnd = this.generate_label();
+        const lNext = this.generate_label();
+        const lNext2 = this.generate_label();
+        this.pureIf(exponent,'0','!=',lNext);
+        this.push_cache(1); //Any number ^ 0 is 1.
+        this.goto(lEnd);
+        this.set_label(lNext);
+        this.pureIf(exponent,'1','!=',lNext2); //Any number ^ 1 is the same number.
+        this.push_cache(base);
+        this.goto(lEnd);
+        this.set_label(lNext2);
+        this.pureIf(exponent,'0','>',lPositive);
+        this.operate(exponent,'-1','*',exponent); //we turn the exponent positive.
+        this.operate('1',base,'/',base); //We perform base ^ (-1)
+        this.set_label(lPositive);
+        this.operate(exponent,'1','%',root);
+        this.operate(root,ACCURACY,'*',root); //we get the integer part of the root.
+        this.remove_decimal_part(root);  //Remove any extra decimals
+        this.remove_decimal_part(exponent); //we clear the decimal part from the exponent
+        this.push_cache(base);
+        this.push_cache(exponent);
+        this.push_cache(base);
+        this.push_cache(root);
+        this.call('___root___');
+        this.pop_cache(root); //we retrieve the evaluated root.
+        this.pop_cache(exponent); //we retrieve the exponent.
+        this.pop_cache(base); //we get the base back.
+        this.push_cache(root); //we push the evaluated root.
+        this.push_cache(base); //we push the base back.
+        this.push_cache(exponent); //we push the exponent at the top.
+        this.call('___pow___');
+        this.pop_cache(base); //we pop the evaluated base
+        this.pop_cache(root); //we get back the evaluated root.
+        this.operate(base,root,'*',base); //we multiply them together.
+        this.push_cache(base);
+        this.set_label(lEnd);
+        Printing.print_function();
+
+        //This function performs a pure pow (only takes 2 natural numbers as valid parameters):
+        Printing.add_function('___pow___');
+        this.pop_cache(exponent);
+        this.pop_cache(base);
+        const notZero = this.generate_label();
+        const notOne = this.generate_label();
+        const lPow_End = this.generate_label();
+        const og = 'og';
+        this.pureIf(exponent,'0','!=',notZero);
+        this.push_cache(1);
+        this.goto(lPow_End);
+        this.set_label(notZero);
+        this.pureIf(exponent,'1','!=',notOne);
+        this.push_cache(base);
+        this.goto(lPow_End);
+        this.set_label(notOne);
+        this.assign(og,base);
+        const lPowWhileStart = this.generate_label();
+        const lPowWhileEnd = this.generate_label();
+        this.set_label(lPowWhileStart);
+        this.pureIf(exponent,'1','<=',lPowWhileEnd);
+        this.operate(base,og,'*',base);
+        this.operate(exponent,'1','-',exponent); //we decrease the exponent
+        this.goto(lPowWhileStart);
+        this.set_label(lPowWhileEnd);
+        this.push_cache(base); //we push the answer.
+        this.set_label(lPow_End);
+        Printing.print_function();
+
+        //This function calculates the Nth root of a number (only takes natural numbers as parameters)
+        const prev = 'prev';
+        const accuracy ='accuracy';
+        const distance = 'distance';
+        const res = 'res';
+        Printing.add_function('___root___');
+        this.pop_cache(root);
+        this.pop_cache(base);
+        const notZero1 = this.generate_label();
+        const notOne1 = this.generate_label();
+        const lroot_End = this.generate_label();
+        this.pureIf(root,'0','!=',notZero1);
+        this.push_cache(1);
+        this.goto(lroot_End);
+        this.set_label(notZero1);
+        this.pureIf(root,'1','!=',notOne1);
+        this.push_cache(base);
+        this.goto(lroot_End);
+        this.set_label(notOne1);
+        this.assign(prev,(Math.floor(Math.random()*100)%10));
+        this.assign(accuracy,1/(ACCURACY*10));
+        this.assign(distance,'2000000');
+        this.assign(res,0);
+        const lRootWhileStart = this.generate_label();
+        const lRootWhileEnd = this.generate_label();
+        this.set_label(lRootWhileStart);
+        this.pureIf(distance,accuracy,'<=',lRootWhileEnd);
+        this.push_cache(base); //we save the value for later.
+        this.operate(root,1,'-',this.t1); //t1 = root -1
+        this.operate(prev,this.t1,'*',this.t2); //t2 = (root - 1) * prev
+        this.push_cache(this.t2);
+        this.push_cache(prev);
+        this.push_cache(this.t1);
+        this.call('___pow___');
+        this.pop_cache(this.t3); //t3 = pow (prev,root-1)
+        this.pop_cache(this.t2); //t2 = (root - 1) * prev
+        this.pop_cache(base); //we get the base back.
+        this.operate(base,this.t3,'/',res);
+        this.operate(this.t2,res,'+',res);
+        this.operate(res,root,'/',res);
+        this.operate(res,prev,'-',distance);
+        this.get_abs(distance);
+        this.assign(prev,res);
+        this.goto(lRootWhileStart);
+        this.set_label(lRootWhileEnd);
+        this.push_cache(res);
+        this.set_label(lroot_End);
+        Printing.print_function();
+    },
+    get_abs:function(num){
+        const lEnd = this.generate_label();
+        this.pureIf(num,'0','>=',lEnd);
+        this.operate(num,'-1','*',num); //we turn the num positive.
+        this.set_label(lEnd);
+    },
     to_String:function () {
         //This functions prints a 3D function that returns an String saying null
         // Or Object. Class: num Address: num
+        const ObjInstance = 'ObjInstance';
         Printing.add_function('___toString___');
-        this.pop_cache(this.t); //t = object instance.
+        this.pop_cache(ObjInstance); //t = object instance.
         const lEnd = this.generate_label();
         const notNullL = this.generate_label();
         this.pureIf(this.t,'0','!=',notNullL);
@@ -3361,13 +3510,13 @@ const Code_Generator = {
         this.set_label(notNullL);
         //Alright is an Instance of an Object. let's start building the String representation:
         this.compile_string('Object. Class:');
-        this.get_heap(this.t1,this.t); //we get the ID of the Object.
+        this.get_heap(this.t1,ObjInstance); //we get the ID of the Object.
         this.push_cache(this.t1); //we push the numeric value.
         this.call('int_to_string'); //We get its charArray representation.
         this.call('___sum_strings___'); //We concatenate them.
         this.compile_string(' Address: ');
         this.call('___sum_strings___'); //we concatenate.
-        this.push_cache(this.t);
+        this.push_cache(ObjInstance);
         this.call('int_to_string'); //we push the String representation of the address.
         this.call('___sum_strings___'); //We concatenate.
         this.set_label(lEnd);

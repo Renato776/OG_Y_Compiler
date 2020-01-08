@@ -17,8 +17,12 @@
 "#MAX_HEAP_DISPLAY"[ \r\t]+[0-9]+ 				{MAX_HEAP_DISPLAY = Number(yytext.substring(17).trim());}
 "#MAX_STACK_DISPLAY"[ \r\t]+[0-9]+ 				{MAX_STACK_DISPLAY = Number(yytext.substring(18).trim());}
 "#MAX_INSTRUCTION"[ \r\t]+[0-9]+ 				{INSTRUCTION_MAX = Number(yytext.substring(16).trim());}
+"#MAX_CACHE"[ \r\t]+[0-9]+ 						{MAX_CACHE = Number(yytext.substring(10).trim());}
+"#ACCURACY"[ \r\t]+[0-9]+						{ACCURACY = Number(yytext.substring(9).trim());}
+"#HIDE_NATIVES"									{SHOW_ALL_DETAILS = false;}
 "#FORCE_ENTRY_PROC"[ \r\t]+([a-zA-Z]|_)+[0-9]*	{FORCE_ENTRY_PROC=yytext.substring(17).trim();}
 "#FORCE_ENTRY_POINT"[ \r\t]+[0-9]+				{FORCE_ENTRY_POINT=yytext.substring(17).trim();}
+
 ";".*              {/*ignore*/}
 "proc"           return 'PROC';
 "{"           return 'LEFT_BRACE';

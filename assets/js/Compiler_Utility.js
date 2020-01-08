@@ -952,12 +952,13 @@ function compile_source() {
     }catch (e) {
         return;
     }
+    Compiler.scope_tracker = Compiler.scope_tracker.reverse(); //We reverse it so it can be ready for the CodeGenerator
+    Compiler.sub_block_tracker = Compiler.sub_block_tracker.reverse(); //We reverse it so it can be ready for the Code Generator
     $("#Compilar_Main").unbind();
     $("#Compilar_Main").click(generate_code); //Advance process to the next part.
     $("#Compilar_Main").html('Finish compilation');
 }
 function generate_code() {
-    Code_Generator.initialize();
     if(Code_Generator.entry_point==-1){
         /*
         const valid_entry_point_details = 'For an static method to be valid as starting point' +
@@ -976,6 +977,7 @@ function generate_code() {
             return;
         }
     }
+    Code_Generator.initialize();
     try{
         Code_Generator.compile_abstract_methods(); //Next we output 3D for all abstract methods.
         Code_Generator.compile_native_constructors(); //Next we output 3D for all default constructors.

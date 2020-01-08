@@ -73,7 +73,7 @@ function update_heap(index,value) { //A function to update the heap Graphically.
     if(index>=MAX_HEAP_DISPLAY){
         if(CAP_HEAP_DISPLAY){
             if(!alerted_H){
-                alert("To keep optimal performance in debugger visualization of any Heap index past "+MAX_HEAP_DISPLAY+" is forbidden.");
+                alert("To keep optimal performance in debugger, visualization of any Heap index past "+MAX_HEAP_DISPLAY+" is forbidden.");
             } alerted_H = true;
             return;
         }else{ //Alright we haven't capped the display limit this means we could make a new segment twice as big.
@@ -91,7 +91,7 @@ function update_stack(index,value) { //A function to update the heap Graphically
     if(index>=MAX_STACK_DISPLAY){
         if(CAP_STACK_DISPLAY){
             if(!alerted_S){
-                alert("To keep optimal performance in debugger visualization of any Stack index past "+MAX_STACK_DISPLAY+" is forbidden.");
+                alert("To keep optimal performance in debugger, visualization of any Stack index past "+MAX_STACK_DISPLAY+" is forbidden.");
             } alerted_S = true;
             return;
         }else{ //Alright we haven't capped the display limit this means we could make a new segment twice as big.
