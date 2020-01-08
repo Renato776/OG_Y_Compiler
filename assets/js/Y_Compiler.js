@@ -761,7 +761,7 @@ const Compiler = {
              this.finish_function_compilation(func_index,node,_class);
          }
             return;
-         default:console.log('Unimplemented or unimportant node: '+node.name);
+         default: //console.log('Unimplemented or unimportant node: '+node.name);
      }
     },
     compile_function:function(func_signature,node){ //Compiles the type signature for the function and adds the function to the ST,

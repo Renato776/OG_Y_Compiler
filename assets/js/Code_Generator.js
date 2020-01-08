@@ -611,6 +611,9 @@ const Code_Generator = {
         * d) I'm doing a call to a target scope which is a parent of current_scope.
         * */
         //-1) reset the found fields:
+        if(caller==88&&target==63){
+            console.log('stoop!')
+        }
         this.repeated_inherited_id = {};
         //0) We increase P: (atm P is still pointing to the parent scope)
         this.operate('P',jump_size,'+','P');
@@ -662,7 +665,8 @@ const Code_Generator = {
             while(row.inherited){ //Now all common inherited values have been loaded. At this pont we're expecting references from locals held in parent.
                 i = Compiler.get_var_index(caller,row.name);
                 if(i==-1)throw new _compiling_exception("Fatal Error. Could not load references properly." +
-                    "Caller scope: "+this.SymbolTable[caller].name+". Target scope: "+this.SymbolTable[target].name);
+                    "Caller scope: "+this.SymbolTable[caller].name+". Target scope: "+this.SymbolTable[target].name+ "" +
+                    " Tried to load: "+row.name);
                 this.operate(this.t,this.SymbolTable[i].offset,'+',this.t1);
                 this.operate('P',this.SymbolTable[j].offset,'+',this.t2);
                 this.set_stack(this.t2,this.t1);
@@ -680,7 +684,8 @@ const Code_Generator = {
                 if(!(row.name in this.repeated_inherited_id))this.repeated_inherited_id[row.name]=0;
                 i = this.get_next_inherited_field(caller,row.name);
                 if(i==-1)throw new _compiling_exception("Fatal Error. Could not load references properly." +
-                    "Caller scope: "+this.SymbolTable[caller].name+". Target scope: "+this.SymbolTable[target].name);
+                    "Caller scope: "+this.SymbolTable[caller].name+". Target scope: "+this.SymbolTable[target].name+
+                    " Tried to load: "+row.name);
                 this.operate(this.t,this.SymbolTable[i].offset,'+',this.t1);
                 this.operate('P',this.SymbolTable[j].offset,'+',this.t2);
                 this.get_stack(this.t1,this.t1);//Its already a reference so we just retrieve the reference.
@@ -752,6 +757,15 @@ const Code_Generator = {
                 {
                     let indexL = node.children[node.children.length-1];
                     let i = indexL.children.length-1;
+                    if(resolve_as_signature){
+                        this.resolve_varChain(node.children[0],resolve_as_signature,static_access,resolve_as_ref); //We resolve the ID as usual.
+                        let array_type = this.evaluation_stack.pop();
+                        array_type = this.types[array_type];
+                        let target_dimension = indexL.children.length;
+                        let target_type = array_type.array.get_type_in_dimension(target_dimension);
+                        this.evaluation_stack.push(target_type);
+                        return;
+                    }
                     while(i>=0){ //We value the indexes beginning at the last index and going backwards.
                         this.value_expression(indexL.children[i]);
                         let index_type = this.evaluation_stack.pop();
@@ -761,9 +775,6 @@ const Code_Generator = {
                     this.varChainIndex  = 0; //We set it to 0 since atm it only accepts IDs, Ideally it'd accept a whole varChain.
                     this.resolve_varChain(node.children[0],resolve_as_signature,static_access,resolve_as_ref); //We resolve the ID as usual.
                     let array_type = this.evaluation_stack.pop();
-                    if(resolve_as_signature){
-                        array_type = this.types[array_type]; //if we're valuating as signature array_type is a mere String.
-                    }
                     if(!array_type.is_array())throw new semantic_exception("Cannot resolve Array Access in type: "+array_type.signature,node);
                     //Remember to check at runtime if array is null.
                     let target_dimension = indexL.children.length;
@@ -772,10 +783,6 @@ const Code_Generator = {
                     let target_type = array_type.array.get_type_in_dimension(target_dimension);
                     if(!(target_type in this.types)){
                         this.types[target_type] = new type(array_type.array.type,target_dimension);
-                    }
-                    if(resolve_as_signature){
-                        this.evaluation_stack.push(target_type.signature);
-                        return;
                     }
                     this.evaluation_stack.push(this.types[target_type]); //We push the target type.
                     if(resolve_as_ref){
@@ -1041,50 +1048,34 @@ const Code_Generator = {
             case 'downcast':
             {
                 let target = node.children[0].text; //We get the target type we're attempting to downcast
+                if(value_as_signature){
+                    this.evaluation_stack.push(target);
+                    return;
+                }
                 this.value_expression(node.children[1],value_as_signature); //We value the expression associated to the downcast.
                 let og = this.evaluation_stack.pop(); //We get the og type.
                 switch (target) {
                     case DOUBLE:
-                        if(value_as_signature){
-                            this.evaluation_stack.push(DOUBLE);
-                            return;
-                        }
                         if(!og.is_primitive())throw new semantic_exception('Cannot downcast '+og.signature+' to '+target,node);
                         this.cast_to_double(og);
                         this.evaluation_stack.push(this.types[DOUBLE]);
                         return;
                     case INTEGER:
-                        if(value_as_signature){
-                            this.evaluation_stack.push(INTEGER);
-                            return;
-                        }
                         if(!og.is_primitive())throw new semantic_exception('Cannot downcast '+og.signature+' to '+target,node);
                         this.cast_to_integer(og);
                         this.evaluation_stack.push(this.types[INTEGER]);
                         return;
                     case CHAR:
-                        if(value_as_signature){
-                            this.evaluation_stack.push(CHAR);
-                            return;
-                        }
                         if(!og.is_primitive())throw new semantic_exception('Cannot downcast '+og.signature+' to '+target,node);
                         this.cast_to_char(og);
                         this.evaluation_stack.push(this.types[CHAR]);
                         return;
                     case BOOLEAN:
-                        if(value_as_signature){
-                            this.evaluation_stack.push(BOOLEAN);
-                            return;
-                        }
                         if(!og.is_primitive())throw new semantic_exception('Cannot downcast '+og.signature+' to '+target,node);
                         this.cast_to_boolean(og);
                         this.evaluation_stack.push(this.types[BOOLEAN]);
                         return;
                     case 'String':
-                        if(value_as_signature){
-                            this.evaluation_stack.push('String');
-                            return;
-                        }
                         if(og.is_primitive()){
                             this.cast_to_string(og,node);
                         }else{
@@ -1102,10 +1093,6 @@ const Code_Generator = {
                         og = this.classes[og.signature];
                         target = this.classes[target]; //We get the actual class
                         if(target.cc % og.cc == 0){
-                            if(value_as_signature){
-                                this.evaluation_stack.push(target.name);
-                                return;
-                            }
                             this.push_cache(target.id); //We push the target id
                             this.call('___downcast___');
                             this.evaluation_stack.push(this.types[target.name]);
@@ -1177,23 +1164,40 @@ const Code_Generator = {
                 let right_arg;
                 let left_value = 'left_value';
                 let right_value = 'right_value';
-                if(node.name=='NOT'||node.name=='UMINUS'){
-                    left_arg = right_arg = this.evaluation_stack.pop();
-                    this.pop_cache(left_value);
-                    this.assign(right_value,left_value);
-                }else{
-                    right_arg = this.evaluation_stack.pop();
-                    left_arg = this.evaluation_stack.pop();
-                    this.pop_cache(right_value);
-                    this.pop_cache(left_value);
+                if(!value_as_signature){
+                    if(node.name=='NOT'||node.name=='UMINUS'){
+                        left_arg = right_arg = this.evaluation_stack.pop();
+                        this.pop_cache(left_value);
+                        this.assign(right_value,left_value);
+                    }else{
+                        right_arg = this.evaluation_stack.pop();
+                        left_arg = this.evaluation_stack.pop();
+                        this.pop_cache(right_value);
+                        this.pop_cache(left_value);
+                    }
+                }else{ //the difference is that the 3D instructions aren't printed if we're valuating as signature.
+                    if(node.name=='NOT'||node.name=='UMINUS'){
+                        left_arg = right_arg = this.evaluation_stack.pop();
+                     }else{
+                        right_arg = this.evaluation_stack.pop();
+                        left_arg = this.evaluation_stack.pop();
+                      }
                 }
                 switch (node.name){
                     case "+": //Sum is special because of all possible overloads.
+                        if(value_as_signature){
+                            if(this.signature_is_String(left_arg)||this.signature_is_String(right_arg)){
+                                this.evaluation_stack.push(STRING);
+                            } else if(this.signature_is_integer(left_arg)
+                                &&this.signature_is_integer(right_arg)){
+                                this.evaluation_stack.push(INTEGER);
+                            } else if(this.signature_is_number(left_arg)
+                                &&this.signature_is_number(right_arg))this.evaluation_stack.push(DOUBLE);
+                            else throw new semantic_exception('Invalid types for + operator. Expected: String|char|int|double x2. got: '+left_arg
+                                +' and '+right_arg,node);
+                            return;
+                        }
                         if(left_arg.is_string()||right_arg.is_string()){//There's at least one string. We must concatenate
-                            if(value_as_signature){
-                                this.evaluation_stack.push('String');
-                                return;
-                            }
                             this.push_cache(left_value);
                             this.cast_to_string(left_arg,node);
                             this.push_cache(right_value);
@@ -1201,11 +1205,6 @@ const Code_Generator = {
                             this.call('sum_strings');
                             this.evaluation_stack.push(this.types['String']);
                         }else if(left_arg.is_number()&&right_arg.is_number()){ //Both are numbers, it is an arithmetic sum
-                            if(value_as_signature){
-                                if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(INTEGER);
-                                else this.evaluation_stack.push(DOUBLE);
-                                return;
-                            }
                             this.operate(left_value,right_value,'+',left_value);
                             this.push_cache(left_value);
                             if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(this.types[INTEGER]);
@@ -1217,16 +1216,19 @@ const Code_Generator = {
                     case "/":
                     case "*":
                     case "%":
+                        if(value_as_signature){
+                            if(!(this.signature_is_number(left_arg)&&this.signature_is_number(right_arg)))
+                                throw new semantic_exception("Invalid types for operation: "+node.name+" " +
+                                    "Expected: integer|decimal and integer|decimal. Got: "+left_arg.signature+" and "+right_arg.signature,node);
+                            if(this.signature_is_integer(left_arg)&&this.signature_is_integer(right_arg))this.evaluation_stack.push(INTEGER);
+                            else this.evaluation_stack.push(DOUBLE);
+                            return;
+                        }
                         //Alright the rest of arithmetic operations have no overloads so it's pretty much the same for most of them:
                         //1) Verify  that both arguments are numbers:
                         if(!(left_arg.is_number()&&right_arg.is_number()))
                             throw new semantic_exception("Invalid types for operation: "+node.name+" " +
                                 "Expected: integer|decimal and integer|decimal. Got: "+left_arg.signature+" and "+right_arg.signature,node);
-                        if(value_as_signature){
-                            if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(INTEGER);
-                            else this.evaluation_stack.push(DOUBLE);
-                            return;
-                        }
                         this.operate(left_value,right_value,node.name,left_value);
                         this.push_cache(left_value);
                         if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(this.types[INTEGER]);
@@ -1238,14 +1240,14 @@ const Code_Generator = {
                     case "<":
                     case ">=":
                     case "<=":
+                        if(value_as_signature){
+                            this.evaluation_stack.push(BOOLEAN);
+                            return;
+                        }
                         if(!((left_arg.is_class()||right_arg.is_class())&&
                             (left_arg.signature==NULL||right_arg.signature==NULL))){
                             if(!(left_arg.is_primitive()&&right_arg.is_primitive()))throw new semantic_exception("Cannot perform: "+node.name+" " +
                                 "On types: "+left_arg.signature+" and "+right_arg.signature,node);
-                        }
-                        if(value_as_signature){
-                            this.evaluation_stack.push(BOOLEAN);
-                            return;
                         }
                         this.operate(left_value,right_value,node.name,this.t);
                         this.push_cache(this.t);
@@ -1253,32 +1255,32 @@ const Code_Generator = {
                         return;
                     case "&&":
                     case "||":
+                        if(value_as_signature){
+                            this.evaluation_stack.push(BOOLEAN);
+                            return;
+                        }
                         if(left_arg.is_boolean()&&right_arg.is_boolean()){
-                            if(value_as_signature){
-                                this.evaluation_stack.push(BOOLEAN);
-                                return;
-                            }
                             this.operate(left_value,right_value,node.name,this.t);
                             this.push_cache(this.t);
                             this.evaluation_stack.push(this.types[BOOLEAN]);
                             return;
                         }else throw new semantic_exception("Cannot perform operation: "+node.name+" On types: "+left_arg.signature+" and "+right_arg.signature,node);
                     case "NOT":
-                        if(!left_arg.is_boolean())throw new semantic_exception("Cannot negate type: "+left_arg.signature,node);
                         if(value_as_signature){
                             this.evaluation_stack.push(BOOLEAN);
                             return;
                         }
+                        if(!left_arg.is_boolean())throw new semantic_exception("Cannot negate type: "+left_arg.signature,node);
                         this.operate(left_value,null,'!',this.t,true);
                         this.push_cache(this.t);
                         this.evaluation_stack.push(this.types[BOOLEAN]);
                         return;
                     case "UMINUS":
-                        if(!left_arg.is_number())throw  new semantic_exception("Cannot operate: UMinus on type: "+ left_arg.signature,node);
                         if(value_as_signature){
-                            this.evaluation_stack.push(left_arg.signature);
+                            this.evaluation_stack.push(left_arg);
                             return;
                         }
+                        if(!left_arg.is_number())throw  new semantic_exception("Cannot operate: UMinus on type: "+ left_arg.signature,node);
                         this.operate(left_value,null,'-',this.t,true);
                         this.push_cache(this.t);
                         if(left_arg.is_integer())this.evaluation_stack.push(this.types[INTEGER]);
@@ -1527,6 +1529,7 @@ const Code_Generator = {
         * */
         let name = node.text;
         let owner = this.evaluation_stack.pop(); //We get the type from the past member of the chain
+        if(resolve_as_signature)owner = this.types[owner]; //we get the actual type.
         if(owner.is_array()){
             //Alright, the previous member resolved as Array. This means there's only one option:
             //.length has been called.
@@ -1612,7 +1615,9 @@ const Code_Generator = {
                 let method = this.get_field(signature,owner,node);
                 if(method==undefined)throw new semantic_exception('method: '+signature+" Has NOT been defined.",node);
                 if(method.category=='field')throw new semantic_exception(method.name+" is NOT a function.",node); //Just in case
+                this.varChainIndex = 0; //we reset the var chain index as we're within a global function resolution.
                 this.resolve_method_call(method,node,resolve_as_signature);
+                this.varChainIndex++;
                 return;
             }
             if(resolve_as_signature){
@@ -3599,6 +3604,21 @@ const Code_Generator = {
         this.call('___sum_strings___'); //We concatenate.
         this.set_label(lEnd);
         Printing.print_function();
+    },
+    signature_is_number(signature){
+        return signature==CHAR||signature==INTEGER||signature==DOUBLE;
+    },
+    signature_is_integer(sigature){
+        return sigature==CHAR||sigature==INTEGER;
+    },
+    signature_is_class(signature){
+      return signature in this.classes;
+    },
+    signature_is_array(signature){
+      return signature.startsWith('array');
+    },
+    signature_is_String(signature){
+      return signature=='String';
     },
     write_file() {
         Printing.print_in_context('write_file(0)');
