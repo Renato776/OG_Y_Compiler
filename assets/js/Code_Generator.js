@@ -3017,8 +3017,9 @@ const Code_Generator = {
            else return false;
        },
     holds_valid_return_stmt(block) {
-        return; //We should implement the return tracking here. Not implemented yet.
+         //We should implement the return tracking here. Not implemented yet.
         if(this.SymbolTable[this.current_function].type=='void')return; //If it is a void function it doesn't matter whether it has a return stmt or not.
+        this.foundReturn = false;
         this.returnTracker = [0];//we reset the return tracker to default.
         this.trackReturnStmt(block);
         if(!this.foundReturn)throw new semantic_exception(this.SymbolTable[this.current_function].name+' is missing return statement.',block);
@@ -3063,10 +3064,12 @@ const Code_Generator = {
         if(block.name=='ifStmt'||block.name=='switch'){
             this.returnTracker.push(1); //Could or not be an unconditional return.
             let hasElse = false;
-            block.children.forEach(child=>{
-                if(child.name=='else'||child.name=='default')hasElse = true;
-                this.trackReturnStmt(child);
-            });
+            if(block.name=='switch')block = block.children[block.children.length-1]; //we replace the og switch block by the caseL block.
+            for(let i = 0; i<block.children.length; i++){
+               let child = block.children[i];
+               if(child.name=='else'||child.name=='default')hasElse = true;
+               this.trackReturnStmt(child);
+            }
             let outcome = this.returnTracker.pop();
             if(outcome==(block.children.length+1)&&hasElse){
                 //has else block and all of them have return stmts.
@@ -3079,6 +3082,7 @@ const Code_Generator = {
                     this.returnTracker.push(top);
                 }
             }
+            return;
         }else if (block.name=='if'||block.name=='case'||block.name=='else'||block.name=='default'){
             if(this.has_immediate_return(block)){
                 let top = this.returnTracker.pop();
@@ -3088,12 +3092,13 @@ const Code_Generator = {
             block.children.forEach(child=>{
                 if(this.has_relevant_sub_block(child))this.trackReturnStmt(child);
             });
+            return;
         }
         //Else (do, normal block, pure block):
         if(this.has_immediate_return(block)&&this.is_unconditional_return()){
             this.foundReturn = true;
             return;
-        }else{
+        }else if(this.has_immediate_return(block)&&!this.is_unconditional_return()){
             let top = this.returnTracker.pop();
             top++;
             this.returnTracker.push(top);
@@ -3118,6 +3123,8 @@ const Code_Generator = {
          case 'ifStmt':
          case 'switch':
          case 'do':
+         case 'block':
+         case 'caseL':
              return true;
          default:
              return false;
