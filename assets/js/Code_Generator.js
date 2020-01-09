@@ -62,6 +62,9 @@ const Code_Generator = {
     goto:function(target){
         Printing.print_in_context('goto '+target);
     },
+    readFile:function(path){
+       Printing.print_in_context('read('+path+')');
+    },
     operate:function(param1,param2,op,vessel,unary = false){
         if(unary){ //Special operation with unary operators like - and !
             if(op=='!'){
@@ -429,6 +432,7 @@ const Code_Generator = {
         Printing.print_function();
         //endregion
         this.malloc();
+        this.string_to_double();
         this.native_arithmetics();
         this.string_to_int();
         this.int_to_string();
@@ -850,6 +854,10 @@ const Code_Generator = {
                             signature = function_name+signature;
                             //region resolve as signature
                             if(resolve_as_signature){
+                                if(signature.startsWith('equals')){
+                                    this.evaluation_stack.push(BOOLEAN);
+                                    return;
+                                }
                                 switch (signature) {
                                     case "isNull":
                                         this.evaluation_stack.push(BOOLEAN);
@@ -873,6 +881,18 @@ const Code_Generator = {
                             }
                             //endregion
                             //region Actual implementation
+                            if(signature.startsWith('equals')){
+                                //Alright, first of all let's value the argument:
+                                if(paramL.children.length!=1)throw new semantic_exception('' +
+                                    'invalid parameter amount for equals method. Expected: 1. got: '+paramL.children.length,node);
+                                this.value_expression(paramL.children[0]); //we value the param we'll search.
+                                let arg = this.evaluation_stack.pop(); //we already know the type of the return param.
+                                if(!arg.is_array())throw new semantic_exception('Invalid type for equals argument. ' +
+                                    'expected: Array. got:'+arg.signature,node);
+                                this.call('___compareArrays___');
+                                this.evaluation_stack.push(this.types[BOOLEAN]);
+                                return;
+                            }
                             switch (signature) {
                                 case "isNull":
                                     this.pop_cache(this.t); //t = array Address
@@ -1825,7 +1845,7 @@ const Code_Generator = {
             case "toInt":
             case "toDouble":
                 if(value_as_signature){
-                    if(node.name=='toDouble') this.evaluation_stack.push(DOUBLE);
+                    if(func_name=='toDouble') this.evaluation_stack.push(DOUBLE);
                     else this.evaluation_stack.push(INTEGER);
                     return true;
                 }
@@ -1835,11 +1855,13 @@ const Code_Generator = {
                     if(!type.is_class())throw new semantic_exception('Invalid parameter for '+func_name+" function." +
                         " Expected: String. Got: "+type.signature,node);
                     this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
-                    if(node.name=='toDouble'){
+                    if(func_name=='toDouble'){
                         this.get_char_array();
                         this.call('string_to_double');
-                    }else this.cast_to_integer(type); //We cast it to Integer.
-                    if(node.name=='toDouble') this.evaluation_stack.push(this.types[DOUBLE]);
+                    }else{
+                        this.cast_to_integer(type); //We cast it to Integer.
+                    }
+                    if(func_name=='toDouble') this.evaluation_stack.push(this.types[DOUBLE]);
                         else this.evaluation_stack.push(this.types[INTEGER]);
                 }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
                 return true;
@@ -1920,6 +1942,24 @@ const Code_Generator = {
                     this.evaluation_stack.push(this.types[VOID]);
                 }else throw new semantic_exception("More or less parameters than expected for function: "+func_name,node);
                 return true;
+            case "read":
+                if(value_as_signature){
+                    this.evaluation_stack.push(STRING);
+                    return true;
+                }
+                if(this.is_within_expression())throw new semantic_exception('Cannot call read from within an expression.',node);
+                if(paramL.children.length==1){//Only one parameters allowed.
+                    this.value_expression(paramL.children[0]); //We value the first param.
+                    let type = this.evaluation_stack.pop();
+                    if(!type.is_class())throw new semantic_exception('Invalid parameter for '+func_name+" function." +
+                        " Expected: String. Got: "+type.signature,node);
+                    this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
+                    this.get_char_array(); //we replace the String by the charArray.
+                    this.pop_cache('path');
+                    this.read('path'); //We print the file.
+                    this.evaluation_stack.push(this.types['String']);
+                }else throw new semantic_exception("More or less parameters than expected for function: "+func_name,node);
+
             default:
                 return false;
         }

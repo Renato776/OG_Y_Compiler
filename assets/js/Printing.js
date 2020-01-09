@@ -1,9 +1,11 @@
+let DEBUG_3D_OUTPUT = false;
 const Printing = {
     functions:[],
     last_five_lines:[],
     current_last_line:0,
     initialize:function () {
         this.functions = [];
+        this.last_five_lines = [];
     },
     peek_function_stack:function(){
       return this.functions[this.functions.length-1];
@@ -15,8 +17,10 @@ const Printing = {
         this.functions.push(new RFunction(function_name));
     },
     print_in_context:function(line){
-        this.current_last_line++;
-        this.last_five_lines[this.current_last_line%5] = line;
+        if(DEBUG_3D_OUTPUT){
+            this.current_last_line++;
+            this.last_five_lines[this.current_last_line%5] = line;
+        }
         this.peek_function_stack().add(line);
     },
     print_function:function(){
