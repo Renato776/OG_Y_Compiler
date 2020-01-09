@@ -273,7 +273,11 @@ const _compiling_exception = function (message,node = null) {
         t = _token_tracker.pop();
         if(t==undefined)t = new _token(null,null,null,null,null,null,true);
     }
-    else t = node.get_token();
+    else {
+        if(node.get_token==undefined){
+            t = new _token(null,null,null,null,null,null,true);
+        }else t = node.get_token();
+    }
     let $row = new error_entry('Semantic',t.row,t.col,message,t._class,t.file);
     $("#ErrorTableBody").append($row);
     _log("One or more errors occurred during compilation. See error tab for details.");
@@ -894,7 +898,8 @@ function perform_inheritance() {
                 if(am==undefined){ //It has not been registered yet, let's register it:
                    am = new AbstractMethod(field.index,[]);
                    abstractMethods.push(am);
-                   Compiler.scope_tracker.splice( Compiler.scope_tracker.indexOf(field.index), 1 );
+                   Compiler.scope_tracker.splice( Compiler.scope_tracker.indexOf(field.index), 1 ); //We remove the
+                    //abstract method's index from the scope tracker cause it is compiled separately.
                 }
             }
             if(field.name in _class.fields){ //True if we overrode a method/field
@@ -902,6 +907,9 @@ function perform_inheritance() {
                     am.implementations.push(new Implementation(_class.id,_class.fields[field.name].index));
                     overridden = true;
                 }
+                if(field.category=='method'&&field.final)
+                    throw new _compiling_exception('Method: '+field.name+' is final in class: '+parent.name+". " +
+                        "Cannot be overridden.");
             }else if(field.visibility!='private'){ //Alright, is a normal field from parent. We must inherit if not private:
                 let inherited_field = copy_field(field);
                 inherited_field.inherited = true;
@@ -911,7 +919,7 @@ function perform_inheritance() {
                 _class.fields[field.name] = inherited_field;
             }
             if(field.abstract&&!overridden)throw new _compiling_exception('Class: '+_class.name+" " +
-                "Does not override abstract method: "+field.name+" Please, override method before proceeding.");
+                "Does not override abstract method: "+field.name+". Please, override method before proceeding.");
         });
         i++;
     }

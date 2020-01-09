@@ -354,7 +354,8 @@ const Compiler = {
     abstractMethodDecl:function (type_token,name,dim,paramL) { //Prod:: TYPE dimList ID LEFT_PAREN paramDef RIGHT_PAREN SEMI
         let processed_details = this.resolve_modifiers(type_token,dim);
         if(!processed_details.abstract)throw new _compiling_exception("method: "+name.text+" is missing method body, or declare abstract.",type_token);
-        if(processed_details.visibility=='private') throw new _compiling_exception("An abstract method cannot be private.",type_token);
+        if(processed_details.visibility=='private') throw new _compiling_exception(
+            "An abstract method cannot be private.",type_token);
         if(processed_details._static)throw new _compiling_exception("Cannot declare a method as abstract and static at the same time.",type_token);
         let res = new _Node("abstractMethod");
         res.add(processed_details.token);
@@ -364,8 +365,8 @@ const Compiler = {
     },
     methodDecl:function (type_token,name,dim,paramL,stmtL) { //prod::  TYPE ID LEFT_PAREN paramDef RIGHT_PAREN LEFT_BRACE stmtL RIGHT_BRACE
         let processed_details = this.resolve_modifiers(type_token,dim);
-        if(processed_details.abstract)throw new _compiling_exception("An abstract method cannot be implemented in the same class it is declared on.",type_token);
-        if(processed_details.final)throw new _compiling_exception('Final modifier cannot be applied to methods',type_token);
+        if(processed_details.abstract)throw new _compiling_exception(
+            "An abstract method cannot be implemented in the same class it is declared on.",processed_details.token);
         let res;
         if(processed_details._static){ //static declaration
             res = new _Node("staticMethod");
@@ -637,7 +638,7 @@ const Compiler = {
              this.SymbolTable[func_index].visibility = details.visibility;
              if(node.name=='method'||node.name=='abstractMethod'){
                  let owner = this.classes[_class];
-                 if(fun_name=='toString')fun_name = '_toString_';
+                 if(fun_name=='toString')fun_name = '_toString_'; //we must change the signature cause JS produces naming issues with the native toString JS method
                  let methodName = fun_name+this.evaluation_stack.pop(); //We get the type signature.
                  let notValidName = methodName in owner.fields;
                  if(notValidName)throw new semantic_exception('There is another member with the same name: '+methodName,node);
@@ -645,6 +646,7 @@ const Compiler = {
                  if(node.name=='abstractMethod'){
                      owner.fields[methodName].abstract = true;
                  }
+                 owner.fields[methodName].final = toBoolean(details.final); //just to make sure it is boolean
                  this.finish_function_compilation(func_index,node,_class);
              }else this.finish_function_compilation(func_index,node);
          }
