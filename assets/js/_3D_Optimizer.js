@@ -224,9 +224,15 @@ const Optimizer = {
         * */
         this.load_optimization_header();
         this.instruction_stack.forEach(i=>{
-           $("#Optimized_code").append(i.signature+" <br> ");
+           //$("#Optimized_code").append(i.signature+" <br> ");
+            $("#Optimized_code").append(this.get_formatted_signature(i.signature)+" <br> ");
         });
         $("#Optimized_code").removeClass('Debug_Container_Hide');
+    },
+    get_formatted_signature(signature) {
+        let res = signature.replace(/</gm,'&lt');
+        res = res.replace(/>/gm,'&gt');
+        return res;
     }
 };
 function Optimize() {

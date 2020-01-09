@@ -245,6 +245,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     $("#Debug_Console").empty();
     $("#Ejecutar_Console").empty();
     $("#ErrorTableBody").empty();
+    $("#Optimized_code").empty();
     current_line = null;
     current_line2 = null;
 }
