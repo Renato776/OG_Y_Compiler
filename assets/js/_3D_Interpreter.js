@@ -274,10 +274,6 @@ function print(format = 'char', value = 0) { //ATM the output will be logged to 
                 current_line = new line("");
                 append_to_3D_console();
             }
-            else if(value=='\t'.charCodeAt(0)){
-                current_line.children()[1].append('&#9;');
-                current_line2.children()[1].append('&#9;');
-            }
             else{
                 current_line.children()[1].append(String.fromCharCode(value));
                 current_line2.children()[1].append(String.fromCharCode(value));

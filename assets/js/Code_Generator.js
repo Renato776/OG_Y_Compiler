@@ -1180,7 +1180,7 @@ const Code_Generator = {
                     this.evaluation_stack.push(target);
                     return;
                 }
-                this.value_expression(node.children[1],value_as_signature); //We value the expression associated to the downcast.
+                this.value_expression(node.children[1]); //We value the expression associated to the downcast.
                 let og = this.evaluation_stack.pop(); //We get the og type.
                 switch (target) {
                     case DOUBLE:
@@ -1209,7 +1209,12 @@ const Code_Generator = {
                         }else{
                             og = this.classes[og.signature];
                             target = this.classes['String'];
-                            if(target.cc % og.cc == 0){
+                            if(this.compatible_classes(target.name,og.name)){
+                                /*
+                                * There's no need to do anything is a native cast.
+                                * */
+                            }
+                            else if(target.cc % og.cc == 0){ //downcast
                                 this.push_cache(target.id); //We push the target id
                                 this.call('___downcast___');
                             }else throw new semantic_exception('Cannot downcast '+og.name+' to '+target.name,node);
@@ -1220,11 +1225,15 @@ const Code_Generator = {
                     {
                         og = this.classes[og.signature];
                         target = this.classes[target]; //We get the actual class
-                        if(target.cc % og.cc == 0){
+                        if(this.compatible_classes(target.name,og.name)){
+                            /*
+                            * No need to do anything is a native cast.
+                            * */
+                        }else if(target.cc % og.cc == 0){
                             this.push_cache(target.id); //We push the target id
                             this.call('___downcast___');
-                            this.evaluation_stack.push(this.types[target.name]);
                         }else throw new semantic_exception('Cannot downcast '+og.name+' to '+target.name,node);
+                        this.evaluation_stack.push(this.types[target.name]);
                     }
                         return;
                 }
@@ -2638,18 +2647,16 @@ const Code_Generator = {
             case 'constructor':
                 /**
                 //Alright, time to define custom constructors!
-                //A custom constructor will NOT actually build a new param from scratch.
-                //It will simply update the default one a native constructor returns.
-                //At the end it return the this reference it used.
-                //The super constructor might be kind of an issue, as it'd
+                //A custom constructor will NOT actually build a new instance from scratch.
+                //It will simply update the default one, returned by the native constructor.
+                //The super constructor tho, might be kind of an issue, as it'd
                 //imply building an ancestor object and then transferring its properties
                 //to the caller. Doable but I'll implement later.
-                 Is basically the same as a normal method, except it returns the this reference
+                 Is basically the same as a normal method, except it returns a this reference
                  at the end & I must not check whether it has or not valid return stmts.
-                 The usage of return stmts might produce unexpected behaviour, however,
-                 they aren't completely forbidden. I leave correct usage
-                 of returns to the user.
-                **/
+                 The usage of return stmts might produce unexpected behaviour,
+                 but I'll leave that to the user.
+                 **/
             case 'method':
             case 'staticMethod':
                 /*
@@ -3010,6 +3017,7 @@ const Code_Generator = {
            else return false;
        },
     holds_valid_return_stmt(block) {
+        return; //We should implement the return tracking here. Not implemented yet.
         if(this.SymbolTable[this.current_function].type=='void')return; //If it is a void function it doesn't matter whether it has a return stmt or not.
         this.returnTracker = [0];//we reset the return tracker to default.
         this.trackReturnStmt(block);
