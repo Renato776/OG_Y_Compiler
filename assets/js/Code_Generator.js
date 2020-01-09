@@ -2887,8 +2887,9 @@ const Code_Generator = {
                 let target_block = this.sub_block_tracker.pop();
                 let whileStart = this.generate_label();
                 let whileEnd = this.generate_label();
+                let whileContinue = this.generate_label();
                 let lF = this.generate_label();
-                this.continue_display.push(whileStart);
+                this.continue_display.push(whileContinue);
                 this.break_display.push(whileEnd);
                 //Alright, first things first: perform the jump:
                 this.perform_jump(this.peek(this.scope),target_block,this.SymbolTable[this.peek(this.scope)].size);
@@ -2916,6 +2917,7 @@ const Code_Generator = {
                         if(!("semantic" in e))console.log(e);
                     }
                 });
+                this.set_label(whileContinue);
                 this.evaluate_node(update); //We update the for variable.
                 this.goto(whileStart);
                 this.set_label(lF);
