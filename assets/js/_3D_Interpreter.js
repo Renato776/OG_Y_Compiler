@@ -273,7 +273,12 @@ function print(format = 'char', value = 0) { //ATM the output will be logged to 
             if(value=='\n'.charCodeAt(0)){ //Print new line.
                 current_line = new line("");
                 append_to_3D_console();
-            }else{
+            }
+            else if(value=='\t'.charCodeAt(0)){
+                current_line.children()[1].append('&#9;');
+                current_line2.children()[1].append('&#9;');
+            }
+            else{
                 current_line.children()[1].append(String.fromCharCode(value));
                 current_line2.children()[1].append(String.fromCharCode(value));
             }
@@ -442,7 +447,7 @@ function malloc(size) {
     * Function to implement malloc functionality manually. Can be useful
     * if you need the interpreter to interact with the data-structures during code execution.
     * */
-    let res = temporals['H'];
+    const res = temporals['H'];
     temporals['H'] = res+size;
     this.push_cache(res);
     let i = 0;
@@ -450,6 +455,7 @@ function malloc(size) {
         HEAP[res+i] = 0;
         i++;
     }
+    return res;
 }
 function compile_string(s){
     /*
@@ -742,16 +748,23 @@ function play_instruction(instruction,debug = false) {
             let path = pop_cache();
             content = extract_String(content);
             path = extract_String(path);
-            $("#Compilar_Button").trigger('click');
+            if(path[0]=='/')path = path.substring(1); //We remove the root slash if any.
+            try{
+                $("#Compilar_Button").trigger('click');
+            }catch (e) {
+                console.log(e);
+            }
             add_source_tab(content, path);
+            increase_IP();
             return true;
         case 'read':
-            path = pop_cache();
-            path = extract_String(path);
-            let archive = archives[path];
-            if(archive==undefined) throw new _3D_Exception(instruction.token,'Failed to open file: '+path,true,true);
-            content = archive.mirror.getValue();
-            compile_string(content);
+            let path_ = pop_cache();
+            path_ = extract_String(path_);
+            let archive = archives[path_];
+            if(archive==undefined) throw new _3D_Exception(instruction.token,'Failed to open file: '+path_,true,true);
+            let content_ = archive.mirror.getValue();
+            compile_string(content_);
+            increase_IP();
             return true;
         case 'exit':
             switch (instruction.exitCode) {

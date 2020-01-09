@@ -3,14 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Optimizer_Grammar/_Optimizer_grammar.jison" beforeDir="false" afterPath="$PROJECT_DIR$/Optimizer_Grammar/_Optimizer_grammar.jison" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_3D_grammar.jison" beforeDir="false" afterPath="$PROJECT_DIR$/_3D_grammar.jison" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_3D_grammar.js" beforeDir="false" afterPath="$PROJECT_DIR$/_3D_grammar.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/Code_Generator.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/Code_Generator.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/js/Printing.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/Printing.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/js/_3D_grammar.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_grammar.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/js/_Optimizer_grammar.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_Optimizer_grammar.js" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -120,7 +114,8 @@
       <workItem from="1578517299556" duration="143000" />
       <workItem from="1578518588908" duration="5740000" />
       <workItem from="1578533429419" duration="21588000" />
-      <workItem from="1578583130044" duration="3441000" />
+      <workItem from="1578583130044" duration="4455000" />
+      <workItem from="1578587870347" duration="2379000" />
     </task>
     <servers />
   </component>

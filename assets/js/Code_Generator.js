@@ -1947,7 +1947,6 @@ const Code_Generator = {
                     this.evaluation_stack.push(STRING);
                     return true;
                 }
-                if(this.is_within_expression())throw new semantic_exception('Cannot call read from within an expression.',node);
                 if(paramL.children.length==1){//Only one parameters allowed.
                     this.value_expression(paramL.children[0]); //We value the first param.
                     let type = this.evaluation_stack.pop();
@@ -1955,11 +1954,11 @@ const Code_Generator = {
                         " Expected: String. Got: "+type.signature,node);
                     this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
                     this.get_char_array(); //we replace the String by the charArray.
-                    this.read('path'); //We read the file
+                    this.readFile('path'); //We read the file
                     this.call('build_string');
                     this.evaluation_stack.push(this.types['String']);
                 }else throw new semantic_exception("More or less parameters than expected for function: "+func_name,node);
-
+                return true;
             default:
                 return false;
         }
