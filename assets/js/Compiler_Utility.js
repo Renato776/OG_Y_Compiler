@@ -592,6 +592,7 @@ function digest(string) { //We scape the characters (if any)
     res = res.replace(/\\t/gm,'\t');
     res =  res.replace(/\\"/gm,'"');
     res = res.replace(/\\'/gm,'\'');
+    res = res.replace(/@([a-zA-Z]|_)+[0-9]*/gm,replace_class_token_in_string);
     res = res.substring(1,res.length-1);
     return res;
 }
@@ -836,6 +837,9 @@ function replace_class_token(match){
     let end = match[match.length-1];
     let name = match.substring(1,match.length-1);
     return begin+"@"+name+end;
+}
+function replace_class_token_in_string(match){
+    return match.substring(1); //we remove the @ at the begining.
 }
 function prepare_all_types(source) {
     /*
