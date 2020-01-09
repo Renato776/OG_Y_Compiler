@@ -1456,8 +1456,25 @@ const Code_Generator = {
         * */
         //0) Get the owner class:
         let owner = Compiler.get_class(node);
+        let local_index;
+        //Verify it isn't the super keyword:
+        if(node.text=='super'){
+            owner = this.classes[owner]; //we get the actual class.
+            //Calling supper as a field, is basically upcasting the this reference so the next members of the chain can resolve properly.
+            if(resolve_as_signature){
+                this.evaluation_stack.push(owner.parent);
+                return;
+            }
+            local_index = this.get_index('this');
+            if(local_index==-1)throw new semantic_exception('Cannot access: '+node.text+" Within a static context.",node);
+            this.evaluation_stack.push(this.types[owner.parent]); //we push the parent's class.
+            if(resolve_as_ref)throw new semantic_exception('You Cannot modify super\'s value.',node);
+            if(this.SymbolTable[local_index].inherited)this.get_stored_inherited_value(local_index);
+            else this.get_stored_value(local_index);
+            return; //that's all!
+        }
         //1) Check the first scenario: (a local within the current block):
-        let local_index = this.get_index(node.text);
+        local_index = this.get_index(node.text);
         if (local_index==-1){//Alright it is not a local. Let's check if it is an static field:
             local_index = this.get_static_field(node.text,owner,node,false);
             if(local_index==-1){ //Okay, there's a last chance of the ID being a normal field:
