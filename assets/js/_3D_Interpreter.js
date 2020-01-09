@@ -407,6 +407,8 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
     case "write":
         this.signature = "write (0)";
         break;
+    case "read":
+        this.signature = "read ("+this.token.text+")";
     default:
         break;
     }
@@ -434,6 +436,33 @@ function print_stack_trace(){
             $("#ErrorTableBody").append($row);
         }
     });
+}
+function malloc(size) {
+    /*
+    * Function to implement malloc functionality manually. Can be useful
+    * if you need the interpreter to interact with the data-structures during code execution.
+    * */
+    let res = temporals['H'];
+    temporals['H'] = res+size;
+    this.push_cache(res);
+    let i = 0;
+    while(i<size){
+        HEAP[res+i] = 0;
+        i++;
+    }
+}
+function compile_string(s){
+    /*
+        * This method takes a high level String as parameter and allocates a char_array in memory for it.
+        * This method makes sure the answer is pushed to the cache.
+        * */
+    let string_index = malloc(s.length+1);
+    push_cache(string_index); //We push the answer.
+    HEAP[string_index] = s.length; //We put the size of the array.
+    for(let i = 0; i<s.length;i++){
+        let char_index = string_index+i+1;
+        HEAP[char_index] = s[i].charCodeAt(0);
+    }
 }
 function extract_String(address){
     /*
@@ -469,6 +498,10 @@ function get_heap(address){
     let value = HEAP[address];
     if(value==undefined)value = HEAP[address.toString()];
     return Number(value);
+}
+function set_heap(address,value){
+    address = Number(address);
+    HEAP[address] = Number(value);
 }
 function get_name_of_proc(proc){
     //This method takes a true_func_signature as parameter and searches all the SymbolTable for it.
@@ -709,14 +742,21 @@ function play_instruction(instruction,debug = false) {
             let path = pop_cache();
             content = extract_String(content);
             path = extract_String(path);
-            download(path,content);
-            log('Cannot resume execution after writing & downloading a file. Exit code: 1');
-            return false;
+            $("#Compilar_Button").trigger('click');
+            add_source_tab(content, path);
+            return true;
+        case 'read':
+            path = pop_cache();
+            path = extract_String(path);
+            let archive = archives[path];
+            if(archive==undefined) throw new _3D_Exception(instruction.token,'Failed to open file: '+path,true,true);
+            content = archive.mirror.getValue();
+            compile_string(content);
+            return true;
         case 'exit':
             switch (instruction.exitCode) {
                 case '0': {
-                    throw new _3D_Exception(instruction.token,'Null pointer exception.',true);
-                    print_stack_trace();
+                    throw new _3D_Exception(instruction.token,'Null pointer exception.',true,true);
                 }
                 case '1': {
                     let forLength = pop_cache();
@@ -743,6 +783,11 @@ function play_instruction(instruction,debug = false) {
                     let invalidString = pop_cache();
                     invalidString = extract_String(invalidString);
                     throw new _3D_Exception(instruction.token,'Error casting String to int. Invalid String:'+invalidString,true,true);
+                case '4':
+                    let upperLimit = pop_cache();
+                    let lowerLimit = pop_cache();
+                    throw  new _3D_Exception(instruction.token,'Invalid slice method arguments. ' +
+                        'Lower limit: '+lowerLimit+' Upper limit: '+upperLimit,true,true);
                 default: throw new _3D_Exception(instruction.token,'FATAL ERROR at runtime. Finished execution with code: 4',true);
             }
         default:

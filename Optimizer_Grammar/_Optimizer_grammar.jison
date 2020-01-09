@@ -41,6 +41,7 @@
 "print"             return 'PRINT';
 "exit"				return 'EXIT';
 "write_file"		return 'WRITE_FILE'
+"read"				return 'READ';
 ","                 return 'COMMA';
 
 /* Espacios en blanco */
@@ -127,6 +128,7 @@ stmt : varDecl {$$ = $1;}
         | getStack {$$ = $1;}
         | exit {$$ = $1;}
         | write {$$ = $1;}
+        | read {$$ = $1;}
         ;
 
 varDecl: VAR ID ASIGNACION value {
@@ -218,6 +220,10 @@ exit : EXIT LEFT_PAREN value RIGHT_PAREN {
        ;
 exit : WRITE LEFT_PAREN value RIGHT_PAREN {
        $$ = new Instruction("write",$3,$3.text); //Write instruction (code)
+       }
+       ;
+read : READ LEFT_PAREN value RIGHT_PAREN {
+       $$ = new Instruction("read",$3,$3.text); //Write instruction (path)
        }
        ;
 
