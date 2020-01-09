@@ -1476,7 +1476,7 @@ const Code_Generator = {
         let lStart = this.generate_label();
         let lEnd = this.generate_label();
         this.set_label(lStart);
-        this.pureIf('i','0','<=',lEnd);
+        this.pureIf('i','strEnd','<=',lEnd);
         this.operate('str','i','+',this.t1);
         this.get_heap(this.t1,this.t1);
         const lWrong = this.generate_label();
@@ -1835,7 +1835,10 @@ const Code_Generator = {
                     if(!type.is_class())throw new semantic_exception('Invalid parameter for '+func_name+" function." +
                         " Expected: String. Got: "+type.signature,node);
                     this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
-                    this.cast_to_integer(type); //We cast it to Integer.
+                    if(node.name=='toDouble'){
+                        this.get_char_array();
+                        this.call('string_to_double');
+                    }else this.cast_to_integer(type); //We cast it to Integer.
                     if(node.name=='toDouble') this.evaluation_stack.push(this.types[DOUBLE]);
                         else this.evaluation_stack.push(this.types[INTEGER]);
                 }else throw new semantic_exception("More parameters than expected for function: "+func_name,node);
@@ -1966,6 +1969,7 @@ const Code_Generator = {
             this.operate(this.t1,'1','%',double_decimal_part);
             this.operate(double_decimal_part,ACCURACY*10000,'*',double_decimal_part);
             this.remove_decimal_part(double_decimal_part); //in case there's even extra decimals we remove them.
+            this.get_abs(double_decimal_part); //in case it is negative, there's no sign for the decimal part either way.
             this.push_cache(double_integer_part); //we push the integer part of the number
             this.call('int_to_string'); //We transform it to a char array
             this.build_unary_char_array('.'.charCodeAt(0)); //we build a unary char array holding the .
@@ -3890,6 +3894,84 @@ const Code_Generator = {
         this.goto(whileStart);
         this.set_label(whileEnd);
         this.push_cache(newArray);
+        Printing.print_function();
+    },
+    string_to_double:function () {
+        const charArray = 'DoubleCharArray';
+        const doubleSign = 'DoubleSign';
+        const integerCharArray = 'integerCharArray';
+        const decimalCharArray = 'decimalCharArray';
+        const charArraySize = 'charArraySize';
+        const indexOfDot = 'indexOfDot';
+        const integerValue = 'integerValue';
+        const doubleValue = 'doubleValue';
+        const decimalLength = 'decimalLength';
+        const lNext = this.generate_label();
+        /* High level implementation:
+        * char ls[] = s.toCharArray();
+    boolean negative = ls[0]=='-';
+    if(ls.indexOf('.')==-1)return toInt(s);
+    char integer[] = ls.slice(0,ls.indexOf('.'));
+    char decimal[];
+    if(ls.indexOf('.')!=-1)
+      decimal = ls.slice(ls.indexOf('.')+1,ls.length);
+      else decimal = new char[0];
+    int i = abs(toInt(integer.toString()));
+    int d = toInt(decimal.toString());
+    int sign = (negative)?-1:1;
+    return sign*(i + (double)d/pow(10,decimal.length));
+        * */
+        //3D implementation:
+        Printing.add_function('string_to_double');
+        const lEnd = this.generate_label();
+        const alreadyInteger = this.generate_label();
+        this.pop_cache(charArray);
+        this.get_heap(charArraySize,charArray);
+        this.operate(charArray,'1','+',this.t); //t = address of first char.
+        this.get_heap(this.t,this.t); //t is the first char.
+        this.assign(doubleSign,1); //by default is positive.
+        this.pureIf(this.t,'-'.charCodeAt(0),'!=',lNext);
+        this.assign(doubleSign,-1);
+        this.set_label(lNext);
+        this.push_cache(charArray);
+        this.push_cache('.'.charCodeAt(0)); //we indicate we wan't .
+        this.call('___indexOf___');
+        this.pop_cache(indexOfDot); //t = index of .
+        this.pureIf(indexOfDot,-1,'==',alreadyInteger);
+        this.push_cache(charArray); //alright time to slice it:
+        this.push_cache(0);
+        this.push_cache(indexOfDot); //indexOf .
+        this.call('___slice___');
+        this.pop_cache(integerCharArray); //we get the integer char array.
+        this.push_cache(charArray);
+        this.operate(indexOfDot,1,'+',indexOfDot);
+        this.push_cache(indexOfDot); //indexOfDot + 1
+        this.push_cache(charArraySize); //we push the max size for the String.
+        this.call('___slice___');
+        this.pop_cache(decimalCharArray);
+        //Alright we got both char arrays now, next step is parsing them to int:
+        this.push_cache(integerCharArray);
+        this.call('string_to_int');
+        this.pop_cache(integerValue); //we get the integer value.
+        this.get_abs(integerValue); //we get the absolute value.
+        this.push_cache(decimalCharArray);
+        this.call('string_to_int');
+        this.pop_cache(doubleValue);
+        //Alright, now lets calculate pow(10,decimal.length)
+        this.push_cache(10);
+        this.get_heap(decimalLength,decimalCharArray);
+        this.push_cache(decimalLength);
+        this.call('___pow___');
+        this.pop_cache(decimalLength); //decimal length's value is no longer of importance so we'll use it as a temp.
+        this.operate(doubleValue,decimalLength,'/',doubleValue); //we operate.
+        this.operate(integerValue,doubleValue,'+',doubleValue);
+        this.operate(doubleValue,doubleSign,'*',doubleValue);
+        this.push_cache(doubleValue); //we push the answer!
+        this.goto(lEnd);
+        this.set_label(alreadyInteger);
+        this.push_cache(charArray);
+        this.call("string_to_int");
+        this.set_label(lEnd);
         Printing.print_function();
     }
 };
