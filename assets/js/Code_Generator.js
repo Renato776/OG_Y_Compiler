@@ -1955,8 +1955,8 @@ const Code_Generator = {
                         " Expected: String. Got: "+type.signature,node);
                     this.compatible_types(this.types['String'],type,paramL); //We verify it is an String.
                     this.get_char_array(); //we replace the String by the charArray.
-                    this.pop_cache('path');
-                    this.read('path'); //We print the file.
+                    this.read('path'); //We read the file
+                    this.call('build_string');
                     this.evaluation_stack.push(this.types['String']);
                 }else throw new semantic_exception("More or less parameters than expected for function: "+func_name,node);
 

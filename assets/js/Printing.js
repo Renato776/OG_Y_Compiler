@@ -37,7 +37,7 @@ const Printing = {
         $("#Ejecutar_Console").empty();
         if(SEMANTIC_ERROR_OCCURRED){
             log('One or more semantic errors occurred. See error tab for details.');
-            log('If you choose to proceed regardless, unexpected behaviour might happen.');
+            log('If you still choose to proceed, unexpected behaviour might happen.');
         }
     }
 };
