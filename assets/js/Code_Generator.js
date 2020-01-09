@@ -26,7 +26,7 @@ const Code_Generator = {
     repeated_inherited_id:{},
     returnTracker:[],
     foundReturn:false,
-    varChainIndex:0,
+    varChainIndex:[],
     endLabel:null,
     break_display:[],
     continue_display:[],
@@ -440,6 +440,9 @@ const Code_Generator = {
         this.get_array_value();
         this.to_String();
         this.copy_array();
+        this.linear_copy();
+        this.___slice___();
+        this.___indexOf___();
         this.inherit();
         this.to_case();
         this.is_upper_case();
@@ -736,17 +739,20 @@ const Code_Generator = {
          * If it is the second or onwards it can only mean a reference to a field of the previous record.
          * */
             if(node.token) { //varChain ID resolve.
-                if (this.varChainIndex == 0) { //First ID in the chain.
+                if (this.peek(this.varChainIndex) == 0) { //First ID in the chain.
                     this.resolve_global_id(node,resolve_as_signature,resolve_as_ref);
-                    this.varChainIndex++;
                 } else this.resolve_member_id(node,resolve_as_signature,static_access,resolve_as_ref); //Makes reference to a field
             }
             switch (node.name){
                 case "varChain":
-                    this.varChainIndex = 0;
+                    this.varChainIndex.push(0);
                     node.children.forEach(child=>{
                        this.resolve_varChain(child,resolve_as_signature,static_access,resolve_as_ref);
+                        let c = this.varChainIndex.pop();
+                        c++;
+                        this.varChainIndex.push(c);
                     });
+                    this.varChainIndex.pop();
                     return;
                 case 'normalAccess': //Just value the id in the children token.
                     node.children.forEach(child=>{
@@ -766,13 +772,33 @@ const Code_Generator = {
                         this.evaluation_stack.push(target_type);
                         return;
                     }
+                    //Alright, before valuating the params, I must resolve the reference to the previous member in the chain currently
+                    //loaded in the cache (Only applies if we're valuating as ref)
                     while(i>=0){ //We value the indexes beginning at the last index and going backwards.
                         this.value_expression(indexL.children[i]);
                         let index_type = this.evaluation_stack.pop();
                         if(!index_type.is_integer())throw new semantic_exception("Invalid index type. Expected: integer. Got: "+index_type.signature,indexL.children.get(i));
                         i--;
-                    } //Alright all indexes are integers and have been valuated. The next thing is pushing the base array address:
-                    this.varChainIndex  = 0; //We set it to 0 since atm it only accepts IDs, Ideally it'd accept a whole varChain.
+                    } //Alright all indexes are integers and have been valuated.
+                    if(this.peek(this.varChainIndex)!=0){
+                        if(resolve_as_ref){
+                            this.push_cache(indexL.children.length); //We indicate how many indexes we valuated.
+                            this.call('send_this_reference_to_top'); //we send the previous reference to the top.
+                            //Alright, we just sent the ref back to top. However, this isn't enough!
+                            //We also have to get where to use the ref.
+                            this.push_cache(indexL.children.length+1); //We indicate how many indexes we valuated + 1 from the ref that is now at the top.
+                            this.call('send_this_reference_to_top'); //we send where to use to the top.
+                            this.pop_cache(this.t); //t = where to use.
+                            this.pop_cache(this.t1); //actual ref.
+                            this.push_cache(this.t); //we push it back
+                            this.push_cache(this.t1); //we push it back.
+                            //What we just did is to swap the order, since after getting back from sending where to use to the top,
+                            //it was well, in the top, and the next instructions expects the actual ref to be at the top and where to use below.
+                        }else{
+                            this.push_cache(indexL.children.length); //We indicate how many indexes we valuated.
+                            this.call('send_this_reference_to_top'); //we send the previous reference to the top.
+                        }
+                    }
                     this.resolve_varChain(node.children[0],resolve_as_signature,static_access,resolve_as_ref); //We resolve the ID as usual.
                     let array_type = this.evaluation_stack.pop();
                     if(!array_type.is_array())throw new semantic_exception("Cannot resolve Array Access in type: "+array_type.signature,node);
@@ -808,14 +834,93 @@ const Code_Generator = {
                     return;
                 case 'functionCall':
                     if(resolve_as_ref)throw new semantic_exception('Cannot extract reference from a function call.',node);
-                    if(this.varChainIndex==0){
+                    if(this.peek(this.varChainIndex)==0){
                         this.resolve_global_functionCall(node,resolve_as_signature);
-                        this.varChainIndex++;
                     }else {
                         let owner = this.evaluation_stack.pop(); //The value returned by the previous member.
                         if(resolve_as_signature){
                             owner = this.types[owner]; //if solving as signature the previous member returned an String. NOT a type.
                         }
+                        //region native array methods
+                        if(owner.is_array()){
+                            let function_name = node.children[0].text;
+                            let paramL = node.children[node.children.length-1];
+                            this.compile_signature(paramL);
+                            let signature = this.evaluation_stack.pop();
+                            signature = function_name+signature;
+                            //region resolve as signature
+                            if(resolve_as_signature){
+                                switch (signature) {
+                                    case "isNull":
+                                        this.evaluation_stack.push(BOOLEAN);
+                                        break;
+                                    case "indexOf-int":
+                                    case "indexOf-char":
+                                    case "indexOf-double":
+                                        this.evaluation_stack.push(INTEGER);
+                                        break;
+                                    case "copy":
+                                        this.evaluation_stack.push(owner.signature);
+                                        break;
+                                    case "slice-int-int":
+                                        this.evaluation_stack.push(owner.signature);
+                                        break;
+                                    case "toString":
+                                        this.evaluation_stack.push(STRING);
+                                    default: throw new semantic_exception('Cannot read function: '+signature+" of Array.",node);
+                                }
+                                return;
+                            }
+                            //endregion
+                            //region Actual implementation
+                            switch (signature) {
+                                case "isNull":
+                                    this.pop_cache(this.t); //t = array Address
+                                    this.operate(this.t,'0','==',this.t2); //true if address == 0
+                                    this.push_cache(this.t2);
+                                    this.evaluation_stack.push(this.types[BOOLEAN]);
+                                    break;
+                                case "indexOf-int":
+                                case "indexOf-char":
+                                case "indexOf-double":
+                                    this.value_expression(paramL.children[0]); //we value the param we'll search.
+                                    this.evaluation_stack.pop(); //we already know the type of the return param.
+                                    this.call('___indexOf___');
+                                    this.evaluation_stack.push(this.types[INTEGER]);
+                                    break;
+                                case "copy":
+                                    this.call('___linear_copy___');
+                                    this.evaluation_stack.push(this.types[owner.signature]);
+                                    break;
+                                case "slice-int-int":
+                                case "slice-int":
+                                    this.value_expression(paramL.children[0]); //we value the lower limit
+                                    this.evaluation_stack.pop();
+                                    if(paramL.children[1]!=undefined){
+                                        this.value_expression(paramL.children[1]);
+                                        this.evaluation_stack.pop();
+                                    }
+                                    else { //no upper limit was provided, therefore we use .length instead.
+                                        this.pop_cache(this.t); //t = lower limit
+                                        this.pop_cache(this.t1); //t1 = array address.
+                                        this.get_heap(this.t2,this.t1);//t2 = size. aka upper limit
+                                        this.push_cache(this.t1);
+                                        this.push_cache(this.t);
+                                        this.push_cache(this.t2);
+                                    }
+                                    this.call('___slice___');
+                                    this.evaluation_stack.push(this.types[owner.signature]);
+                                    break;
+                                case "toString":
+                                    this.call('build_string');
+                                    this.evaluation_stack.push(this.types['String']);
+                                    break;
+                                default: throw new semantic_exception('Cannot read function: '+signature+" of Array.",node);
+                            }
+                            return;
+                            //endregion
+                        }
+                        //endregion
                         if(!owner.is_class())throw new semantic_exception(owner.signature+' is NOT a class.',node);
                         let function_name = node.children[0].text;
                         let paramL = node.children[node.children.length-1];
@@ -844,7 +949,9 @@ const Code_Generator = {
                     let owner = node.children[0].text;
                     owner = this.types[owner];
                     if(!owner.is_class())throw new semantic_exception(owner.signature+" is NOT a class.",node);
-                    this.varChainIndex++;
+                    let i = this.varChainIndex.pop();
+                    i++;
+                    this.varChainIndex.push(i);
                     this.evaluation_stack.push(owner);
                     this.resolve_varChain(node.children[1],resolve_as_signature,true,resolve_as_ref);
                 }
@@ -1034,7 +1141,8 @@ const Code_Generator = {
                     j++;
                 }
                 let top_type = types.pop();
-                if(top_type==undefined)throw new semantic_exception('Cannot declare an empty array.');
+                if(top_type==undefined)throw new semantic_exception('Cannot define an inline empty array.' +
+                    ' use: new type [0] instead.',node);
                 let top_types = top_type.signature.split('|');
                 top_type = top_types[top_types.length-1]; //We get the last one.
                 let array_type = new type(top_type,top_types.length);
@@ -1550,7 +1658,7 @@ const Code_Generator = {
         if(owner.is_array()){
             //Alright, the previous member resolved as Array. This means there's only one option:
             //.length has been called.
-            if(name!='length')throw new semantic_exception('Cannot read property: '+length+" of: Array");
+            if(name!='length')throw new semantic_exception('Cannot read property: '+name+" of: Array",node);
             if(resolve_as_signature){
                 this.evaluation_stack.push(INTEGER);
                 return;
@@ -1632,9 +1740,9 @@ const Code_Generator = {
                 let method = this.get_field(signature,owner,node);
                 if(method==undefined)throw new semantic_exception('method: '+signature+" Has NOT been defined.",node);
                 if(method.category=='field')throw new semantic_exception(method.name+" is NOT a function.",node); //Just in case
-                this.varChainIndex = 0; //we reset the var chain index as we're within a global function resolution.
+                this.varChainIndex.push(0); //we reset the var chain index as we're within a global function resolution.
                 this.resolve_method_call(method,node,resolve_as_signature);
-                this.varChainIndex++;
+                this.varChainIndex.pop();
                 return;
             }
             if(resolve_as_signature){
@@ -1924,7 +2032,7 @@ const Code_Generator = {
             return;
         }
         let paramL = node.children[node.children.length-1];
-        if(this.varChainIndex==0){
+        if(this.peek(this.varChainIndex)==0){
          //We have to load the this reference first:
             let this_index = this.get_index('this');
             if(this_index==-1)throw new semantic_exception('Cannot access: '+field.name+" Within a static context.",node);
@@ -2772,8 +2880,9 @@ const Code_Generator = {
                 node = node.children[0]; //It seems like we have an Update wrapped within an external Update
                 let vessel = node.children[0];
                 let exp = node.children[1];
-                this.varChainIndex = 0; //We initialize the varChain index since vessel is ID and NOT a varChain node.
+                this.varChainIndex.push(0); //We initialize the varChain index since vessel is ID and NOT a varChain node.
                 this.resolve_varChain(vessel,false,false,true);
+                this.varChainIndex.pop();
                 this.value_expression(exp);
                 this.evaluation_stack.pop();
                 this.evaluation_stack.pop(); //We dispose of them directly because we are sure they have the same type.
@@ -2834,8 +2943,14 @@ const Code_Generator = {
             * or throws exception otherwise.
             * */
             if(recipient_type.is_primitive()&&value_type.is_primitive()){
+                if(recipient_type.is_integer()&&value_type.signature==DOUBLE)
+                     throw new semantic_exception('incompatible types: possible lossy conversion from double to '+
+                        recipient_type.signature,node);
                 if(recipient_type.is_number()&&value_type.is_number())return true; //We're fine.
                 if(recipient_type.is_boolean()&&value_type.is_boolean())return true; //We're fine.
+            }
+            else if(recipient_type.is_array()&&value_type.signature==NULL){
+                return true;
             }
             else if(recipient_type.is_array()&&value_type.is_array()) {
                 let left_type = recipient_type.array.type;
@@ -3657,5 +3772,124 @@ const Code_Generator = {
            if(s=='println')indeed = true;
         });
         return indeed;
+    },
+    ___indexOf___:function () {
+        const arrayAddress = 'arrayAddress';
+        const i = 'i';
+        const value = 'value';
+        const size = 'size';
+        const current = 'current';
+        const lFound = this.generate_label();
+        const lEnd = this.generate_label();
+        Printing.add_function('___indexOf___');
+        this.pop_cache(value);
+        this.pop_cache(arrayAddress);
+        this.get_heap(size,arrayAddress); //we get the size of the array.
+        this.assign(i,1); //we set the first index to start the search.
+        const whileStart = this.generate_label();
+        const whileEnd  = this.generate_label();
+        this.set_label(whileStart);
+        this.pureIf(i,size,'>',whileEnd);
+        this.operate(arrayAddress,i,'+',current); //we get the address of the current value.
+        this.get_heap(current,current); //we get the actual value.
+        this.pureIf(current,value,'==',lFound);
+        this.operate(i,1,'+',i); //i++
+        this.goto(whileStart);
+        this.set_label(whileEnd);
+        this.push_cache(-1);
+        this.goto(lEnd);
+        this.set_label(lFound);
+        this.operate(i,1,'-',i); //i-- so we can get the index relative to 0-length-1
+        this.push_cache(i);
+        this.set_label(lEnd);
+        Printing.print_function();
+    },linear_copy:function () {
+        const arrayAddress = 'arrayAddress';
+        const size = 'size';
+        const i = 'i';
+        const whileStart = this.generate_label();
+        const whileEnd = this.generate_label();
+        const current = 'current';
+        const newArray = 'newArray';
+        Printing.add_function('___linear_copy___');
+        //this method creates and returns a linear copy of the array sent as parameter
+        this.pop_cache(arrayAddress);
+        this.get_heap(size,arrayAddress);
+        this.operate(size,1,'+',newArray);
+        this.push_cache(newArray);
+        this.call('malloc');
+        this.pop_cache(newArray);
+        this.set_heap(newArray,size); //we set the size of the array.
+        this.assign(i,1);
+        this.set_label(whileStart);
+        this.pureIf(i,size,'>',whileEnd);
+        this.operate(arrayAddress,i,'+',current); //we get the address of the current value.
+        this.get_heap(current,current); //we get the actual value.
+        this.operate(newArray,i,'+',this.t); //t = address of the corresponding cell in the new empty array.
+        this.set_heap(this.t,current); //we set the new value.
+        this.operate(i,1,'+',i); //i++
+        this.goto(whileStart);
+        this.set_label(whileEnd);
+        this.push_cache(newArray);
+        Printing.print_function();
+    },
+    ___slice___:function () {
+    /*
+    * This method takes 3 arguments:
+    * upper limit
+    * lower limit
+    * ArrayAddress
+    * And returns a new array with the contents from ArrayAddress from [lowerLimit - upperLimit)
+    * */
+        const arrayAddress = 'arrayAddress';
+        const size = 'size';
+        const i = 'i';
+        const whileStart = this.generate_label();
+        const whileEnd = this.generate_label();
+        const lEnd = this.generate_label();
+        const lFine = this.generate_label();
+        const lNext = this.generate_label();
+        const lWrong = this.generate_label();
+        const current = 'current';
+        const newArray = 'newArray';
+        const newSize = 'newSize';
+        const lowerLimit = 'lowerLimit';
+        const upperLimit = 'upperLimit';
+        const j = 'j';
+        Printing.add_function('___slice___');
+        //this method creates and returns a linear copy of the array sent as parameter
+        this.pop_cache(upperLimit);
+        this.pop_cache(lowerLimit);
+        this.pop_cache(arrayAddress);
+        this.get_heap(size,arrayAddress);
+        this.pureIf(upperLimit,size,'>',lWrong);
+        this.pureIf(lowerLimit,'0','<',lWrong);
+        this.pureIf(lowerLimit,upperLimit,'>',lWrong); //lower limit can't be higher than upper limit.
+        this.goto(lFine);
+        this.set_label(lWrong);
+        this.push_cache(lowerLimit);
+        this.push_cache(upperLimit);
+        this.exit(4); //invalid parameter for slice method.
+        this.set_label(lFine);
+        this.operate(upperLimit,lowerLimit,'-',newSize); //the size of the resultant array is upper - lower limit
+        this.operate(newSize,1,'+',newArray); //+1 for the space where we'll save the new size.
+        this.push_cache(newArray);
+        this.call('malloc');
+        this.pop_cache(newArray);
+        this.set_heap(newArray,newSize); //we set the size of the address.
+        this.operate(lowerLimit,1,'+',i); //we start copying from lower limit + 1 (true index)
+        this.assign(j,1);
+        this.set_label(whileStart);
+        this.pureIf(i,upperLimit,'>',whileEnd);
+        this.operate(arrayAddress,i,'+',current); //we get the address of the current value.
+        this.get_heap(current,current); //we get the actual value.
+        this.operate(newArray,j,'+',this.t); //t = address of the corresponding cell in the new empty array.
+        this.set_heap(this.t,current); //we set the new value.
+        this.operate(j,1,'+',j);
+        this.operate(i,1,'+',i);
+        this.goto(whileStart);
+        this.set_label(whileEnd);
+        this.push_cache(newArray);
+        Printing.print_function();
     }
 };

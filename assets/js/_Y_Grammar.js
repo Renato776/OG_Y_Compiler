@@ -92,7 +92,7 @@ break;
 case 4:
 this.$ = new _Node("program");
 break;
-case 5: case 6: case 41: case 42: case 49: case 53: case 54:
+case 5: case 6: case 41: case 42: case 54:
 this.$ = $$[$0-1];
 break;
 case 7: case 8: case 9: case 10:
@@ -181,8 +181,14 @@ break;
 case 29:
 this.$ = new _Node("block");
 break;
-case 30: case 31: case 32: case 33: case 34: case 35: case 36: case 37: case 38: case 39: case 40: case 43: case 44: case 45: case 46: case 47: case 48: case 50: case 51: case 52: case 119: case 127: case 128: case 130:
+case 30: case 31: case 32: case 33: case 34: case 35: case 36: case 37: case 38: case 39: case 40: case 43: case 119: case 127: case 128: case 130:
 this.$ = $$[$0];
+break;
+case 44: case 45: case 46: case 47: case 48: case 50: case 51: case 52:
+this.$ = new _Node("block"); this.$.add($$[$0]);
+break;
+case 49: case 53:
+this.$ = new _Node("block"); this.$.add($$[$0-1]);
 break;
 case 55:
 this.$ = Compiler.variableDef(

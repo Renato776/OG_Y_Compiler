@@ -183,16 +183,16 @@ stmt: 	block {$$ = $1;}
 		;
 		
 basicStmt :	block {$$ = $1;}
-		|returnStmt {$$ = $1;}
-		|assignationStmt {$$ = $1;}
-		|breakStmt {$$ = $1;}
-		|continueStmt {$$ = $1;}
-		|autoStmt {$$ = $1;}
-		|varChain SEMI {$$ = $1;}
-		|switchStmt {$$ = $1;}
-		|whileStmt {$$ = $1;}
-		|forStmt {$$ = $1;}
-		|doStmt SEMI {$$ = $1;}
+		|returnStmt {$$ = new _Node("block"); $$.add($1);}
+		|assignationStmt {$$ = new _Node("block"); $$.add($1);}
+		|breakStmt {$$ = new _Node("block"); $$.add($1);}
+		|continueStmt {$$ = new _Node("block"); $$.add($1);}
+		|autoStmt {$$ = new _Node("block"); $$.add($1);}
+		|varChain SEMI {$$ = new _Node("block"); $$.add($1);}
+		|switchStmt {$$ = new _Node("block"); $$.add($1);}
+		|whileStmt {$$ = new _Node("block"); $$.add($1);}
+		|forStmt {$$ = new _Node("block"); $$.add($1);}
+		|doStmt SEMI {$$ = new _Node("block"); $$.add($1);}
 		;
 		
 block : LEFT_BRACE stmtL RIGHT_BRACE {$$ = $2;}
