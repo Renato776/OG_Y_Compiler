@@ -1672,11 +1672,14 @@ const Code_Generator = {
                 this.evaluation_stack.push(this.types[VOID]); //We push the type and return.
             }return true;
             case "println":
+            case "print":
                 if(value_as_signature){
                     this.evaluation_stack.push(VOID);
                     return true;
                 }
+                this.stack.push(func_name);
                 this.format_text(paramL);
+                this.stack.pop();
                 if(this.is_within_expression())throw new semantic_exception('Cannot call println from within an expression.',node);
                 this.evaluation_stack.push(this.types[VOID]);
                 return true;
@@ -1801,7 +1804,9 @@ const Code_Generator = {
         this.cast_to_string(type,paramList);
         this.get_char_array(); //We remove the String ref from the top and push a charArray ref instead.
         this.call('print_string'); //We print the String
-        this.printChar('\n'.charCodeAt(0));
+        if(this.is_within_println()){
+            this.printChar('\n'.charCodeAt(0));
+        }
     },
     cast_to_double:function(og){
         this.pop_cache(this.t1); //t1 = value to downcast.
@@ -3628,5 +3633,12 @@ const Code_Generator = {
     },
     write_file() {
         Printing.print_in_context('write_file(0)');
+    },
+    is_within_println() {
+        let indeed = false;
+        this.stack.forEach(s=>{
+           if(s=='println')indeed = true;
+        });
+        return indeed;
     }
 };
