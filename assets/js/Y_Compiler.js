@@ -158,7 +158,7 @@ const type = function (signature,dimension = 0) {
       return this.primitive;
   };
   this.is_array = function() {
-    return this.isArray;
+    return this.signature.startsWith('array');
   };
   this.is_boolean = function(){
       return this.signature==BOOLEAN;
