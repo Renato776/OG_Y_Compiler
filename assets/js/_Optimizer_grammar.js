@@ -105,12 +105,16 @@ case 6:
     
 break;
 case 7:
+    Optimizer.instruction_stack.push($$[$0]);
+    Optimizer.resolve_redundant_instruction();
+    /**
  if(Optimizer.goto_started){
     			Optimizer.unused_instructions.push($$[$0]);
     		}else {
     			Optimizer.instruction_stack.push($$[$0]);
     			Optimizer.resolve_redundant_instruction();
     		}
+     **/
     	
 break;
 case 8:
@@ -122,6 +126,7 @@ break;
 case 9:
 
     this.$ = $$[$0-1]+":";
+    Optimizer.label_stack = []; //we empty the label Stack
     Optimizer.label_stack.push($$[$0-1]);
     
 break;
@@ -816,7 +821,7 @@ case 28:return 51;
 break;
 case 29:return 56;
 break;
-case 30:return 'WRITE_FILE'
+case 30:return 'WRITE_FILE';
 break;
 case 31:return 58;
 break;
@@ -841,8 +846,8 @@ break;
 case 41:return 6;
 break;
 case 42:
-        default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column)," Unrecognized symbol: "+yy_.yytext,true,'Lexical',true);
-        break;
+default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column)," Unrecognized symbol: "+yy_.yytext,true,'Lexical',true);
+    break;
 }
 },
 rules: [/^(?:;.*)/i,/^(?:proc\b)/i,/^(?:\{)/i,/^(?:\})/i,/^(?:\()/i,/^(?:\))/i,/^(?:stack\b)/i,/^(?:heap\b)/i,/^(?:\[)/i,/^(?:\])/i,/^(?:<=)/i,/^(?:>=)/i,/^(?:<)/i,/^(?:>)/i,/^(?:\+)/i,/^(?:-)/i,/^(?:\*)/i,/^(?:\/)/i,/^(?:%)/i,/^(?:!=)/i,/^(?:==)/i,/^(?:=)/i,/^(?:if\b)/i,/^(?:ifFalse\b)/i,/^(?:goto\b)/i,/^(?::)/i,/^(?:var\b)/i,/^(?:call\b)/i,/^(?:print\b)/i,/^(?:exit\b)/i,/^(?:write_file\b)/i,/^(?:read\b)/i,/^(?:,)/i,/^(?:[ \r\t]+)/i,/^(?:\n)/i,/^(?:[0-9]+(\.0)\b)/i,/^(?:[0-9]+(\.[0-9]+)\b)/i,/^(?:[0-9]+\b)/i,/^(?:(L)[0-9]+)/i,/^(?:([a-zA-Z]|_)+[0-9]*\b)/i,/^(?:('%d')|('%e')|('%c'))/i,/^(?:$)/i,/^(?:.)/i],

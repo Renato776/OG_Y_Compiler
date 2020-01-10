@@ -40,7 +40,7 @@
 "call"				return 'CALL';
 "print"             return 'PRINT';
 "exit"				return 'EXIT';
-"write_file"		return 'WRITE_FILE'
+"write_file"		return 'WRITE_FILE';
 "read"				return 'READ';
 ","                 return 'COMMA';
 
@@ -103,6 +103,7 @@ labelList:
     }
     |LABEL DOSPUNTOS {
     $$ = $1+":";
+    Optimizer.label_stack = []; //we empty the label Stack
     Optimizer.label_stack.push($1);
     }
     ;
