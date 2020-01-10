@@ -151,12 +151,18 @@ dimList : dimList LEFT_BRACKET RIGHT_BRACKET {$$ = $1 + 1;}
 paramDef : paramDef COMMA TYPE dimList ID {$$ = $1; $$.add(Compiler.paramDef(
 					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
 					token_solver.build_token('id',$5,@5.first_line,@5.first_column),$4));}
+			| paramDef COMMA TYPE ID dimList {$$ = $1; $$.add(Compiler.paramDef(
+					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
+					token_solver.build_token('id',$4,@4.first_line,@4.first_column),$5));}
 			| paramDef COMMA TYPE ID {$$ = $1; $$.add(Compiler.paramDef(
 					token_solver.build_token('type',$3,@3.first_line,@3.first_column),
 					token_solver.build_token('id',$4,@4.first_line,@4.first_column),0));}
 			| TYPE dimList ID {$$ = new _Node("paramDefList"); $$.add(Compiler.paramDef(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
 					token_solver.build_token('id',$3,@3.first_line,@3.first_column),$2));}
+			| TYPE ID dimList {$$ = new _Node("paramDefList"); $$.add(Compiler.paramDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3));}
 			| TYPE ID {$$ = new _Node("paramDefList"); $$.add(Compiler.paramDef(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
 					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0));}
@@ -201,12 +207,18 @@ block : LEFT_BRACE stmtL RIGHT_BRACE {$$ = $2;}
 variableDef : TYPE ID dimList ASIGNACION Exp SEMI {$$ = Compiler.variableDef(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
 					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3,$5);}
+			| TYPE dimList ID ASIGNACION Exp SEMI {$$ = Compiler.variableDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$3,@3.first_line,@3.first_column),$2,$5);}
 			| TYPE ID ASIGNACION Exp SEMI {$$ = Compiler.variableDef(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
 					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,$4);}
 			| TYPE ID dimList SEMI {$$ = Compiler.variableDef(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
 					token_solver.build_token('id',$2,@2.first_line,@2.first_column),$3,null);}
+			| TYPE dimList ID SEMI {$$ = Compiler.variableDef(
+					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
+					token_solver.build_token('id',$3,@3.first_line,@3.first_column),$2,null);}
 			| TYPE ID SEMI {$$ = Compiler.variableDef(
 					token_solver.build_token('type',$1,@1.first_line,@1.first_column),
 					token_solver.build_token('id',$2,@2.first_line,@2.first_column),0,null);}
