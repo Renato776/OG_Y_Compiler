@@ -105,16 +105,12 @@ case 6:
     
 break;
 case 7:
-    Optimizer.instruction_stack.push($$[$0]);
-    Optimizer.resolve_redundant_instruction();
-    /**
  if(Optimizer.goto_started){
     			Optimizer.unused_instructions.push($$[$0]);
     		}else {
     			Optimizer.instruction_stack.push($$[$0]);
     			Optimizer.resolve_redundant_instruction();
     		}
-     **/
     	
 break;
 case 8:
@@ -219,6 +215,8 @@ break;
 case 48:
 
       this.$ = new Instruction("ret",new _3D_Token(function_names.pop(),_$[$0].first_line,_$[$0].first_column));
+      Optimizer.resolve_unreachable_code();
+      Optimizer.goto_started = false;    
       
 break;
 case 49:

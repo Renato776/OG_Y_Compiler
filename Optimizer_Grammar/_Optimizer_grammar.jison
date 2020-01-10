@@ -209,6 +209,8 @@ call : CALL ID {
 
 ret : RIGHT_BRACE {
       $$ = new Instruction("ret",new _3D_Token(function_names.pop(),@1.first_line,@1.first_column));
+      Optimizer.resolve_unreachable_code();
+      Optimizer.goto_started = false;    
       };
 
 print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {

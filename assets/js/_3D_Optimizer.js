@@ -237,11 +237,11 @@ const Optimizer = {
 };
 function Optimize() {
     let unOptimizedCode = CodeMirror_3D.getValue();
+    $("#Optimized_code").empty();
     Optimizer.initialize();
     try{
         _Optimizer_grammar.parse(unOptimizedCode);
     }catch (e) {
-        $("#Optimized_code").empty();
         let t = token_tracker.pop();
         new _3D_Exception(t,"Unexpected symbol: "+t.text,true,'Syntactical',true);
     }
