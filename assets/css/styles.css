@@ -73,6 +73,12 @@ background-color: aliceblue;
 .Selected_Class{
   background: #24ff00 !important;
 }
+#Ejecutar_console{
+  height: 300px;
+}
+#Debug_console{
+  height: 300px;
+}
 #create_file_dialog {
   text-align: center;
   background-color: lawngreen;
