@@ -25,6 +25,8 @@ let FORCE_ENTRY_POINT = '0';
 let ACCURACY = 10;
 let selected_class = null;
 let SHOW_ALL_DETAILS = true;
+let TRACK_RETURN_STMT = true;
+let BREAKPOINT_SENSITIVE = true;
 //endregion
 //region Constants for 3D.
 const classes = {};
@@ -51,12 +53,14 @@ const temporals = {
     }
 };
 const onCursorActivity = (instance) => { //Failed to fetch the line.no Object successfully. Therefore a table holding all breakpoints will be shown instead.
-    const cursor = CodeMirror_3D.getCursor();
-    let i = cursor.line;
-     if(breakpoints.includes(i)){
-         breakpoints.splice( breakpoints.indexOf(i), 1 );
-     } else  breakpoints.push(i);
-    show_breakpoints($(".BreakPoints_Container"),to_div_array(breakpoints));
+    if(BREAKPOINT_SENSITIVE){ //we only add the breakpoint if we are breakpoint sensitive.
+        const cursor = CodeMirror_3D.getCursor();
+        let i = cursor.line;
+        if(breakpoints.includes(i)){
+            breakpoints.splice( breakpoints.indexOf(i), 1 );
+        } else  breakpoints.push(i);
+        show_breakpoints($(".BreakPoints_Container"),to_div_array(breakpoints));
+    }
 };
 //endregion
 //region Global Variables for 3D
@@ -228,6 +232,7 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     FORCE_ENTRY_PROC = null;
     FORCE_ENTRY_POINT = '0';
     SHOW_ALL_DETAILS = true;
+    BREAKPOINT_SENSITIVE = true;
     //endregion temporals.clear();
     instructions.clear();
     labels.clear();

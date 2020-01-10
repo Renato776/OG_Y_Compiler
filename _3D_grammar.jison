@@ -13,6 +13,7 @@
 "#UNCAP_HEAP_DISPLAY"							{CAP_HEAP_DISPLAY = false;}
 "#UNCAP_STACK_DISPLAY"							{CAP_STACK_DISPLAY = false;}
 "#UNCAP_INSTRUCTION_EXECUTION"					{CAP_INSTRUCTION_EXECUTION = false;}
+"#DISABLE_RETURN_TRACKING"	    				{TRACK_RETURN_STMT = !TRACK_RETURN_STMT;}
 "#MAX_HEAP"[ \r\t]+[0-9]+ 						{MAX_HEAP = Number(yytext.substring(9).trim());}
 "#MAX_HEAP_DISPLAY"[ \r\t]+[0-9]+ 				{MAX_HEAP_DISPLAY = Number(yytext.substring(17).trim());}
 "#MAX_STACK_DISPLAY"[ \r\t]+[0-9]+ 				{MAX_STACK_DISPLAY = Number(yytext.substring(18).trim());}
