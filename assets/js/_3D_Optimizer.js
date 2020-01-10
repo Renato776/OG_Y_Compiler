@@ -54,7 +54,7 @@ const Optimizer = {
     },
     resolve_unreachable_code :function () {
         //Dispose of all elements in the unused instruction stack and log details regarding the operation.
-        this.unused_instructions = this.unused_instructions.slice(1); //We remove the 0 entry as it is the same goto that started the block.
+        //this.unused_instructions = this.unused_instructions; //We remove the 0 entry as it is the same goto that started the block.
         if(this.unused_instructions.length==0)return; //There's nothing to be done, code is already optimized.
         let info = "";
         this.unused_instructions.forEach(instr=>{
