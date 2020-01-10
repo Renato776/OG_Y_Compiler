@@ -3,9 +3,9 @@ function set_3D_source(text){
     CodeMirror_3D.setValue(text);
     CodeMirror_Execute.setValue(text);
 }
-function append_to_3D_console(){
-    $("#Ejecutar_Console").append(current_line);
-    $("#Debug_Console").append(current_line2);
+function append_to_3D_console(msg){
+    document.getElementById("Debug_console").value += msg;
+    document.getElementById("Ejecutar_console").value += msg;
 }
 function append_to_main_console(){
     $("#Main_Console").append(_current_line);
@@ -71,8 +71,6 @@ let breakpoints = [];
 let HEAP = [];
 let STACK = [];
 let INSTRUCTION_STACK = [];
-let current_line = null;
-let current_line2 = null;
 let _current_line = null;
 let CodeMirror_3D = null;
 let CodeMirror_Main = null;
@@ -247,12 +245,10 @@ function reset_3D() { //Resets all structures back to default. Must be called be
     show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H");
     show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S");
     $("#Temporals_Display").empty();
-    $("#Debug_Console").empty();
-    $("#Ejecutar_Console").empty();
     $("#ErrorTableBody").empty();
     $("#Optimized_code").empty();
-    current_line = null;
-    current_line2 = null;
+    $("#Ejecutar_console").val('');
+    $("#Debug_console").val('');
 }
 function increase_IP() {
     IP = find__Next(IP,instructions);
@@ -269,31 +265,31 @@ function get_signature(token) {
     return s;
 }
 function print(format = 'char', value = 0) { //ATM the output will be logged to the literal console of JS.
-    if(current_line==null){ //Should only happen if is the first time we print a char.
-        current_line = new line("");
-        append_to_3D_console();
-     }
     switch (format) {
         case "'%c'":
             if(value=='\n'.charCodeAt(0)){ //Print new line.
-                current_line = new line("");
-                append_to_3D_console();
+                append_to_3D_console('\n');
+            }
+            else if(value==' '.charCodeAt(0)){ //whitespace special char
+                append_to_3D_console(' ');
+            }
+            else if(value=='>'.charCodeAt(0)){ //Print > special char.
+                append_to_3D_console('>');
+            }else if(value=='<'.charCodeAt(0)){ //< special char
+                append_to_3D_console('<');
             }
             else{
-                current_line.children()[1].append(String.fromCharCode(value));
-                current_line2.children()[1].append(String.fromCharCode(value));
+                append_to_3D_console(String.fromCharCode(value));
             }
             break;
         case "'%e'":
         case "'%d'":
-            current_line.children()[1].append(value);
-            current_line2.children()[1].append(value);
+            append_to_3D_console(value);
             break;
     }
 }
 function log(message) {
-    current_line = new line(message);
-    append_to_3D_console();
+    append_to_3D_console(">>"+message+"\n");
 }
 //endregion
 //region Object constructors for 3D code.
@@ -526,8 +522,6 @@ function play_instruction(instruction,debug = false) {
     IC++;
     if(IC>=INSTRUCTION_MAX&&CAP_INSTRUCTION_EXECUTION){
         new _3D_Exception(null,"Potential infinite loop prevented. Cannot execute more than "+INSTRUCTION_MAX+" Sentences. <break>",false);
-        current_line = new line("");
-        append_to_3D_console();
         IC = 0;
         $("#Recover_Container").removeClass('Debug_Container_Hide');
         return false;
