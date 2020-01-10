@@ -3,12 +3,13 @@ const line = function (message) {
     let s = $("<td>");
     s.append("&gt;&gt;");
     let m = $("<td>");
+    let pre = $("<pre>");
+    pre.append(message);
+    m.append(pre);
     m.attr("style","width: 100%; " +
         "text-align: left;");
-    m.append(message);
     row.append(s);
     row.append(m);
-    current_line2 = row.clone();
     return row;
 };
 const heap_cell = function (index, value) {
@@ -186,8 +187,6 @@ function initialize(){
     $("#Iniciar").click(begin_execution);
     $("#Recover").click(recover_execution);
     $("#clear_all_breakpoints").click(clear_all_breakpoints);
-    $("#Debug_Console").empty();
-    $("#Ejecutar_Console").empty();
     $("#Main_Console").empty();
     $("#Current_Instruction").empty();
     $("#ErrorTableBody").empty();
@@ -197,7 +196,8 @@ function initialize(){
     $("#SYMBOL_TABLE_HEADER").empty();
     $("#OPTIMIZACION_BODY").empty();
     $("#OPTIMIZACION_HEADER").empty();
-    current_line = null; //We set current_line back to null
+    $("#Ejecutar_console").val('');
+    $("#Debug_console").val('');
     show_new_segment($("#Stack_Display"),MAX_STACK_DISPLAY,"S"); //We load default segment
     show_new_segment($("#Heap_Display"),MAX_HEAP_DISPLAY,"H"); //We load default segment
     $("#Temporals_Display").empty(); //We clear the temp list

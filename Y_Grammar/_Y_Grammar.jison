@@ -46,10 +46,10 @@
 "-"									return 'MINUS';
 "?"									return 'TERNARIO';
 "%"									return 'MOD';
-">"									return 'MAYORQ';
-"<"									return 'MENORQ';
 ">="								return 'MAYORIGUAL';
 "<="								return 'MENORIGUAL';
+">"									return 'MAYORQ';
+"<"									return 'MENORQ';
 "=="								return 'COMPARACION';
 "!="								return 'DISTINTO';
 "!"									return 'NOT';
