@@ -781,7 +781,7 @@ const Code_Generator = {
                     while(i>=0){ //We value the indexes beginning at the last index and going backwards.
                         this.value_expression(indexL.children[i]);
                         let index_type = this.evaluation_stack.pop();
-                        if(!index_type.is_integer())throw new semantic_exception("Invalid index type. Expected: integer. Got: "+index_type.signature,indexL.children.get(i));
+                        if(!index_type.is_integer())throw new semantic_exception("Invalid index type. Expected: integer. Got: "+index_type.signature,indexL.children[i]);
                         i--;
                     } //Alright all indexes are integers and have been valuated.
                     if(this.peek(this.varChainIndex)!=0){
@@ -1223,8 +1223,12 @@ const Code_Generator = {
                         return;
                     default:
                     {
-                        og = this.classes[og.signature];
                         target = this.classes[target]; //We get the actual class
+                        if(og.signature=='null'){ //null can be casted to any class.
+                            this.evaluation_stack.push(this.types[target.name]);
+                            return;
+                        }
+                        og = this.classes[og.signature]; //we get the actual class.
                         if(this.compatible_classes(target.name,og.name)){
                             /*
                             * No need to do anything is a native cast.
@@ -1367,6 +1371,10 @@ const Code_Generator = {
                             throw new semantic_exception("Invalid types for operation: "+node.name+" " +
                                 "Expected: integer|decimal and integer|decimal. Got: "+left_arg.signature+" and "+right_arg.signature,node);
                         this.operate(left_value,right_value,node.name,left_value);
+                        if(left_arg.is_integer()&&right_arg.is_integer()&&node.name=='/'){
+                           //We're performing an integer division, therefore we must cut the extra decimals after valuating.
+                            this.remove_decimal_part(left_value);
+                        }
                         this.push_cache(left_value);
                         if(left_arg.is_integer()&&right_arg.is_integer())this.evaluation_stack.push(this.types[INTEGER]);
                         else this.evaluation_stack.push(this.types[DOUBLE]);
@@ -1618,6 +1626,10 @@ const Code_Generator = {
                 let _field = this.get_field(node.text,owner,node);
                 if(_field==undefined)throw new semantic_exception('variable: '+node.text+' NOT defined',node);
                 //Alright is a field access.
+                if(resolve_as_signature){ //if we're solving as signature we simply return the type of the field.
+                    this.evaluation_stack.push(_field.type);
+                    return;
+                }
                 local_index = this.get_index('this');
                 if(local_index==-1)throw new semantic_exception('Cannot access: '+node.text+" Within a static context.",node);
                 this.evaluation_stack.push(this.types[owner]);
@@ -1709,7 +1721,7 @@ const Code_Generator = {
             let signature = owner.signature+"."+name;
             let target = this.get_index(signature);
             if(target==-1)throw new semantic_exception('static field: '+name+' NOT found.',node);
-            if(this.SymbolTable[target].block)throw new semantic_exception('static member: '+name+' is NOT a field.');
+            if(this.SymbolTable[target].block)throw new semantic_exception('static member: '+name+' is NOT a field.',node);
             if(resolve_as_signature){
                 this.evaluation_stack.push(this.SymbolTable[target].type);
                 return;
@@ -1902,10 +1914,10 @@ const Code_Generator = {
                 if(paramL.children.length==2){//Only 2 parameters allowed.
                     this.value_expression(paramL.children[0]); //We value the first param.
                     let type = this.evaluation_stack.pop();
-                    if(!type.is_primitive())throw new semantic_exception('Invalid pow parameter. Expected: double|int|char. got: '+type.signature);
+                    if(!type.is_primitive())throw new semantic_exception('Invalid pow parameter. Expected: double|int|char. got: '+type.signature,node);
                     this.value_expression(paramL.children[1]); //We value the second param.
                     type = this.evaluation_stack.pop();
-                    if(!type.is_primitive())throw new semantic_exception('Invalid pow parameter. Expected: double|int|char. got: '+type.signature);
+                    if(!type.is_primitive())throw new semantic_exception('Invalid pow parameter. Expected: double|int|char. got: '+type.signature,node);
                     //Alright, both numbers are currently in the cache, let's pow them:
                     this.call('pow');
                     this.evaluation_stack.push(this.types[DOUBLE]);
@@ -1920,7 +1932,7 @@ const Code_Generator = {
                 if(paramL.children.length==1){//Only 1 parameters allowed.
                     this.value_expression(paramL.children[0]); //We value the first param.
                     let type = this.evaluation_stack.pop();
-                    if(!type.is_primitive())throw new semantic_exception('Invalid abs parameter. Expected: double|int|char. got: '+type.signature);
+                    if(!type.is_primitive())throw new semantic_exception('Invalid abs parameter. Expected: double|int|char. got: '+type.signature,node);
                     //Alright, both numbers are currently in the cache, let's pow them:
                     this.pop_cache(this.t3);
                     this.get_abs(this.t3);
@@ -1974,7 +1986,7 @@ const Code_Generator = {
     },
     format_text(paramList) {
         //This method takes any parameter, casts it to string (if possible) and prints it.
-        if(paramList.children.length!=1)throw new semantic_exception('Only one parameter expected for println function. Found: '+paramList.children.length);
+        if(paramList.children.length!=1)throw new semantic_exception('Only one parameter expected for println function. Found: '+paramList.children.length,paramList);
         this.value_expression(paramList.children[0]); //We value the param as expression.
         let type = this.evaluation_stack.pop();
         this.cast_to_string(type,paramList);
@@ -2840,7 +2852,7 @@ const Code_Generator = {
                 this.value_expression(exp);
                 let while_type = this.evaluation_stack.pop();
                 if(!while_type.is_boolean())throw new semantic_exception('invalid while parameter. Expected: boolean ' +
-                    'got: '+while_type.signature);
+                    'got: '+while_type.signature,node);
                 this.pop_cache(this.t1); //t1 = true/false
                 this.pureIf(this.t1,'0','==',WhileFinal);
                 this.perform_sub_block_jump(block,continueLabel);
@@ -2865,7 +2877,7 @@ const Code_Generator = {
                 this.value_expression(exp);
                 let while_type = this.evaluation_stack.pop();
                 if(!while_type.is_boolean())throw new semantic_exception('invalid do-while parameter. Expected: boolean ' +
-                    'got: '+while_type.signature);
+                    'got: '+while_type.signature,node);
                 this.pop_cache(this.t1); //t1 = true/false
                 this.pureIf(this.t1,'1','==',WhileStart); //We repeat if it is true.
                 this.set_label(WhileFinal);
@@ -2906,7 +2918,7 @@ const Code_Generator = {
                 this.value_expression(exp);
                 let for_type = this.evaluation_stack.pop();
                 if(!for_type.is_boolean())throw new semantic_exception('Invalid for argument. Expected: boolean,' +
-                    ' got: '+for_type.signature);
+                    ' got: '+for_type.signature,node);
                 this.pop_cache(this.t1); //t1 = true/false
                 this.pureIf(this.t1,'0','==',lF);
                 //Alright, we can now output the rest of the block instructions here!

@@ -1,0 +1,1653 @@
+proc dolar {C = 0
+E = E+1
+stack[E] = 10
+call procedimiento_42
+t10 = stack[E]
+E = E-1
+call procedimiento_25
+call procedimiento_93
+P = 400
+P = P
+t10 = P
+call procedimiento_38
+P = P
+}; undefined
+proc procedimiento_85 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 1
+call procedimiento_7
+P = P+2
+t44 = P-2
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_72
+P = P-2
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+L1:}; undefined
+proc procedimiento_87 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 1
+E = E+1
+stack[E] = t10
+call procedimiento_40
+L2:}; undefined
+proc procedimiento_89 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L4
+t10 = stack[t10]
+goto L5
+L4:t10 = heap[t10]
+L5:E = E+1
+stack[E] = t10
+t10 = 1
+E = E+1
+stack[E] = t10
+call procedimiento_55
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L7
+stack[t10] = t44
+goto L6
+L7:heap[t10] = t44
+L6:L3:}; undefined
+proc procedimiento_91 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 2
+E = E+1
+stack[E] = t10
+call procedimiento_68
+L8:}; undefined
+proc procedimiento_93 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L10
+t10 = stack[t10]
+goto L11
+L10:t10 = heap[t10]
+L11:E = E+1
+stack[E] = t10
+t10 = 2
+E = E+1
+stack[E] = t10
+call procedimiento_21
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L13
+stack[t10] = t44
+goto L12
+L13:heap[t10] = t44
+L12:L9:}; undefined
+proc procedimiento_95 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 3
+E = E+1
+stack[E] = t10
+call procedimiento_25
+L14:}; undefined
+proc procedimiento_97 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L16
+t10 = stack[t10]
+goto L17
+L16:t10 = heap[t10]
+L17:E = E+1
+stack[E] = t10
+t10 = 3
+E = E+1
+stack[E] = t10
+call procedimiento_97
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L19
+stack[t10] = t44
+goto L18
+L19:heap[t10] = t44
+L18:L15:}; undefined
+proc procedimiento_103 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 4
+E = E+1
+stack[E] = t10
+call procedimiento_32
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value==right_value goto L21
+t44 = 0
+goto L22
+L21:t44 = 1
+L22:E = E+1
+stack[E] = t44
+L20:}; undefined
+proc procedimiento_106 {t44 = P
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 1
+call procedimiento_31
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_91
+P = P-3
+t44 = P
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 1
+call procedimiento_50
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_83
+P = P-3
+}; undefined
+proc procedimiento_108 {t44 = P
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_72
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_3
+P = P-3
+t44 = P+2
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 1
+call procedimiento_81
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_2
+P = P-3
+t44 = P+2
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+}; undefined
+proc procedimiento_105 {call procedimiento_74
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 1
+call procedimiento_56
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_51
+P = P-3
+t10 = stack[E]
+E = E-1
+t44 = P+2
+stack[t44] = t10
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_43
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_48
+P = P-3
+t10 = stack[E]
+E = E-1
+if t10==0 goto L25
+P = P+3
+t44 = P-3
+t10 = t44+2
+t22 = P+2
+stack[t22] = t10
+t10 = t44+1
+t22 = P+1
+stack[t22] = t10
+t10 = t44
+t22 = P
+stack[t22] = t10
+call procedimiento_71
+P = P-3
+goto L24
+L25:P = P+3
+t44 = P-3
+t10 = t44+2
+t22 = P+2
+stack[t22] = t10
+t10 = t44+1
+t22 = P+1
+stack[t22] = t10
+t10 = t44
+t22 = P
+stack[t22] = t10
+call procedimiento_50
+P = P-3
+L24:L23:}; undefined
+proc procedimiento_112 {t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t10 = t10+1
+target_ref = stack[E]
+E = E-1
+where_to_use = stack[E]
+E = E-1
+if where_to_use==1 goto L32
+stack[target_ref] = t10
+goto L33
+L32:heap[target_ref] = t10
+L33:t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t44 = P+1
+t44 = stack[t44]
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_72
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_15
+P = P-3
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L35
+stack[t10] = t44
+goto L34
+L35:heap[t10] = t44
+L34:L28:}; undefined
+proc procedimiento_111 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_55
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_2
+P = P-3
+t10 = stack[E]
+E = E-1
+t44 = P+1
+stack[t44] = t10
+E = E+1
+stack[E] = 0
+t10 = stack[E]
+E = E-1
+t44 = P+2
+stack[t44] = t10
+L27:t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value!=right_value goto L30
+t44 = 0
+goto L31
+L30:t44 = 1
+L31:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L29
+P = P+3
+t44 = P-3
+t10 = t44+2
+t22 = P+2
+stack[t22] = t10
+t10 = t44+1
+t22 = P+1
+stack[t22] = t10
+t10 = t44
+t22 = P
+stack[t22] = t10
+call procedimiento_30
+P = P-3
+goto L27
+L29:t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+L26:}; undefined
+proc procedimiento_115 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 4
+E = E+1
+stack[E] = t10
+call procedimiento_95
+L36:}; undefined
+proc procedimiento_117 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L38
+t10 = stack[t10]
+goto L39
+L38:t10 = heap[t10]
+L39:E = E+1
+stack[E] = t10
+t10 = 4
+E = E+1
+stack[E] = t10
+call procedimiento_35
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L41
+stack[t10] = t44
+goto L40
+L41:heap[t10] = t44
+L40:L37:}; undefined
+proc procedimiento_119 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 5
+E = E+1
+stack[E] = t10
+call procedimiento_56
+L42:}; undefined
+proc procedimiento_121 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L44
+t10 = stack[t10]
+goto L45
+L44:t10 = heap[t10]
+L45:E = E+1
+stack[E] = t10
+t10 = 5
+E = E+1
+stack[E] = t10
+call procedimiento_73
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L47
+stack[t10] = t44
+goto L46
+L47:heap[t10] = t44
+L46:L43:}; undefined
+proc procedimiento_123 {t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+left_value = left_value*right_value
+E = E+1
+stack[E] = left_value
+L48:}; undefined
+proc procedimiento_125 {t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+left_value = left_value/right_value
+E = E+1
+stack[E] = left_value
+L49:}; undefined
+proc procedimiento_127 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 5
+E = E+1
+stack[E] = 1
+E = E+1
+stack[E] = 1
+call procedimiento_49
+E = E+1
+stack[E] = 1
+call procedimiento_54
+P = P+1
+t44 = P-1
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_87
+P = P-1
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 5
+E = E+1
+stack[E] = 1
+call procedimiento_31
+P = P+1
+t44 = P-1
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_97
+P = P-1
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+L50:}; undefined
+proc procedimiento_130 {E = E+1
+stack[E] = 1
+P = P-2
+goto L51
+}; undefined
+proc procedimiento_129 {t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value==right_value goto L54
+t44 = 0
+goto L55
+L54:t44 = 1
+L55:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L53
+P = P+2
+t44 = P-2
+t10 = t44+1
+t22 = P+1
+stack[t22] = t10
+t10 = t44
+t22 = P
+stack[t22] = t10
+call procedimiento_54
+P = P-2
+L53:L52:t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 1
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+left_value = left_value-right_value
+E = E+1
+stack[E] = left_value
+E = E+1
+stack[E] = 1
+call procedimiento_31
+P = P+2
+t44 = P-2
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_52
+P = P-2
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+left_value = left_value*right_value
+E = E+1
+stack[E] = left_value
+L51:}; undefined
+proc procedimiento_133 {t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_33
+P = P+4
+t44 = P-4
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_42
+P = P-4
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+left_value = left_value%right_value
+E = E+1
+stack[E] = left_value
+t10 = stack[E]
+E = E-1
+t44 = P+2
+stack[t44] = t10
+t44 = P+2
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 1
+call procedimiento_99
+P = P+4
+t44 = P-4
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_20
+P = P-4
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L58
+stack[t10] = t44
+goto L57
+L58:heap[t10] = t44
+L57:t44 = P+2
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_24
+P = P+4
+t44 = P-4
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_51
+P = P-4
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+left_value = left_value%right_value
+E = E+1
+stack[E] = left_value
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L60
+stack[t10] = t44
+goto L59
+L60:heap[t10] = t44
+L59:t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_70
+P = P+4
+t44 = P-4
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_41
+P = P-4
+L56:}; undefined
+proc procedimiento_139 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_46
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_68
+P = P-3
+t10 = stack[E]
+E = E-1
+t44 = P+1
+stack[t44] = t10
+E = E+1
+stack[E] = 0
+t10 = stack[E]
+E = E-1
+t44 = P+2
+stack[t44] = t10
+L62:t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 5
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value<right_value goto L65
+t44 = 0
+goto L66
+L65:t44 = 1
+L66:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L64
+P = P+3
+t44 = P-3
+L61:}; undefined
+proc procedimiento_145 {t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value!=right_value goto L70
+t44 = 0
+goto L71
+L70:t44 = 1
+L71:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L69
+P = P+2
+t44 = P-2
+L67:}; undefined
+proc procedimiento_149 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_29
+P = P+4
+t44 = P-4
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_3
+P = P-4
+t10 = stack[E]
+E = E-1
+t44 = P+2
+stack[t44] = t10
+E = E+1
+stack[E] = 0
+t10 = stack[E]
+E = E-1
+t44 = P+3
+stack[t44] = t10
+L73:t44 = P+3
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 5
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value<right_value goto L76
+t44 = 0
+goto L77
+L76:t44 = 1
+L77:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L75
+P = P+4
+t44 = P-4
+L72:}; undefined
+proc procedimiento_155 {t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value!=right_value goto L81
+t44 = 0
+goto L82
+L81:t44 = 1
+L82:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L80
+P = P+2
+t44 = P-2
+L78:}; undefined
+proc procedimiento_159 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 6
+E = E+1
+stack[E] = t10
+call procedimiento_9
+L83:}; undefined
+proc procedimiento_161 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L85
+t10 = stack[t10]
+goto L86
+L85:t10 = heap[t10]
+L86:E = E+1
+stack[E] = t10
+t10 = 6
+E = E+1
+stack[E] = t10
+call procedimiento_95
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L88
+stack[t10] = t44
+goto L87
+L88:heap[t10] = t44
+L87:L84:}; undefined
+proc procedimiento_163 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 7
+E = E+1
+stack[E] = t10
+call procedimiento_85
+L89:}; undefined
+proc procedimiento_165 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L91
+t10 = stack[t10]
+goto L92
+L91:t10 = heap[t10]
+L92:E = E+1
+stack[E] = t10
+t10 = 7
+E = E+1
+stack[E] = t10
+call procedimiento_63
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L94
+stack[t10] = t44
+goto L93
+L94:heap[t10] = t44
+L93:L90:}; undefined
+proc procedimiento_167 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+call procedimiento_1
+E = E+1
+stack[E] = 0
+call procedimiento_56
+P = P+1
+t44 = P-1
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_36
+P = P-1
+E = E+1
+stack[E] = 1
+call procedimiento_78
+P = P+1
+t44 = P-1
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+t10 = stack[E]
+E = E-1
+t22 = P+1
+stack[t22] = t10
+call procedimiento_44
+P = P-1
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+L95:}; undefined
+proc procedimiento_169 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 8
+E = E+1
+stack[E] = t10
+call procedimiento_48
+L96:}; undefined
+proc procedimiento_171 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L98
+t10 = stack[t10]
+goto L99
+L98:t10 = heap[t10]
+L99:E = E+1
+stack[E] = t10
+t10 = 8
+E = E+1
+stack[E] = t10
+call procedimiento_49
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L101
+stack[t10] = t44
+goto L100
+L101:heap[t10] = t44
+L100:L97:}; undefined
+proc procedimiento_173 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 9
+E = E+1
+stack[E] = t10
+call procedimiento_37
+L102:}; undefined
+proc procedimiento_175 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L104
+t10 = stack[t10]
+goto L105
+L104:t10 = heap[t10]
+L105:E = E+1
+stack[E] = t10
+t10 = 9
+E = E+1
+stack[E] = t10
+call procedimiento_7
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L107
+stack[t10] = t44
+goto L106
+L107:heap[t10] = t44
+L106:L103:}; undefined
+proc procedimiento_177 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 10
+E = E+1
+stack[E] = t10
+call procedimiento_35
+L108:}; undefined
+proc procedimiento_179 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L110
+t10 = stack[t10]
+goto L111
+L110:t10 = heap[t10]
+L111:E = E+1
+stack[E] = t10
+t10 = 10
+E = E+1
+stack[E] = t10
+call procedimiento_27
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L113
+stack[t10] = t44
+goto L112
+L113:heap[t10] = t44
+L112:L109:}; undefined
+proc procedimiento_181 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 11
+E = E+1
+stack[E] = t10
+call procedimiento_49
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value==right_value goto L115
+t44 = 0
+goto L116
+L115:t44 = 1
+L116:E = E+1
+stack[E] = t44
+L114:}; undefined
+proc procedimiento_183 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_27
+P = P+2
+t44 = P-2
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_64
+P = P-2
+t10 = stack[E]
+E = E-1
+if t10==0 goto L119
+P = P+2
+t44 = P-2
+L117:}; undefined
+proc procedimiento_191 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_94
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_36
+P = P-3
+t10 = stack[E]
+E = E-1
+t44 = P+1
+stack[t44] = t10
+E = E+1
+stack[E] = 0
+t10 = stack[E]
+E = E-1
+t44 = P+2
+stack[t44] = t10
+L121:t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value!=right_value goto L124
+t44 = 0
+goto L125
+L124:t44 = 1
+L125:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L123
+P = P+3
+t44 = P-3
+L120:}; undefined
+proc procedimiento_195 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_60
+P = P+3
+t44 = P-3
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_74
+P = P-3
+t10 = stack[E]
+E = E-1
+t44 = P+1
+stack[t44] = t10
+E = E+1
+stack[E] = 0
+t10 = stack[E]
+E = E-1
+t44 = P+2
+stack[t44] = t10
+L127:t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value!=right_value goto L130
+t44 = 0
+goto L131
+L130:t44 = 1
+L131:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L129
+P = P+3
+t44 = P-3
+L126:}; undefined
+proc procedimiento_199 {E = E+1
+stack[E] = 8
+call procedimiento_23
+t44 = stack[E]
+heap[t44] = 7
+t22 = t44+1
+heap[t22] = 114
+t22 = t44+2
+heap[t22] = 101
+t22 = t44+3
+heap[t22] = 112
+t22 = t44+4
+heap[t22] = 111
+t22 = t44+5
+heap[t22] = 114
+t22 = t44+6
+heap[t22] = 116
+t22 = t44+7
+heap[t22] = 101
+call procedimiento_23
+t10 = stack[E]
+E = E-1
+t44 = P+1
+stack[t44] = t10
+E = E+1
+stack[E] = 14
+call procedimiento_52
+t44 = stack[E]
+heap[t44] = 13
+t22 = t44+1
+heap[t22] = 78
+t22 = t44+2
+heap[t22] = 111
+t22 = t44+3
+heap[t22] = 46
+t22 = t44+4
+heap[t22] = 32
+t22 = t44+5
+heap[t22] = 110
+t22 = t44+6
+heap[t22] = 105
+t22 = t44+7
+heap[t22] = 118
+t22 = t44+8
+heap[t22] = 101
+t22 = t44+9
+heap[t22] = 108
+t22 = t44+10
+heap[t22] = 101
+t22 = t44+11
+heap[t22] = 115
+t22 = t44+12
+heap[t22] = 58
+t22 = t44+13
+heap[t22] = 32
+call procedimiento_23
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_63
+P = P+5
+t44 = P-5
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_96
+P = P-5
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E+1
+stack[E] = right_value
+t10 = stack[E]
+call procedimiento_71
+call procedimiento_29
+call procedimiento_81
+t10 = stack[E]
+E = E-1
+t44 = P+2
+stack[t44] = t10
+E = E+1
+stack[E] = 0
+t10 = stack[E]
+E = E-1
+t44 = P+3
+stack[t44] = t10
+t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+call procedimiento_96
+P = P+5
+t44 = P-5
+t10 = stack[E]
+E = E-1
+t22 = P
+stack[t22] = t10
+call procedimiento_71
+P = P-5
+t10 = stack[E]
+E = E-1
+t44 = P+4
+stack[t44] = t10
+L133:t44 = P+4
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 0
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value!=right_value goto L136
+t44 = 0
+goto L137
+L136:t44 = 1
+L137:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L135
+P = P+5
+t44 = P-5
+L132:}; undefined
+proc procedimiento_203 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 11
+E = E+1
+stack[E] = t10
+call procedimiento_80
+L138:}; undefined
+proc procedimiento_205 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L140
+t10 = stack[t10]
+goto L141
+L140:t10 = heap[t10]
+L141:E = E+1
+stack[E] = t10
+t10 = 11
+E = E+1
+stack[E] = t10
+call procedimiento_37
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L143
+stack[t10] = t44
+goto L142
+L143:heap[t10] = t44
+L142:L139:}; undefined
+proc procedimiento_207 {t44 = P
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t10 = 12
+E = E+1
+stack[E] = t10
+call procedimiento_82
+L144:}; undefined
+proc procedimiento_209 {t44 = P
+E = E+1
+stack[E] = 0
+E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L146
+t10 = stack[t10]
+goto L147
+L146:t10 = heap[t10]
+L147:E = E+1
+stack[E] = t10
+t10 = 12
+E = E+1
+stack[E] = t10
+call procedimiento_11
+t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = stack[E]
+E = E-1
+t10 = stack[E]
+E = E-1
+t22 = stack[E]
+E = E-1
+if t22==1 goto L149
+stack[t10] = t44
+goto L148
+L149:heap[t10] = t44
+L148:L145:}; undefined
+proc procedimiento_211 {t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+left_value = left_value+right_value
+E = E+1
+stack[E] = left_value
+L150:}; undefined
+proc procedimiento_213 {t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+t44 = P+2
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+left_value = left_value-right_value
+E = E+1
+stack[E] = left_value
+L151:}; undefined
+proc procedimiento_215 {call procedimiento_47
+t10 = stack[E]
+E = E-1
+t44 = P
+stack[t44] = t10
+E = E+1
+stack[E] = 0
+t10 = stack[E]
+E = E-1
+t44 = P+1
+stack[t44] = t10
+L153:t44 = P+1
+t44 = stack[t44]
+E = E+1
+stack[E] = t44
+E = E+1
+stack[E] = 26
+right_value = stack[E]
+E = E-1
+left_value = stack[E]
+E = E-1
+if left_value<right_value goto L156
+t44 = 0
+goto L157
+L156:t44 = 1
+L157:E = E+1
+stack[E] = t44
+t10 = stack[E]
+E = E-1
+if t10==0 goto L155
+P = P+2
+t44 = P-2
+L152:}; undefined 
