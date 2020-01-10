@@ -3019,7 +3019,7 @@ const Code_Generator = {
            else return false;
        },
     holds_valid_return_stmt(block) {
-         //We should implement the return tracking here. Not implemented yet.
+        if(!TRACK_RETURN_STMT)return; //If we disable the return tracking we do nothing and return.
         if(this.SymbolTable[this.current_function].type=='void')return; //If it is a void function it doesn't matter whether it has a return stmt or not.
         this.foundReturn = false;
         this.returnTracker = [0];//we reset the return tracker to default.

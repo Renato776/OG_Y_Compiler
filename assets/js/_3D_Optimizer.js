@@ -79,9 +79,9 @@ const Optimizer = {
             optimized =  new Instruction('assignation',instruction.token,instruction.c,instruction.b);
         }else if(!isNaN(b)&&b==0&&(instruction.op=='+'||instruction.op=='-')){
             optimized = new Instruction('assignation',instruction.token,instruction.c,instruction.a);
-        }else if (!isNaN(a)&&a==1&&(instruction.op=='*'||instruction.op=='/')){
+        }else if (!isNaN(a)&&a==1&&(instruction.op=='*')){
             optimized = new Instruction('assignation',instruction.token,instruction.c,instruction.b);
-        }else if(!isNaN(b)&&b==1&&(instruction.op=='*'||instruction.op=='/')){
+        }else if(!isNaN(b)&&b==1&&(instruction.op=='*')){
             optimized = new Instruction('assignation',instruction.token,instruction.c,instruction.a);
         }else if(!isNaN(b)&&!isNaN(a)){ //Both are numbers
             let r;

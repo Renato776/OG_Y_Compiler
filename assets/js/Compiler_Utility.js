@@ -594,6 +594,7 @@ function digest(string) { //We scape the characters (if any)
     let res =  string.replace(/\\n/gm,'\n');
     res = res.replace(/\\\\/gm,'\\');
     res = res.replace(/\\t/gm,'\t');
+    res = res.replace(/\\a/gm,'@');
     res =  res.replace(/\\"/gm,'"');
     res = res.replace(/\\'/gm,'\'');
     res = res.replace(/@([a-zA-Z]|_)+[0-9]*/gm,replace_class_token_in_string);

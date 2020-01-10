@@ -171,6 +171,9 @@ function stop_3D(){ //Resets execution.
     new _3D_Exception(null,"Stopped 3D execution.",false);
 }
 //endregion
+function toggle_breakpoint_sensibility() {
+    BREAKPOINT_SENSITIVE = !BREAKPOINT_SENSITIVE; //we toggle the breakpoint sensibility option.
+}
 //region On document ready.
 function initialize(){
     load_native_functions();
@@ -203,6 +206,7 @@ function initialize(){
     $("#Compilar_Button").click(show_tab);
     $("#Ejecutar_Button").click(show_tab);
     $("#Errores_Button").click(show_tab);
+    $("#DepurarTitle").click(toggle_breakpoint_sensibility);
     $("#TablaDeSimbolos_Button").click(show_tab);
     $("#AST_Button").click(show_tab);
     $("#Optimizacion_Button").click(show_tab);
