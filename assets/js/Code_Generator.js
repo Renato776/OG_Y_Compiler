@@ -3023,6 +3023,9 @@ const Code_Generator = {
                 if(recipient_type.array.dimensions==value_type.array.dimensions)return true;
                // if (recipient_type.signature == value_type.signature) return true; //Arrays are already abstracted for them to show only the important info in their signatures.
             }
+            else if(!recipient_type.is_array()&&value_type.is_array()){
+                if(throwException)throw new semantic_exception('Incompatible types. Cannot assign: '+value_type.signature+' to: '+recipient_type.signature,node);
+            }
             else if(recipient_type.is_class()){//I'm expecting value to be null or a compatible class.
                 if(value_type.signature==NULL)return true; //null is accepted regardless.
                 if(this.compatible_classes(recipient_type.signature,value_type.signature))return true; //we're fine. Both classes are compatible.
