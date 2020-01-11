@@ -172,6 +172,9 @@ function stop_3D(){ //Resets execution.
     new _3D_Exception(null,"Stopped 3D execution.",false);
 }
 //endregion
+function showHelp(){
+    window.open('/Y_Compiler Manual.pdf');
+}
 function toggle_breakpoint_sensibility() {
     BREAKPOINT_SENSITIVE = !BREAKPOINT_SENSITIVE; //we toggle the breakpoint sensibility option.
 }
@@ -218,6 +221,7 @@ function initialize(){
     $("#Optimization_button").click(Optimize);
     $("#AST_Title").click(toggle_details);
     $("#Compile_Title").click(reset_compilation_cycle);
+    $("#Help_Button").click(showHelp);
     document.getElementById('input-file')
         .addEventListener('change', getFile);
 }
