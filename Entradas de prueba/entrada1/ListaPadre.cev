@@ -1,0 +1,13 @@
+
+public class ListaPadre {
+    public String heredado;
+    
+    public ListaPadre(){
+        this.heredado = "texto seteado";
+    }
+    
+    public void imprimir(){
+        println("Desde el padre: "+this.heredado);
+    }
+    
+}

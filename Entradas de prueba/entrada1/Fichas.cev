@@ -1,0 +1,31 @@
+
+public class Fichas {
+    private int size;
+    private Fichas sig;
+    private Fichas ant;
+    
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public Fichas getSig() {
+        return sig;
+    }
+
+    public void setSig(Fichas sig) {
+        this.sig = sig;
+    }
+
+    public Fichas getAnt() {
+        return ant;
+    }
+
+    public void setAnt(Fichas ant) {
+        this.ant = ant;
+    }
+ 
+}

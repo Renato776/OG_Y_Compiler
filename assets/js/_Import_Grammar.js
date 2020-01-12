@@ -84,7 +84,7 @@ performAction: function anonymous(yytext, yyleng, yylineno, yy, yystate /* actio
 var $0 = $$.length - 1;
 switch (yystate) {
 case 1:
-$("#Unified_Source").html($$[$0-1]);
+Import_Solver.Unified_Source = $$[$0-1];
 break;
 case 2:
  this.$ = $$[$0-1]+$$[$0]; 
@@ -581,7 +581,7 @@ case 2:return 6;
 break;
 }
 },
-rules: [/^(?:import[ \r\t]*"([^"\""\\]|\\.)*")/,/^(?:$)/,/^(?:[^])/],
+rules: [/^(?:import[ \r\t]*"([^"\""\\]|\\.)*"[ \r\t]*;)/,/^(?:$)/,/^(?:[^])/],
 conditions: {"INITIAL":{"rules":[0,1,2],"inclusive":true}}
 });
 return lexer;

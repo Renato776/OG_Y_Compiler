@@ -9,6 +9,21 @@
 
 %%
 
+"#UNCAP_HEAP"									{CAP_HEAP = false; }
+"#UNCAP_HEAP_DISPLAY"							{CAP_HEAP_DISPLAY = false;}
+"#UNCAP_STACK_DISPLAY"							{CAP_STACK_DISPLAY = false;}
+"#UNCAP_INSTRUCTION_EXECUTION"					{CAP_INSTRUCTION_EXECUTION = false;}
+"#DISABLE_RETURN_TRACKING"	    				{TRACK_RETURN_STMT = !TRACK_RETURN_STMT;}
+"#MAX_HEAP"[ \r\t]+[0-9]+ 						{resolve_directive(yytext);} 
+"#MAX_HEAP_DISPLAY"[ \r\t]+[0-9]+ 				{resolve_directive(yytext);} 
+"#MAX_STACK_DISPLAY"[ \r\t]+[0-9]+ 				{resolve_directive(yytext);} 
+"#MAX_INSTRUCTION_EXECUTION "[ \r\t]+[0-9]+ 	{resolve_directive(yytext);}
+"#MAX_CACHE"[ \r\t]+[0-9]+ 						{resolve_directive(yytext);}
+"#ACCURACY"[ \r\t]+[0-9]+						{resolve_directive(yytext);}
+"#HIDE_NATIVES"									{SHOW_ALL_DETAILS = false;}
+"#FORCE_ENTRY_PROC"[ \r\t]+([a-zA-Z]|_)+[0-9]*	{resolve_directive(yytext);}
+"#FORCE_ENTRY_POINT"[ \r\t]+[0-9]+				{resolve_directive(yytext);}
+
 ";".*              {/*ignore*/}
 "proc"           return 'PROC';
 "{"           return 'LEFT_BRACE';
@@ -38,14 +53,18 @@
 "var"				return 'VAR';
 "call"				return 'CALL';
 "print"             return 'PRINT';
+"exit"				return 'EXIT';
+"write_file"		return 'WRITE_FILE';
+"read"				return 'READ';
+"input"				return 'INPUT';
 ","                 return 'COMMA';
 
 /* Espacios en blanco */
 [ \r\t]+            {}
 \n                  {}
 [0-9]+(".0")\b    return 'BETA_NUM';
-[0-9]+\b        return 'NUM';
 [0-9]+("."[0-9]+)\b    return 'FLOAT';
+[0-9]+\b        return 'NUM';
 ("L")[0-9]+             return 'LABEL';
 ([a-zA-Z]|_)+[0-9]*\b    return 'ID';
 ("'%d'")|("'%e'")|("'%c'") return 'FORMAT';
@@ -68,22 +87,22 @@ inicio : InstrL EOF {};
 
 InstrL:
 	 InstrL Instr {
-	  instructions[$2.token.row-1] = $2;
+	  instructions[$2.token.row] = $2;
 	  }
 	| Instr {
-	 instructions[$1.token.row-1] = $1; //Register Instruction in the Instruction List.
+	 instructions[$1.token.row] = $1; //Register Instruction in the Instruction List.
 	 }
 ;
 
 Instr:
     labelList stmt {
      $1.forEach(label=>{
-     labels[label.text] = $2.token.row-1; //We register the labels.
+     labels[label.text] = $2.token.row; //We register the labels.
      });
      $$ = $2;
      }
     |procDef stmt {
-    labels[$1.text] = $2.token.row-1; //We register the proc
+    labels[$1.text] = $2.token.row; //We register the proc
     $$ = $2;
     }
     |stmt { $$ = $1; }
@@ -119,6 +138,10 @@ stmt : varDecl {$$ = $1;}
         | getHeap {$$ = $1;}
         | setStack {$$ = $1;}
         | getStack {$$ = $1;}
+        | exit {$$ = $1;}
+        | write {$$ = $1;}
+        | read {$$ = $1;}
+        | input {$$ = $1;}
         ;
 
 varDecl: VAR ID ASIGNACION value {
@@ -220,6 +243,25 @@ ret : RIGHT_BRACE {
 
 print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {
        $$ = new Instruction("print",$5,$3,$5); //Print(name,token,format,value)
+       }
+       ;
+       
+write : WRITE_FILE LEFT_PAREN RIGHT_PAREN {
+       $$ = new Instruction("write",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
+       }
+       ;
+
+read :  READ LEFT_PAREN RIGHT_PAREN {
+         $$ = new Instruction("read",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
+       }
+       ;
+input :  INPUT LEFT_PAREN RIGHT_PAREN {
+         $$ = new Instruction("input",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
+       }
+       ;
+        
+exit : EXIT LEFT_PAREN value RIGHT_PAREN {
+       $$ = new Instruction("exit",$3,$3); //Print(name,token,format,value)
        }
        ;
 

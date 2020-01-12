@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="" />
+    <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="Added some extra details.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/js/Code_Generator.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/Code_Generator.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/js/Compiler_Utility.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/Compiler_Utility.js" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,9 +86,44 @@
       <workItem from="1577420545297" duration="38205000" />
       <workItem from="1577538360616" duration="6523000" />
       <workItem from="1577549167048" duration="2653000" />
-      <workItem from="1577558093099" duration="7004000" />
-      <workItem from="1577570199927" duration="758000" />
-      <workItem from="1577595191517" duration="1158000" />
+      <workItem from="1577558093099" duration="3938000" />
+      <workItem from="1577597247742" duration="15527000" />
+      <workItem from="1577652223459" duration="5395000" />
+      <workItem from="1577663725630" duration="7419000" />
+      <workItem from="1577756894177" duration="18096000" />
+      <workItem from="1577805559574" duration="599000" />
+      <workItem from="1577817494393" duration="6309000" />
+      <workItem from="1577874711999" duration="3829000" />
+      <workItem from="1577879696938" duration="1705000" />
+      <workItem from="1577899730366" duration="13148000" />
+      <workItem from="1577918477852" duration="23202000" />
+      <workItem from="1577985641033" duration="15116000" />
+      <workItem from="1578003898653" duration="26983000" />
+      <workItem from="1578077075398" duration="13188000" />
+      <workItem from="1578099567147" duration="18919000" />
+      <workItem from="1578124567642" duration="7305000" />
+      <workItem from="1578163019239" duration="4115000" />
+      <workItem from="1578170442291" duration="41919000" />
+      <workItem from="1578265515345" duration="8985000" />
+      <workItem from="1578287108624" duration="10203000" />
+      <workItem from="1578319391360" duration="43661000" />
+      <workItem from="1578381607193" duration="12373000" />
+      <workItem from="1578414052742" duration="26416000" />
+      <workItem from="1578466441526" duration="30023000" />
+      <workItem from="1578504108557" duration="10149000" />
+      <workItem from="1578517299556" duration="143000" />
+      <workItem from="1578518588908" duration="5740000" />
+      <workItem from="1578533429419" duration="21588000" />
+      <workItem from="1578583130044" duration="4455000" />
+      <workItem from="1578587870347" duration="13030000" />
+      <workItem from="1578610368693" duration="506000" />
+      <workItem from="1578611056567" duration="3606000" />
+      <workItem from="1578617959869" duration="2563000" />
+      <workItem from="1578620588512" duration="6720000" />
+      <workItem from="1578669254654" duration="599000" />
+      <workItem from="1578798555880" duration="2413000" />
+      <workItem from="1578803470746" duration="13899000" />
+      <workItem from="1578842709763" duration="1771000" />
     </task>
     <servers />
   </component>
@@ -106,5 +145,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="Added some extra details." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added some extra details." />
   </component>
 </project>

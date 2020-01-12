@@ -1,0 +1,36 @@
+import "ListaPadre.cev";
+
+public class Casteos {
+    private int un_Parametro;
+    
+    public Casteos(int yas){
+        this.un_Parametro = yas;
+    }
+    
+    public void castear(){
+        println((un_Parametro < 15)?"menor a 15":"mayor o igual a 15");
+        char a;
+        int b;
+        double c;
+        boolean d;
+        String e;
+        ListaPadre lp;
+        println(a);
+        println(b);
+        println(c);
+        println(d);
+        println(e);
+        println(lp);
+        a = (char)toInt("90");//Z
+        b = toInt("526");
+        c = toDouble("1284.456");
+        e = str(b);
+        println(a);
+        println(b);
+        println(c);
+        println(e);
+        e = str(c);
+        println(e);
+    }
+    
+}

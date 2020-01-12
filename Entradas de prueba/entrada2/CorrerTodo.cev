@@ -1,0 +1,32 @@
+/*
+Esta entrada fue escrita en su totalidad por: Ricardo Menchu.
+*/
+import "listaUnos.cev";
+
+public class CorrerTodo {
+    
+
+    public static void main() {
+    
+        listaUnos lu = new listaUnos();
+        // Plataforma p = new Plataforma();
+        int x = 0;
+        while(x<26){
+            lu.insert(65+x);
+            x++;
+        }
+        x = 0;
+        while(x<5){
+            lu.insert(48+x);
+            x++;
+        }
+        lu.imprimirs();
+        println(lu.size());
+        println(lu.suma(111, 222));
+        println(lu.resta(123, 246));
+        write_file("reporte1","con valor de varia [ ] s");
+        lu.reportear();
+        
+    }
+    
+}

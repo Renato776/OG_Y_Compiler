@@ -1,0 +1,36 @@
+
+public class NodoCero {
+    private int id;
+    private NodoCero sig;
+    private NodoCero ant;
+    
+    public NodoCero(int id){
+        setId(id);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public NodoCero getSig() {
+        return sig;
+    }
+
+    public void setSig(NodoCero sig) {
+        this.sig = sig;
+    }
+
+    public NodoCero getAnt() {
+        return ant;
+    }
+
+    public void setAnt(NodoCero ant) {
+        this.ant = ant;
+    }
+    
+    
+}

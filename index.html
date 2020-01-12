@@ -60,14 +60,14 @@
     </div>
     <div class="row Debug_Container_Hide" id="AST">
         <div class="col">
-            <div class="Display_Title"><label class="Inline_Title Display_Title">AST</label>
+            <div class="Display_Title"><label id="AST_Title" class="Inline_Title Display_Title">AST</label>
                 <div id="AST_Container"></div>
             </div>
         </div>
     </div>
     <div class="row Debug_Container_Hide" id="OPTIMIZACION">
         <div class="col">
-            <div class="Display_Title"><label class="Inline_Title Display_Title">Reporte de Optimizacion</label>
+            <div class="Display_Title"><label class="Inline_Title Display_Title" id = "Optimization_button">Reporte de Optimizacion</label>
                 <div class="table-responsive">
                     <table class="table">
                         <thead id="OPTIMIZACION_HEADER">
@@ -88,6 +88,8 @@
                         </tbody>
                     </table>
                 </div>
+                <h2>Salida</h2>
+                <div id="Optimized_code" class = "Optimized_field"></div>
             </div>
         </div>
     </div>
@@ -115,14 +117,11 @@
                                         <th colspan="2">Console</th>
                                     </tr>
                                     </thead>
-                                    <tbody id="Ejecutar_Console">
+                                    <tbody id="Ejecutar_Console_body">
                                     <tr>
-                                        <td>&gt;&gt;</td>
-                                        <td style="width: 100%;text-align: left;">Cell 2</td>
-                                    </tr>
-                                    <tr>
-                                        <td>&gt;&gt;</td>
-                                        <td>Cell 4</td>
+                                        <td colspan="2">
+                                            <textarea style="width: 100%;" cols="10" rows="10" spellcheck="false"  id="Ejecutar_console"></textarea>
+                                        </td>
                                     </tr>
                                     </tbody>
                                 </table>
@@ -181,7 +180,7 @@
     <div class="row" id="MAIN">
         <div class="col">
             <div class="row">
-                <div class="col Title_Container"><label class="col-form-label Display_Title Inline_Title"><strong>Alto Nivel</strong></label></div>
+                <div class="col Title_Container"><label class="col-form-label Display_Title Inline_Title"><strong id = "Compile_Title">Alto Nivel</strong></label></div>
             </div>
             <div class="row">
                 <div class="col" id="Main_TextArea">
@@ -212,7 +211,7 @@
                                         <td>
                                             <div class = "row" id="create_file_dialog">
                                                 <div style="margin:auto;">
-                                                    <input type="text" id="file_name" name="file_name" placeholder="Main.OLCEV"></input>
+                                                    <input type="text" id="file_name" name="file_name" placeholder="Main.CEV"></input>
                                                     <button type="button" id="create_file_button">Nuevo</button>
                                                 </div>
                                             </div>
@@ -222,6 +221,11 @@
                                     <tr>
                                         <td></td>
                                         <td><button class="btn btn-danger" id="Guardar_Button" style="border: none;width: 100%;height: auto;background-color: #1effff;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Guardar</button></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td><button class="btn btn-danger" id="Help_Button" style="border: none;width: 100%;height: auto;background-color: #00ff89;color: rgb(0,0,0);margin: auto;/*padding-left: 2.5em;*//*padding-right: 2.5em;*/" type="button">Ayuda</button></td>
                                         <td></td>
                                     </tr>
                                     <tr>
@@ -302,271 +306,11 @@
     <div>
         <div class="container">
             <div class="row">
-                <div class="col Title_Container"><label class="col-form-label Depurar_Title"><strong>Depurar</strong></label></div>
+                <div class="col Title_Container"><label id = "DepurarTitle" class="col-form-label Depurar_Title"><strong>Depurar</strong></label></div>
             </div>
             <div class="row">
                 <div class="col" id="Debug_TextArea">
                     <div><label>3D Source Code</label></div><div id = "Debug_Source_Container"><textarea id="ThreeD_Source" rows="22" class="codemirror-textarea">
-proc Fibonacci{
-n = stack[P]
-if n!=0 goto L2
-stack[P]=0
-goto L1
-L2:
-if n!=1 goto L3
-stack[P]=1
-goto L1
-L3:
-n = stack[P]
-n = n - 1
-P = P + 1
-stack[P] = n
-call Fibonacci
-n1 = stack[P]
-P = P - 1
-n = stack[P]
-stack[P] = n1
-n = n - 2
-P = P + 1
-stack[P] = n
-call Fibonacci
-n1 = stack[P]
-P = P - 1
-n = stack[P]
-n = n + n1
-stack[P] = n
-L1:
-}
-
-proc Test{
-
-nombre= stack[P]
-
-P = P - 1
-P = P + 1
-stack[P]=nombre
-call printString
-t10=10 ;t10 = Valor sobre el cual se caculara Fibonacci.
-;En este caso 10. Se puede cambiar por cualquier numero.
-P = P + 1
-stack[P]=t10
-call Fibonacci
-res = stack[P]
-P = P - 1
-print('%e',res)
-}
-
-proc new_String{
-
-size= stack[P]
-
-P = P - 1
-H=H+1
-t11=H
-heap[H] = size
-H=H+size
-P = P + 1
-stack[P]=t11
-}
-
-proc push_String{
-
-offset= stack[P]
-
-P = P - 1
-newChar= stack[P]
-
-P = P - 1
-cadena= stack[P]
-
-P = P - 1
-t12=cadena+offset
-heap[t12] = newChar
-}
-
-proc sum_String{
-
-string2= stack[P]
-
-P = P - 1
-string1= stack[P]
-
-P = P - 1
-size1 = heap[string1]
-size2 = heap[string2]
-length=size1+size2
-H=H+1
-t13=H
-heap[H] = length
-H=H+length
-t14=t13
-j=string1
-i=0
-L4:
-if i>=size1 goto L2
-t14=t14+1
-i=i+1
-j=j+1
-t15 = heap[j]
-heap[t14] = t15
-goto L4
-L5:
-j=string2
-i=0
-L6:
-if i>=size2 goto L7
-t14=t14+1
-i=i+1
-j=j+1
-t16 = heap[j]
-heap[t14] = t16
-goto L6
-L7:
-P = P + 1
-stack[P]=t13
-}
-
-proc main{
-
-t17=15
-P = P + 1
-stack[P]=t17
-call new_String
-title= stack[P]
-
-P = P - 1
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=70
-P = P + 1
-stack[P]=1
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=105
-P = P + 1
-stack[P]=2
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=98
-P = P + 1
-stack[P]=3
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=111
-P = P + 1
-stack[P]=4
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=110
-P = P + 1
-stack[P]=5
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=97
-P = P + 1
-stack[P]=6
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=99
-P = P + 1
-stack[P]=7
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=99
-P = P + 1
-stack[P]=8
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=105
-P = P + 1
-stack[P]=9
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=32
-P = P + 1
-stack[P]=10
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=100
-P = P + 1
-stack[P]=11
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=101
-P = P + 1
-stack[P]=12
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=32
-P = P + 1
-stack[P]=13
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=56
-P = P + 1
-stack[P]=14
-call push_String
-P = P + 1
-stack[P]=title
-P = P + 1
-stack[P]=58 ;; 58 = Ascii code of 8
-P = P + 1
-stack[P]=15
-call push_String
-P = P + 1
-stack[P]=title
-call Test
-}
-
-proc printString{
-
-cadena= stack[P]
-
-P = P - 1
-size = heap[cadena]
-t18=0
-L8:
-if t18>=size goto L9
-t18=t18+1
-t20=t18+cadena
-t21 = heap[t20]
-P = P + 1
-stack[P]=t21
-ren_= stack[P]
-
-P = P - 1
-print('%c',ren_)
-goto L8
-L9:
-}
-
  </textarea></div></div>
                 <div class="col" id="Debug_Options">
                     <div class="row BreakPoint_Container_Container">
@@ -720,15 +464,12 @@ L9:
                                     <th colspan="2">Console</th>
                                 </tr>
                             </thead>
-                            <tbody id="Debug_Console">
-                                <tr>
-                                    <td>&gt;&gt;</td>
-                                    <td>Cell 2</td>
-                                </tr>
-                                <tr>
-                                    <td>&gt;&gt;</td>
-                                    <td>Cell 4</td>
-                                </tr>
+                            <tbody id="Debug_Console_body">
+                            <tr>
+                                <td colspan="2">
+                                    <textarea style="width: 100%" spellcheck="false" cols="10" rows="10" id="Debug_console"></textarea>
+                                </td>
+                            </tr>
                             </tbody>
                         </table>
                     </div>
@@ -745,14 +486,21 @@ L9:
     <script src="assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="lib/codemirror.js"></script>
     <link rel="stylesheet" href="lib/codemirror.css">
-    <script src="modes/ntriples/ntriples.js"></script>
+    <script src="modes/mode.js"></script>
+    <script src="modes/java.js"></script>
     <script src="assets/js/_3D_grammar.js"></script>
     <script src="assets/js/_3D_Interpreter.js"></script>
     <script src="assets/js/_3D_Utility.js"></script>
     <script src="assets/js/_Y_Compiler_Utility.js"></script>
-    <script src="assets/js/Y_Compiler.js"></script>
+    <script src="assets/js/Compiler_Utility.js"></script>
     <script src="assets/js/_Import_Grammar.js"></script>
     <script src="assets/js/_Aux_Grammar.js"></script>
+    <script src="assets/js/_3D_Optimizer.js"></script>
+    <script src="assets/js/_Optimizer_grammar.js"></script>
+    <script src="assets/js/Y_Compiler.js"></script>
+    <script src="assets/js/_Y_Grammar.js"></script>
+    <script src="assets/js/Code_Generator.js"></script>
+    <script src="assets/js/Printing.js"></script>
 </body>
 
 </html>

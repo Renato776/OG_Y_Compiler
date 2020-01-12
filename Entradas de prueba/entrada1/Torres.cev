@@ -1,0 +1,87 @@
+import "ListaPadre.cev";
+import "Fichas.cev";
+
+public class Torres extends ListaPadre{
+    private Fichas inicio;
+    private Fichas fin;
+    
+    public Torres() {
+        super();
+    }
+    
+
+    public Fichas getInicio() {
+        return inicio;
+    }
+
+    public void setInicio(Fichas inicio) {
+        this.inicio = inicio;
+    }
+
+    public Fichas getFin() {
+        return fin;
+    }
+
+    public void setFin(Fichas fin) {
+        this.fin = fin;
+    }
+    
+    public void addficha(int size){
+        Fichas nueva = new Fichas();
+        nueva.setSize(size);
+        if (vacio()){
+            setInicio(nueva);
+            setFin(nueva);
+            //this.inicio = nueva;
+            //this.fin = nueva;
+        }
+        else{
+            this.fin.setSig(nueva);
+            nueva.setAnt(fin);
+            //this.fin = nueva;
+            this.setFin(nueva);
+        }
+    }
+    
+    public boolean permitido(int size){
+        if (vacio()){
+            return true;
+        }
+        if (this.fin.getSize() < size){
+            return false;
+        }
+        return true;
+    }
+    
+    public String push(Fichas ficha){
+        if (permitido(ficha.getSize())){
+            addficha(ficha.getSize());
+            return "Ficha agregada";
+        }
+        return "No se pudo agregar ficha";
+    }
+    
+    public Fichas pop(){
+        Fichas retorno = null;
+        if (vacio()){
+            return retorno;
+        }
+        retorno = fin;
+        if (this.fin.getAnt() == null){
+            // solo tiene un nodo
+            setInicio((Fichas)null);
+            setFin((Fichas)null);
+        }
+        else{
+            fin.getAnt().setSig((Fichas)null);
+            setFin(fin.getAnt());
+        }
+        return retorno;
+    }
+    
+    private boolean vacio(){
+        boolean a = getInicio() == null;
+        return a;
+    }
+    
+}

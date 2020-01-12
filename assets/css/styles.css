@@ -8,6 +8,49 @@
   border: none;
   font-size: large;
 }
+#AST_Container{
+  text-align: left;
+  font-size: large;
+}
+.node_display{
+  background-color: white;
+}
+.node_container{
+  line-height: 3em;
+  padding: 0.5em;
+}
+.SymbolTable_Entry{
+  text-align: left;
+}
+#SYMBOL_TABLE_HEADER{
+  font-weight: bold;
+  font-size: large;
+}
+.member_entry{
+background-color: aliceblue;
+}
+.Member_Header{
+  font-weight: bold;
+  font-size: large;
+  background-color: #000051;
+  color: white;
+}
+.Class_Header{
+    font-weight: bold;
+    font-size: large;
+    color: black;
+    background-color: #ff00ff;
+}
+.class_name{
+  font-weight: bold;
+}
+.class_info{
+  background-color: purple;
+    color: white;
+}
+#SYMBOL_TABLE tbody tr:nth-child(odd) {background: #CCC}
+#SYMBOL_TABLE tbody tr:nth-child(even) {background: #FFF}
+
 #folderDialog,#create_file_dialog {
   text-align: center;
   background-color: rgb(0,255,240);
@@ -16,12 +59,25 @@
   width:100%;
   margin: auto;
 }
-.Selected_Class{
-  background: #24ff00;
+.Optimized_field {
+  text-align: justify;
 }
-.Class_Header{
-  font-weight: bold;
-  font-size: large;
+.Optimized_field td{
+  border-color: aquamarine;
+  border:solid;
+}
+.Optimized_cell {
+  /*border-color: aquamarine;*/
+  /*border:solid;*/
+}
+.Selected_Class{
+  background: #24ff00 !important;
+}
+#Ejecutar_console{
+  height: 300px;
+}
+#Debug_console{
+  height: 300px;
 }
 #create_file_dialog {
   text-align: center;
