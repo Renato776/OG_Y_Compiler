@@ -113,15 +113,18 @@ function update_temporal(name,value) {
 }
 //region begin_3D
 function begin_3D(){
+    current_execution_option = 1;
     play_3D(true);
 }
 function begin_execution(){
+    current_execution_option = 0;
     if(!$("#Recover_Container").hasClass('Debug_Container_Hide'))$("#Recover_Container").addClass('Debug_Container_Hide'); //We hide the continue option if visible.
     play_3D(false);
 }
 //endregion
 //region next_3D
 function next_3D(){
+    current_execution_option = 2;
     if(!compiling)if(new_3D_cycle())return;
     let instruction = instructions[IP]; //We get the next instruction to execute.
     play_instruction(instruction,true); //We play the instruction and show what happened.
@@ -129,6 +132,7 @@ function next_3D(){
 //endregion
 //region jump_3D
 function jump_3D(){ //Same as next, except we skip proc calls.
+    current_execution_option = 3;
     if(!compiling)if(new_3D_cycle())return;
     let instruction = instructions[IP]; //We get the next instruction to execute.
     if($("#Current_Instruction").text().includes("call")){
@@ -141,6 +145,7 @@ function jump_3D(){ //Same as next, except we skip proc calls.
 //endregion
 //region next_BP
 function next_BP(){
+    current_execution_option = 4;
     if(!compiling)if(new_3D_cycle())return;
     let instruction;
     do{
@@ -150,6 +155,7 @@ function next_BP(){
 //endregion
 //region continue_3D
 function continue_3D(){ //Resumes execution and no longer stops until execution is finished.
+    current_execution_option = 1;
     if(!compiling)if(new_3D_cycle())return;
     let instruction;
     do {
@@ -160,6 +166,7 @@ function continue_3D(){ //Resumes execution and no longer stops until execution 
 //region recover_execution
 function recover_execution(){ //Resumes execution and no longer stops until execution is finished.
     //if(!compiling)if(new_3D_cycle())return; NO need to start a new cycle as this option is only shown when there's a current cycle going on.
+    current_execution_option = 0;
     let instruction;
     do {
         instruction = instructions[IP];
@@ -168,6 +175,7 @@ function recover_execution(){ //Resumes execution and no longer stops until exec
 //endregion
 //region stop_3D
 function stop_3D(){ //Resets execution.
+    current_execution_option = 5;
     compiling = false;
     new _3D_Exception(null,"Stopped 3D execution.",false);
 }

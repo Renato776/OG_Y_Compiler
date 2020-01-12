@@ -1,0 +1,98 @@
+
+import "NodoUno.cev";
+import "claseAbs.cev";
+
+public class listaUnos extends claseAbs {
+    public NodoUno inicio;
+    public NodoUno fin;
+    
+    public boolean vacio(){
+        return this.inicio == null;
+    }
+    
+    public void insert(int id){
+        if (vacio()){
+            NodoUno nuevo = new NodoUno();
+            this.setInicio(nuevo);
+            this.setFin(nuevo);
+            nuevo.getNivel().agregar(id);
+        }
+        else{
+            if (!this.getFin().getNivel().agregar(id)){
+                NodoUno nuevo = new NodoUno();
+                this.getFin().setSig(nuevo);
+                nuevo.setAnt(fin);
+                this.setFin(nuevo);
+                nuevo.getNivel().agregar(id);
+            }
+        }
+    }
+    
+    public int size(){
+        NodoUno tempo = this.getInicio();
+        int z = 0;
+        while(tempo != null){
+            z++;
+            tempo = tempo.getSig();
+        }
+        return z;
+    }
+    
+    public void imprimirs(){
+        NodoUno tempo = this.getInicio();
+        int z = 0;
+        while(tempo != null){
+            println("NIVEL: "+ z);
+            tempo.getNivel().imprimirs();
+            z++;
+            tempo = tempo.getSig();
+        }
+    }
+
+    public void reportear(){
+        String nombre = "reporte";
+        String contenido = "No. niveles: " + this.size();
+        int z = 0;
+        NodoUno tempo = this.getInicio();
+        while(tempo != null){
+            tempo.getNivel().reportear(z);
+            contenido = contenido +", "+ tempo.getNivel().getClass();
+            z++;
+            tempo = tempo.getSig();
+        }
+
+        write_file(nombre+"2",contenido);
+    }
+
+
+    
+
+    public NodoUno getInicio() {
+        return inicio;
+    }
+
+    public void setInicio(NodoUno inicio) {
+        this.inicio = inicio;
+    }
+
+    public NodoUno getFin() {
+        return fin;
+    }
+
+    public void setFin(NodoUno fin) {
+        this.fin = fin;
+    }
+
+
+  //  @Override
+    public int suma(int a, int b) {
+        return a+b;
+    }
+
+   // @Override
+    public double resta(int a, int b) {
+        return a-b;
+    }
+    
+    
+}

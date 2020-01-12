@@ -1,0 +1,66 @@
+
+import "NodoCero.cev";
+import "claseAbs.cev";
+
+public class listaNodos extends claseAbs{
+    private NodoCero inicio;
+    private NodoCero fin;
+    
+    public boolean vacio(){
+        return this.inicio == null;
+    }
+    
+    public void insert(int id){
+        NodoCero nuevo = new NodoCero(id);
+        if (vacio()){
+            this.setInicio(nuevo);
+            this.setFin(nuevo);
+        }
+        else{
+            this.getFin().setSig(nuevo);
+            nuevo.setAnt(fin);
+            this.setFin(nuevo);
+        }
+    }
+    
+    public int size(){
+        NodoCero tempo = this.getInicio();
+        int z = 0;
+        while(tempo != null){
+            z++;
+            tempo = tempo.getSig();
+        }
+        return z;
+    }
+    
+    
+    public NodoCero getInicio() {
+        return inicio;
+    }
+
+    public void setInicio(NodoCero inicio) {
+        this.inicio = inicio;
+    }
+
+    public NodoCero getFin() {
+        return fin;
+    }
+
+    public void setFin(NodoCero fin) {
+        this.fin = fin;
+    }
+
+   // @Override
+    public int suma(int a, int b) {
+        return a*b;
+    }
+
+ //   @Override
+    public double resta(int a, int b) {
+        return a/b;
+    }
+    
+    
+    
+    
+}

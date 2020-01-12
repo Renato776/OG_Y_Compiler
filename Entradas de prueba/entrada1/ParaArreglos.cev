@@ -1,0 +1,54 @@
+import "Torres.cev";
+
+public class ParaArreglos {
+    
+    public void arreglar(){
+        String texto = " "+(char)72+(char)111+(char)108+(char)97 + " " + (char)109+(char)117+(char)110+(char)100+(char)111;
+        println(texto);
+        char miarreglo[][] = new char[2][8];
+        println("toCharArray()");
+        char tempo[] = texto.toCharArray();
+        int x = 0;
+        while (x<16){
+            if (x <= 7){
+                miarreglo[0][x] = '_';
+            }
+            else{
+                miarreglo[1][x-8] = '_';
+            }
+            x++;
+        }
+        int yx = tempo.length;
+        x = 0;
+        while (x<yx){
+            char temporal = tempo[yx-x-1];
+            if (x <= 7){
+                miarreglo[0][x] = temporal;
+            }
+            else{
+                miarreglo[1][x-8] = temporal;
+            }
+            x++;
+        }
+        x = 0;
+        yx = x;
+        while (yx<2){
+            x = 0;
+            String concat = "";
+            while (x<8){
+                concat = concat + miarreglo[yx][x];
+                x++;
+            }
+            println(concat);
+            yx++;
+        }
+        println("toUpperCase()");
+        println(texto.toUpperCase());
+        texto = texto.toUpperCase();
+        println("toLowerCase()");
+        println(texto.toLowerCase());
+        
+        
+    }
+    
+}
