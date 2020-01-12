@@ -14,15 +14,15 @@
 "#UNCAP_STACK_DISPLAY"							{CAP_STACK_DISPLAY = false;}
 "#UNCAP_INSTRUCTION_EXECUTION"					{CAP_INSTRUCTION_EXECUTION = false;}
 "#DISABLE_RETURN_TRACKING"	    				{TRACK_RETURN_STMT = !TRACK_RETURN_STMT;}
-"#MAX_HEAP"[ \r\t]+[0-9]+ 						{MAX_HEAP = Number(yytext.substring(9).trim());}
-"#MAX_HEAP_DISPLAY"[ \r\t]+[0-9]+ 				{MAX_HEAP_DISPLAY = Number(yytext.substring(17).trim());}
-"#MAX_STACK_DISPLAY"[ \r\t]+[0-9]+ 				{MAX_STACK_DISPLAY = Number(yytext.substring(18).trim());}
-"#MAX_INSTRUCTION"[ \r\t]+[0-9]+ 				{INSTRUCTION_MAX = Number(yytext.substring(16).trim());}
-"#MAX_CACHE"[ \r\t]+[0-9]+ 						{MAX_CACHE = Number(yytext.substring(10).trim());}
-"#ACCURACY"[ \r\t]+[0-9]+						{ACCURACY = Number(yytext.substring(9).trim());}
+"#MAX_HEAP"[ \r\t]+[0-9]+ 						{resolve_directive(yytext);} 
+"#MAX_HEAP_DISPLAY"[ \r\t]+[0-9]+ 				{resolve_directive(yytext);} 
+"#MAX_STACK_DISPLAY"[ \r\t]+[0-9]+ 				{resolve_directive(yytext);} 
+"#MAX_INSTRUCTION"[ \r\t]+[0-9]+ 				{resolve_directive(yytext);}
+"#MAX_CACHE"[ \r\t]+[0-9]+ 						{resolve_directive(yytext);}
+"#ACCURACY"[ \r\t]+[0-9]+						{resolve_directive(yytext);}
 "#HIDE_NATIVES"									{SHOW_ALL_DETAILS = false;}
-"#FORCE_ENTRY_PROC"[ \r\t]+([a-zA-Z]|_)+[0-9]*	{FORCE_ENTRY_PROC=yytext.substring(17).trim();}
-"#FORCE_ENTRY_POINT"[ \r\t]+[0-9]+				{FORCE_ENTRY_POINT=yytext.substring(17).trim();}
+"#FORCE_ENTRY_PROC"[ \r\t]+([a-zA-Z]|_)+[0-9]*	{resolve_directive(yytext);}
+"#FORCE_ENTRY_POINT"[ \r\t]+[0-9]+				{resolve_directive(yytext);}
 
 ";".*              {/*ignore*/}
 "proc"           return 'PROC';
@@ -244,12 +244,12 @@ print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {
        }
        ;
        
-write : WRITE_FILE LEFT_PAREN value RIGHT_PAREN {
+write : WRITE_FILE LEFT_PAREN RIGHT_PAREN {
        $$ = new Instruction("write",$3,$3); //Print(name,token,format,value)
        }
        ;
 
-read :  READ LEFT_PAREN value RIGHT_PAREN {
+read :  READ LEFT_PAREN RIGHT_PAREN {
          $$ = new Instruction("read",$3,$3); //Print(name,token,format,value)
        }
        ;

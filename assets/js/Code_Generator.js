@@ -932,6 +932,7 @@ const Code_Generator = {
                                     this.evaluation_stack.push(this.types[owner.signature]);
                                     break;
                                 case "toString":
+                                    if(owner.array.type!='char')throw new semantic_exception('Impossible to convert '+type+'[] to String.',node);
                                     this.call('build_string');
                                     this.evaluation_stack.push(this.types['String']);
                                     break;
@@ -1925,15 +1926,18 @@ const Code_Generator = {
             }
                 return true;
             case "abs":
-                if(value_as_signature){
-                    this.evaluation_stack.push(INTEGER);
-                    return ;
-                }
                 if(paramL.children.length==1){//Only 1 parameters allowed.
+                    if(value_as_signature){
+                        this.value_expression(paramL.children[0],true);
+                        let type = this.evaluation_stack.pop();
+                        type = type.substring(1); //we remove the first -
+                        this.evaluation_stack.push(type);
+                        return ;
+                    }
                     this.value_expression(paramL.children[0]); //We value the first param.
                     let type = this.evaluation_stack.pop();
                     if(!type.is_primitive())throw new semantic_exception('Invalid abs parameter. Expected: double|int|char. got: '+type.signature,node);
-                    //Alright, both numbers are currently in the cache, let's pow them:
+                    //Alright, both numbers are currently in the cache, let's just get the absolute value:
                     this.pop_cache(this.t3);
                     this.get_abs(this.t3);
                     this.push_cache(this.t3);
@@ -1963,7 +1967,7 @@ const Code_Generator = {
                     this.evaluation_stack.push(this.types[VOID]);
                 }else throw new semantic_exception("More or less parameters than expected for function: "+func_name,node);
                 return true;
-            case "read":
+            case "read_file":
                 if(value_as_signature){
                     this.evaluation_stack.push(STRING);
                     return true;
@@ -2201,7 +2205,7 @@ const Code_Generator = {
                 signature=='toUpperCase'||
                 signature=='toLowerCase'
             ){
-                if(overridden.owner!='String')return false; //This means this method has been implemented
+                if(overridden!=undefined)if(overridden.owner!='String')return false; //This means this method has been implemented
             }
         }
         if(signature.startsWith('equals')){ //The highest precedence amongst all native functions. Doesn't matter who's the caller or what are the params.

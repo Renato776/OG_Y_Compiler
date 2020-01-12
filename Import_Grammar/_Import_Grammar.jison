@@ -11,7 +11,7 @@
 //WHITE_SPACE REGEX: [ \r\t]
 /* keywords */
 
-"import"[ \r\t]*"\""([^"\""\\]|\\.)*"\""      { return 'IMPORT_SENTENCE'}
+"import"[ \r\t]*"\""([^"\""\\]|\\.)*"\""[ \r\t]*";"      { return 'IMPORT_SENTENCE'}
 
 <<EOF>>                 return 'EOF';
 
