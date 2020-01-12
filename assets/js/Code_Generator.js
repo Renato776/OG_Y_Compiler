@@ -63,7 +63,7 @@ const Code_Generator = {
         Printing.print_in_context('goto '+target);
     },
     readFile:function(path){
-       Printing.print_in_context('read('+path+')');
+       Printing.print_in_context('read()');
     },
     operate:function(param1,param2,op,vessel,unary = false){
         if(unary){ //Special operation with unary operators like - and !
@@ -3843,7 +3843,7 @@ const Code_Generator = {
       return signature=='String';
     },
     write_file() {
-        Printing.print_in_context('write_file(0)');
+        Printing.print_in_context('write_file()');
     },
     is_within_println() {
         let indeed = false;

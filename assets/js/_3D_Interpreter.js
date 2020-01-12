@@ -87,42 +87,47 @@ default on that switch:
 default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column),"Lexical error. Unrecognized symbol: "+yy_.yytext);
 */
 function show_tab(e) {
-    let b = $(e.target);
-    current_tab.addClass('Debug_Container_Hide'); //We hide the previous tab.
-    let og = current_tab;
-    let signature = b.attr("RValue");
-    signature = "#"+signature;
-    current_tab = $(signature);
-    current_tab.removeClass('Debug_Container_Hide');
-    if(signature=="#DEBUG"&&CodeMirror_3D==null){
-        let code = $("#ThreeD_Source")[0];
-        CodeMirror_3D = CodeMirror.fromTextArea(code, {
-            lineNumbers : true,
-            firstLineNumber: 0,
-            styleSelectedText: true
-        });
-        CodeMirror_3D.on("cursorActivity", onCursorActivity);
-    }else if(signature=="#EJECUTAR"&&CodeMirror_Execute==null){
-        let code = $("#Ejecutar_3D_Source")[0];
-        CodeMirror_Execute = CodeMirror.fromTextArea(code, {
-            lineNumbers : true,
-            firstLineNumber: 0,
-            styleSelectedText: true,
-            readonly :true
-        });
-    }else if(signature=="#MAIN"&&CodeMirror_Main==null){
-        let code = $("#Main_Source")[0];
-        CodeMirror_Main = CodeMirror.fromTextArea(code, {
-            lineNumbers : true,
-            firstLineNumber: 0,
-            mode: "text/x-csrc",
-            matchBrackets:true
-        });
-    }
-    if(og.attr("id")=="EJECUTAR"&&signature=="#DEBUG"){
-        CodeMirror_3D.setValue(CodeMirror_Execute.getValue());
-    }else if(og.attr("id")=="DEBUG"&&signature=="#EJECUTAR"){
-        CodeMirror_Execute.setValue(CodeMirror_3D.getValue());
+    try{
+        let b = $(e.target);
+        current_tab.addClass('Debug_Container_Hide'); //We hide the previous tab.
+        let og = current_tab;
+        let signature = b.attr("RValue");
+        signature = "#"+signature;
+        current_tab = $(signature);
+        current_tab.removeClass('Debug_Container_Hide');
+
+        if(signature=="#DEBUG"&&CodeMirror_3D==null){
+            let code = $("#ThreeD_Source")[0];
+            CodeMirror_3D = CodeMirror.fromTextArea(code, {
+                lineNumbers : true,
+                firstLineNumber: 0,
+                styleSelectedText: true
+            });
+            CodeMirror_3D.on("cursorActivity", onCursorActivity);
+        }else if(signature=="#EJECUTAR"&&CodeMirror_Execute==null){
+            let code = $("#Ejecutar_3D_Source")[0];
+            CodeMirror_Execute = CodeMirror.fromTextArea(code, {
+                lineNumbers : true,
+                firstLineNumber: 0,
+                styleSelectedText: true,
+                readonly :true
+            });
+        }else if(signature=="#MAIN"&&CodeMirror_Main==null){
+            let code = $("#Main_Source")[0];
+            CodeMirror_Main = CodeMirror.fromTextArea(code, {
+                lineNumbers : true,
+                firstLineNumber: 0,
+                mode: "text/x-csrc",
+                matchBrackets:true
+            });
+        }
+        if(og.attr("id")=="EJECUTAR"&&signature=="#DEBUG"){
+            CodeMirror_3D.setValue(CodeMirror_Execute.getValue());
+        }else if(og.attr("id")=="DEBUG"&&signature=="#EJECUTAR"){
+            CodeMirror_Execute.setValue(CodeMirror_3D.getValue());
+        }
+    }catch (e) {
+        //Do nothing, is no big deal if something around here fails.
     }
 }
 function register_token(yytext, row, col) {
@@ -194,7 +199,9 @@ function new_3D_cycle() {
     }catch (e) {
         /*A parse error occurred. We dispose of the error Object and log other properly:*/
         let t = token_tracker.pop();
-        new _3D_Exception(t,"Unexpected symbol: "+t.text,true,'Syntactical');
+        if(t==undefined){
+            console.log(e); //if t is undefined it means it is an uncaught syntactical error. Shouldn't happen.
+        } else new _3D_Exception(t,"Unexpected symbol: "+t.text,true,'Syntactical');
         return true;
     }
     if(reset_IP())return true; //We get the first instruction.
@@ -300,6 +307,9 @@ const _3D_Token = function (text, row, col, negative = false) {
   this.negative = negative;
 };
 const _3D_error_entry = function(token,message,show_position,type){
+    if(token==undefined){
+        throw "Reached end of 3D instructions.";
+    }
     let $row = $("<tr>");
     let $type = $("<td>");
     let $line = $("<td>");
