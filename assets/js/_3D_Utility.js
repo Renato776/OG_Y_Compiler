@@ -175,7 +175,68 @@ function stop_3D(){ //Resets execution.
 function resolve_directive(directive) {
     /*This function receives the text from the parser, digests it and sets the directive it makes reference
     * to. It also performs some extra checks: numbers aren't negative, cuts decimals if any, etc.*/
-    console.log('solving directive!! :'+directive);
+    let directive_regex = /#[a-zA-Z_]+/;
+    let num_regex = /[0-9]+/;
+    let id_regex = /[a-zA-Z_]+/gm;
+    let directive_name = directive.match(directive_regex)[0];
+    let param;
+    switch (directive_name) {
+        case '#MAX_HEAP':
+            param = directive.match(num_regex)[0];
+            if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
+            param = Number(param);
+            if(param<=0) throw  "Invalid parameter for max heap. Cannot use negative numbers. Got: "+param;
+            MAX_HEAP = param;
+            break;
+        case '#MAX_HEAP_DISPLAY':
+            param = directive.match(num_regex)[0];
+            if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
+            param = Number(param);
+            if(param<=0) throw  "Invalid parameter for max heap display. Cannot use negative numbers. Got: "+param;
+            MAX_HEAP_DISPLAY = param;
+            break;
+        case '#MAX_STACK_DISPLAY':
+            param = directive.match(num_regex)[0];
+            if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
+            param = Number(param);
+            if(param<=0) throw  "Invalid parameter for max stack display. Cannot use negative numbers. Got: "+param;
+            MAX_STACK_DISPLAY = param;
+            break;
+        case '#MAX_CACHE':
+            param = directive.match(num_regex)[0];
+            if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
+            param = Number(param);
+            if(param<=0) throw  "Invalid parameter for max cache. Cannot use negative numbers. Got: "+param;
+            MAX_CACHE = param;
+            break;
+        case '#FORCE_ENTRY_PROC':
+            param = directive.match(id_regex)[1];
+            if(param==null||param==undefined)throw "Invalid directive parameter. Expected: id. got: "+directive;
+            FORCE_ENTRY_PROC = param;
+            break;
+        case '#FORCE_ENTRY_POINT':
+            param = directive.match(num_regex)[0];
+            if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
+            FORCE_ENTRY_POINT = param;
+            break;
+        case '#MAX_INSTRUCTION':
+            param = directive.match(num_regex)[0];
+            if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
+            param = Number(param);
+            if(param<=0) throw  "Invalid parameter for max instruction execution. Cannot use negative numbers. Got: "+param;
+            INSTRUCTION_MAX = param;
+            break;
+        case '#ACCURACY':
+            param = directive.match(num_regex)[0];
+            if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
+            param = Number(param);
+            if(param<=0||param % 10 != 0) throw  "Invalid parameter for accuracy directive. Accuracy cannot be negative and must be a multiple of 10." +
+            "Invalid parameter: "+param;
+            ACCURACY = param;
+            break;
+        default:
+            log('Unrecognized directive: '+directive_name+' will be ignored.');
+    }
 }
 function showHelp(){
     window.open('Y_Compiler Manual.pdf');
