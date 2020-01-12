@@ -339,7 +339,7 @@ const _3D_Token = function (text, row, col, negative = false) {
   this.negative = negative;
 };
 const _3D_error_entry = function(token,message,show_position,type){
-    if(token==undefined){
+    if(token===undefined){
         throw message;
     }
     let $row = $("<tr>");
