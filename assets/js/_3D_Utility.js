@@ -172,8 +172,13 @@ function stop_3D(){ //Resets execution.
     new _3D_Exception(null,"Stopped 3D execution.",false);
 }
 //endregion
+function resolve_directive(directive) {
+    /*This function receives the text from the parser, digests it and sets the directive it makes reference
+    * to. It also performs some extra checks: numbers aren't negative, cuts decimals if any, etc.*/
+    console.log('solving directive!! :'+directive);
+}
 function showHelp(){
-    window.open('/Y_Compiler Manual.pdf');
+    window.open('Y_Compiler Manual.pdf');
 }
 function toggle_breakpoint_sensibility() {
     BREAKPOINT_SENSITIVE = !BREAKPOINT_SENSITIVE; //we toggle the breakpoint sensibility option.

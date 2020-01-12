@@ -640,8 +640,10 @@ const Import_Solver = {
       }
     },
     compile_import_sentence : function (og, target) { //returns string
-        target = target.substring(6).trim(); //remove the import word & trim any whitespaces until quotes
-        target = target.substring(1); //We remove the first quote
+        target = target.substring(6).trim(); //remove the import word & the trim any whitespaces until the first quote and semi.
+        target = target.substring(0,target.length-1); // remove the semi symbol.
+        target = target.trim(); //we trim again to remove any whitespace between between last quote and semi.
+        target = target.substring(1); //We remove the first quote.
         target = target.substring(0,target.length-1); //We remove the second quote
         target = target.trim(); //Trim again (for removing whitespaces within the quotes if any)
         if(target[0]=='/')target = target.substring(1); //We remove the first slash (if any)

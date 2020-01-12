@@ -581,7 +581,7 @@ case 2:return 6;
 break;
 }
 },
-rules: [/^(?:import[ \r\t]*"([^"\""\\]|\\.)*")/,/^(?:$)/,/^(?:[^])/],
+rules: [/^(?:import[ \r\t]*"([^"\""\\]|\\.)*"[ \r\t]*;)/,/^(?:$)/,/^(?:[^])/],
 conditions: {"INITIAL":{"rules":[0,1,2],"inclusive":true}}
 });
 return lexer;
