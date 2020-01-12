@@ -997,6 +997,7 @@ function generate_code() {
     }
     Code_Generator.initialize();
     try{
+        Code_Generator.entry_function_tracker.analyze_entry_point(); //We actualize the entry point if the user did changes to the source code & therefore the structure for the Symbol Table changed.
         Code_Generator.compile_native_constructors(); //We start by writing 3D output for all default constructors.
         Code_Generator.compile_abstract_methods(); //Next we output 3D for all abstract methods.
         Code_Generator.compile_utility_functions();//Next we output 3D for all utility functions used in 3D.

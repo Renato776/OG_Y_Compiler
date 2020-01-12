@@ -14,6 +14,24 @@ const Code_Generator = {
     entry_point: -1,
     stack: [],
     evaluation_stack: [],
+    entry_function_tracker:{
+        /*This object is used to actualize the entry point's index
+        since the index of the entry function might change if the user performs
+        some changes to the source code and doesn't re-select the starting point.
+        * */
+        prev : -1,
+        current_function:null,
+        analyze_entry_point(){
+            if(this.prev!=Code_Generator.entry_point){   //The entry point has changed, let's actualize the current_function.
+                this.current_function = Compiler.SymbolTable[Code_Generator.entry_point].name;
+            }
+            Code_Generator.entry_point = Compiler.get_var_index(0,this.current_function);
+            if(Code_Generator.entry_point==-1) throw new _pre_compiling_exception('' +
+                'The selected entry method: '+this.current_function+' has been renamed or no longer exists.' +
+                ' Please, re-select a valid starting point in the folders & classes tab to proceed.');
+            this.prev = Code_Generator.entry_point;
+        }
+    },
     scope: [],
     scope_tracker: [],
     sub_block_tracker: [],
