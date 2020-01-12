@@ -86,6 +86,15 @@ register_token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column);
 default on that switch:
 default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.yylloc.first_column),"Lexical error. Unrecognized symbol: "+yy_.yytext);
 */
+function compile_user_input(e) {
+    if(e.which == '13'){
+        let input = $("#Ejecutar_console").val(); //we retrieve the whole text area input
+        input = input.substr(input.lastIndexOf("\n")+1); //we get only the last line
+        compile_string(input); //we compile the last line
+        increase_IP(); //we increase IP to the next instruction
+        continue_3D(); //we continue execution.
+    }
+}
 function show_tab(e) {
     try{
         let b = $(e.target);
@@ -226,6 +235,7 @@ function reset_IP() {
         return true;
     }
     $("#Current_Instruction").html(instructions[IP].signature);
+    log('Starting code execution...\n');
 }
 function reset_3D() { //Resets all structures back to default. Must be called before parsing.
     //region Set directives back to default
@@ -417,10 +427,14 @@ const Instruction = function (name,token,param1=null,param2=null,param3=null,par
         this.signature = "exit ("+this.exitCode+" )";
         break;
     case "write":
-        this.signature = "write (0)";
+        this.signature = "write ()";
         break;
     case "read":
-        this.signature = "read ("+this.token.text+")";
+        this.signature = "read ()";
+        break;
+    case "input":
+        this.signature = "input ()";
+        break;
     default:
         break;
     }
@@ -771,6 +785,11 @@ function play_instruction(instruction,debug = false) {
             compile_string(content_);
             increase_IP();
             return true;
+        case 'input':
+            $("#Ejecutar_console").unbind();
+            $("#Ejecutar_console").on('keydown',compile_user_input);
+            console.log(IP);
+            return false;
         case 'exit':
             switch (instruction.exitCode) {
                 case '0': {
@@ -808,6 +827,7 @@ function play_instruction(instruction,debug = false) {
                         'Lower limit: '+lowerLimit+' Upper limit: '+upperLimit,true,true);
                 default: throw new _3D_Exception(instruction.token,'FATAL ERROR at runtime. Finished execution with code: 4',true);
             }
+
         default:
             new _3D_Exception(instruction.token,"Unrecognized 3D instruction: "+instruction.signature,true);
             compiling = false;

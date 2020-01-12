@@ -42,6 +42,7 @@
 "exit"				return 'EXIT';
 "write_file"		return 'WRITE_FILE';
 "read"				return 'READ';
+"input"				return 'INPUT';
 ","                 return 'COMMA';
 
 /* Espacios en blanco */
@@ -130,6 +131,7 @@ stmt : varDecl {$$ = $1;}
         | exit {$$ = $1;}
         | write {$$ = $1;}
         | read {$$ = $1;}
+        | input {$$ = $1;}
         ;
 
 varDecl: VAR ID ASIGNACION value {
@@ -217,16 +219,23 @@ print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {
        $$ = new Instruction("print",$5,$3,$5); //Print(name,token,format,value)
        }
        ;
+       
+write : WRITE_FILE LEFT_PAREN RIGHT_PAREN {
+       $$ = new Instruction("write",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
+       }
+       ;
+
+read :  READ LEFT_PAREN RIGHT_PAREN {
+         $$ = new Instruction("read",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
+       }
+       ;
+input :  INPUT LEFT_PAREN RIGHT_PAREN {
+         $$ = new Instruction("input",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
+       }
+       ;
+       
 exit : EXIT LEFT_PAREN value RIGHT_PAREN {
        $$ = new Instruction("exit",$3,$3.text); //Exit(code)
-       }
-       ;
-exit : WRITE LEFT_PAREN value RIGHT_PAREN {
-       $$ = new Instruction("write",$3,$3.text); //Write instruction (code)
-       }
-       ;
-read : READ LEFT_PAREN value RIGHT_PAREN {
-       $$ = new Instruction("read",$3,$3.text); //Write instruction (path)
        }
        ;
 
