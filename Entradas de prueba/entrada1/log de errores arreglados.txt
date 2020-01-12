@@ -1,0 +1,8 @@
+Log de errores:
+
+Cuando enviabas un campo de la clase como parametro de una funcion directamente (es decir sin usar una cadena) se creaba un 
+bug porque deje pasar por alto el sistema de evaluar as signature.
+
+Integer division wasn't working properly.
+
+invalid assignment from array to normal vars needs a better description;

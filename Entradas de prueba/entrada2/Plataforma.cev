@@ -1,0 +1,96 @@
+
+import "listaNodos.cev";
+import "NodoCero.cev";
+
+public class Plataforma {
+    private listaNodos contenido[];
+    private int valor;
+    
+    public Plataforma(){
+        this.setContenido(new listaNodos[5]);
+        this.setValor(5);
+    }
+    
+    public int factorial (int numero) {
+        if (numero==0){
+            return 1;
+        }
+        return numero * factorial(numero-1);
+    }
+    
+    public boolean agregar(int x){
+        int pos = x % this.getValor();
+        pos = factorial(pos);
+        pos = pos % this.getValor();
+        listaNodos content[] = this.getContenido();
+        if (content[pos] == null){
+            content[pos] = new listaNodos();
+            content[pos].insert(x);
+            return true;
+        }
+        if (content[pos].size() == 3){
+            return false;
+        }
+        content[pos].insert(x);
+        return true;
+    }
+    
+    public void imprimirs(){
+        listaNodos tempo[] = this.getContenido();
+        int z = 0;
+        while(z < 5){
+            if (tempo[z] != null){
+                println("pos: " + z);
+                imprimir(tempo[z].getInicio());
+            }
+            z++;
+        }
+    }
+    
+    
+    public void imprimir(NodoCero actual){
+        if (actual != null){
+            println(" ("+actual.getId()+")"+(char)actual.getId());
+            imprimir(actual.getSig());
+        }
+    }
+
+
+
+    public void reportear(int nivel){
+        listaNodos tempo[] = this.getContenido();
+        int z = 0;
+        while(z < 5){
+            if (tempo[z] != null){
+                write_file("reporteContenido"+nivel+z,reportear0(tempo[z].getInicio()));
+            }
+            z++;
+        }
+    }
+    
+    
+    public String reportear0(NodoCero actual){
+        if (actual != null){
+            return " ("+actual.getId()+")"+(char)actual.getId() + reportear0(actual.getSig());
+        }
+        return "";
+    }
+
+    public listaNodos[] getContenido() {
+        return contenido;
+    }
+
+    public void setContenido(listaNodos[] contenido) {
+        this.contenido = contenido;
+    }
+
+    public int getValor() {
+        return valor;
+    }
+
+    public void setValor(int valor) {
+        this.valor = valor;
+    }
+    
+    
+}

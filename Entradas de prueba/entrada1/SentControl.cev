@@ -1,0 +1,134 @@
+
+
+public class SentControl {
+    
+    public void fors(){
+        char actual[] = new char[12];
+        println("------------FOR------------------------------");
+        for (int w = 0; w <= 0; w ++ ) {
+            println(" "+w);
+            for (int x = 0; x < 3; x ++ ) {
+                actual[0] = (char) (65+x);
+                println(actual[0]);
+                for (int y = 0; y < 11; y ++ ) {
+                    actual[1] = (char) (97+y);
+                    for (int z = 0; z < 10; z ++ ) {
+                        actual[2+z] = (char) (48+z);
+                    }
+                    println(" "+actual[1]+" "+actual[2]+actual[3]+actual[4]+actual[5]+actual[6]+actual[7]+actual[8]+actual[9]+actual[10]+actual[11]);
+                }
+            }
+        }
+    }
+    
+    public void whiles(){
+        int w = 0;
+        int x = 0;
+        int y;
+        int z;
+        char actual[] = new char[12];
+        println("------------WHILE------------------------------");
+        while (w < 10){
+            println(" "+w);
+            while (x < 3){
+                actual[0] = (char) (65+x);
+                println(actual[0]);
+                y = 0;
+                while (y < 11){ 
+                    actual[1] = (char) (97+y);
+                    z = 0;
+                    while (z < 10){
+                        actual[2+z] = (char) (48+z);
+                        z++;
+                    }
+                    println(" "+actual[1]+" "+actual[2]+actual[3]+actual[4]+actual[5]+actual[6]+actual[7]+actual[8]+actual[9]+actual[10]+actual[11]);
+                    y++;
+                }
+                x++;
+            }
+            w++;
+        }
+    }
+    
+    
+    public void dowhiles(){
+        int w = 0;
+        int x = 0;
+        int y;
+        int z;
+        char actual[] = new char[12];
+        println("------------DO WHILE------------------------------");
+        do{
+            println(" "+ w);
+            do {
+                actual[0] = (char) (65+x);
+                println(actual[0]);
+                y = 0;
+                do {
+                    actual[1] = (char) (97+y);
+                    z = 0;
+                    do {
+                        actual[2+z] = (char) (48+z);
+                        z++;
+                    }while (z < 10);
+                    println(" "+actual[1]+" "+actual[2]+actual[3]+actual[4]+actual[5]+actual[6]+actual[7]+actual[8]+actual[9]+actual[10]+actual[11]);
+                    y++;
+                }while (y < 11);
+                x++;
+            }while (x < 3);
+            w++;
+        } while (w < 3);
+    }
+    public void ifs(int x){
+        println("------------IF------------------------------");
+        if (x == 12){
+            int y = - 7555 +(x + x * x - x) + 15 * (int)pow(2, 9) - fibonacci(x);
+            //36
+            char charB = (char)(y+30);
+            if (charB == 'B'){
+                if (charB != 'B'){
+                    println("Error!");
+                }
+                else{
+                    println("nivel 3");
+                    if (charB == 'B'){
+                        println("nivel 4");
+                        if (charB == 'B'){
+                            println("nivel 5");
+                            if (charB == 'B'){
+                                println("nivel 6");
+                                if (charB == 'B'){
+                                    println("nivel 7");
+                                    println(charB);
+                                } 
+                            }
+                        }
+                    }
+                }
+            }
+            else{
+                println("Error en la expresiones");
+                println("Valor esperado B");
+                println("Valor obtenido " + charB + " =(");
+            }
+        }
+        else{
+            println("Error en la expresiones");
+            println("Valor esperado 12");
+            println("Valor obtenido " + x + " =(");
+        }
+    }
+    
+    public int fibonacci(int n) {
+        if (n>1){
+           return fibonacci(n-1) + fibonacci(n-2);  //función recursiva
+        }
+        else if (n < -1) {  // caso base
+            return -1;
+        }
+        else{ 
+            return 1; 
+        }
+    }
+    
+}

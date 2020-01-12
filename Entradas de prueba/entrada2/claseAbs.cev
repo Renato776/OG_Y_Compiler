@@ -1,0 +1,7 @@
+
+public abstract class claseAbs {
+    
+    public abstract int suma(int a, int b);
+    public abstract double resta(int a, int b);
+
+}

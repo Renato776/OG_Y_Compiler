@@ -1,0 +1,34 @@
+/*
+Esta entrada de prueba fue escrita en su totalidad por: Ricardo Menchu.
+*/
+import "Acciones.cev";
+import "Casteos.cev";
+import "ParaArreglos.cev";
+import "SentControl.cev";
+
+public class Correr_todo {
+    
+    public static void main() {
+        // TODO code application logic here
+        ParaArreglos pa = new ParaArreglos();
+        Casteos c = new Casteos(15);
+        Acciones a = new Acciones();
+        SentControl sc = new SentControl();
+        int x = 93;
+        x = (x + x * x - x) / 15 * (int)pow(2, 9) - 294900;
+        //12
+        println("<<<<<<<<<<CASTEOS Y VALORES POR DEFECTO>>>>>>>>>>>>>>>>>>");
+        c.castear();
+        println("<<<<<<<<<<SENTENCIAS DE CONTROL>>>>>>>>>>>>>>>>>>");
+        sc.ifs(x);
+        sc.whiles();
+        sc.fors();///*
+        sc.dowhiles();
+        println("<<<<<<<<<<ARREGLOS>>>>>>>>>>>>>>>>>>");
+        pa.arreglar();
+        println("<<<<<<<<<<OBJETOS Y ARREGLO DE OBJETOS>>>>>>>>>>>>>>>>>>");
+        a.Jugar();
+        
+    }
+    
+}

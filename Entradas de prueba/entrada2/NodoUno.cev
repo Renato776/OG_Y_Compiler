@@ -1,0 +1,36 @@
+import "Plataforma.cev";
+public class NodoUno {
+    public Plataforma nivel;
+    public NodoUno sig;
+    public NodoUno ant;
+    
+    public NodoUno(){
+        setNivel(new Plataforma());
+    }
+
+    public Plataforma getNivel() {
+        return nivel;
+    }
+
+    public void setNivel(Plataforma nivel) {
+        this.nivel = nivel;
+    }
+
+    public NodoUno getSig() {
+        return sig;
+    }
+
+    public void setSig(NodoUno sig) {
+        this.sig = sig;
+    }
+
+    public NodoUno getAnt() {
+        return ant;
+    }
+
+    public void setAnt(NodoUno ant) {
+        this.ant = ant;
+    }
+    
+    
+}

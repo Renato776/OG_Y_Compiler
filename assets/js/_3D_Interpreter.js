@@ -77,6 +77,7 @@ let CodeMirror_Main = null;
 let CodeMirror_Execute = null;
 let token_tracker = [];
 let current_tab = null;
+let current_execution_option = 0;
 let main_file = ""; //This variable should have the name of the file where we started the compilation process.
 //endregion
 //region Global Utility Functions for 3D
@@ -88,11 +89,32 @@ default: new _3D_Exception(new _3D_Token(yy_.yytext,yy_.yylloc.first_line-1,yy_.
 */
 function compile_user_input(e) {
     if(e.which == '13'){
-        let input = $("#Ejecutar_console").val(); //we retrieve the whole text area input
+        let input = (current_execution_option==0)?$("#Ejecutar_console").val():$("#Debug_console").val(); //we retrieve the whole text area input
         input = input.substr(input.lastIndexOf("\n")+1); //we get only the last line
         compile_string(input); //we compile the last line
         increase_IP(); //we increase IP to the next instruction
-        continue_3D(); //we continue execution.
+        switch (current_execution_option) {
+            case 0: //If we're executing code (not debugging) We use this option
+                recover_execution();
+                break;
+            case 1: //If we were debugging code with iniciar or continue option, we use this one.
+                continue_3D();
+                break;
+            case 2: //If we're using next line we do nothing more after advancing IP.
+                break;
+            case 3:
+                continue_3D(); //If we were performing a jump option, it'd be kinda hard to recover execution and return
+                //after exactly after the og call finishes.
+                //So we'll just continue without stopping. If you're interested in getting back to the exact position where the
+                //jump was called let me know and I might implement such option.
+                break;
+            case 4:
+                next_BP(); //If were in a next BP option when the input instruction came out, we can recover with ease.
+            case 5:
+                break; //we do nothing since execution has been stopped.
+            default:
+               recover_execution(); //Otherwise we can just recover without pausing where it left.
+        }
     }
 }
 function show_tab(e) {
@@ -787,8 +809,9 @@ function play_instruction(instruction,debug = false) {
             return true;
         case 'input':
             $("#Ejecutar_console").unbind();
+            $("#Debug_console").unbind();
             $("#Ejecutar_console").on('keydown',compile_user_input);
-            console.log(IP);
+            $("#Debug_console").on('keydown',compile_user_input);
             return false;
         case 'exit':
             switch (instruction.exitCode) {
