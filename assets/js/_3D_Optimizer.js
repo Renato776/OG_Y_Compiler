@@ -236,13 +236,14 @@ const Optimizer = {
     }
 };
 function Optimize() {
-    let unOptimizedCode = CodeMirror_3D.getValue();
+    let unOptimizedCode = (CodeMirror_Execute==undefined)?CodeMirror_3D.getValue():CodeMirror_Execute.getValue();
     $("#Optimized_code").empty();
     Optimizer.initialize();
     try{
         _Optimizer_grammar.parse(unOptimizedCode);
     }catch (e) {
         let t = token_tracker.pop();
+        if(t == undefined)throw e;
         new _3D_Exception(t,"Unexpected symbol: "+t.text,true,'Syntactical',true);
     }
 }

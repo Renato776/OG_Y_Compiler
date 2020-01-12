@@ -219,7 +219,7 @@ function resolve_directive(directive) {
             if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
             FORCE_ENTRY_POINT = param;
             break;
-        case '#MAX_INSTRUCTION':
+        case '#MAX_INSTRUCTION_EXECUTION':
             param = directive.match(num_regex)[0];
             if(param==null)throw "Invalid directive parameter. Expected: num. got: "+directive;
             param = Number(param);

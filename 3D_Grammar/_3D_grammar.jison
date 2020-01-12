@@ -17,7 +17,7 @@
 "#MAX_HEAP"[ \r\t]+[0-9]+ 						{resolve_directive(yytext);} 
 "#MAX_HEAP_DISPLAY"[ \r\t]+[0-9]+ 				{resolve_directive(yytext);} 
 "#MAX_STACK_DISPLAY"[ \r\t]+[0-9]+ 				{resolve_directive(yytext);} 
-"#MAX_INSTRUCTION"[ \r\t]+[0-9]+ 				{resolve_directive(yytext);}
+"#MAX_INSTRUCTION_EXECUTION "[ \r\t]+[0-9]+ 	{resolve_directive(yytext);}
 "#MAX_CACHE"[ \r\t]+[0-9]+ 						{resolve_directive(yytext);}
 "#ACCURACY"[ \r\t]+[0-9]+						{resolve_directive(yytext);}
 "#HIDE_NATIVES"									{SHOW_ALL_DETAILS = false;}

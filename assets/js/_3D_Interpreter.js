@@ -308,7 +308,7 @@ const _3D_Token = function (text, row, col, negative = false) {
 };
 const _3D_error_entry = function(token,message,show_position,type){
     if(token==undefined){
-        throw "Reached end of 3D instructions.";
+        throw message;
     }
     let $row = $("<tr>");
     let $type = $("<td>");
