@@ -2,25 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="47a0ddd0-7ad9-43b7-911a-7e3e291be96c" name="Default Changelist" comment="Added some extra details.">
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/Acciones.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/Casteos.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/Correr_todo.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/Fichas.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/ListaPadre.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/ParaArreglos.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/SentControl.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/Torres.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada1/log de errores arreglados.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada2/CorrerTodo.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada2/NodoCero.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada2/NodoUno.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada2/Plataforma.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada2/claseAbs.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada2/listaNodos.cev" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Entradas de prueba/entrada2/listaUnos.cev" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Interpreter.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/js/_3D_Utility.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/_3D_Utility.js" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -138,7 +121,7 @@
       <workItem from="1578620588512" duration="6720000" />
       <workItem from="1578669254654" duration="599000" />
       <workItem from="1578798555880" duration="2413000" />
-      <workItem from="1578803470746" duration="12984000" />
+      <workItem from="1578803470746" duration="13899000" />
     </task>
     <servers />
   </component>
