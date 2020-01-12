@@ -1984,9 +1984,24 @@ const Code_Generator = {
                     this.evaluation_stack.push(this.types['String']);
                 }else throw new semantic_exception("More or less parameters than expected for function: "+func_name,node);
                 return true;
+            case "input":
+                if(value_as_signature){
+                    this.evaluation_stack.push(STRING);
+                    return true;
+                }
+                if(paramL.children.length==0){//No parameters allowed.
+                    this.input();
+                    this.printChar('\n'.charCodeAt(0));
+                    this.call('build_string');
+                    this.evaluation_stack.push(this.types['String']);
+                }else throw new semantic_exception("More or less parameters than expected for function: "+func_name,node);
+            return true;
             default:
                 return false;
         }
+    },
+    input:function(){
+        Printing.print_in_context('input()');
     },
     format_text(paramList) {
         //This method takes any parameter, casts it to string (if possible) and prints it.

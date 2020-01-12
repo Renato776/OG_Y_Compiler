@@ -56,6 +56,7 @@
 "exit"				return 'EXIT';
 "write_file"		return 'WRITE_FILE';
 "read"				return 'READ';
+"input"				return 'INPUT';
 ","                 return 'COMMA';
 
 /* Espacios en blanco */
@@ -140,6 +141,7 @@ stmt : varDecl {$$ = $1;}
         | exit {$$ = $1;}
         | write {$$ = $1;}
         | read {$$ = $1;}
+        | input {$$ = $1;}
         ;
 
 varDecl: VAR ID ASIGNACION value {
@@ -245,12 +247,16 @@ print : PRINT LEFT_PAREN FORMAT COMMA value RIGHT_PAREN {
        ;
        
 write : WRITE_FILE LEFT_PAREN RIGHT_PAREN {
-       $$ = new Instruction("write",$3,$3); //Print(name,token,format,value)
+       $$ = new Instruction("write",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
        }
        ;
 
 read :  READ LEFT_PAREN RIGHT_PAREN {
-         $$ = new Instruction("read",$3,$3); //Print(name,token,format,value)
+         $$ = new Instruction("read",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
+       }
+       ;
+input :  INPUT LEFT_PAREN RIGHT_PAREN {
+         $$ = new Instruction("input",new _3D_Token($1,@1.first_line,@1.first_column)); //Print(name,token,format,value)
        }
        ;
         
